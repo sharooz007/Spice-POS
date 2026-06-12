@@ -5,8 +5,45 @@ import { businessDate } from '@shared/businessDate'
 import InvoiceDetailPanel from '../../components/InvoiceDetailPanel'
 import type { DailySalesRow, ExpenseRow, InvoiceRow, PaymentBreakdownRow } from '@shared/types'
 
+// ── Mini stat card ────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }): ReactElement {
+  return (
+    <div style={{
+      background: accent ? 'var(--accent)' : 'var(--bg-surface)',
+      border: accent ? 'none' : '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem 1.25rem',
+      boxShadow: accent ? '0 4px 16px oklch(0.58 0.2 260 / 0.22)' : 'var(--shadow-xs)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.25rem',
+    }}>
+      <span style={{ fontSize: '0.75rem', fontWeight: 500, color: accent ? 'oklch(1 0 0 / 0.72)' : 'var(--ink-3)', letterSpacing: '0.01em' }}>
+        {label}
+      </span>
+      <span style={{ fontSize: '1.375rem', fontWeight: 700, color: accent ? '#fff' : 'var(--ink-1)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </span>
+      {sub && <span style={{ fontSize: '0.75rem', color: accent ? 'oklch(1 0 0 / 0.6)' : 'var(--ink-3)' }}>{sub}</span>}
+    </div>
+  )
+}
+
+// ── Section heading ───────────────────────────────────────────────────────────
+
+function SectionHead({ title }: { title: string }): ReactElement {
+  return (
+    <h2 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-2)', marginBottom: '0.75rem', letterSpacing: '0.005em' }}>
+      {title}
+    </h2>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 export default function DashboardScreen(): ReactElement {
-  const { user, navigate } = useAppStore()
+  const { navigate } = useAppStore()
   const today = businessDate(new Date())
 
   const [sales, setSales] = useState<DailySalesRow | null>(null)
@@ -38,168 +75,235 @@ export default function DashboardScreen(): ReactElement {
 
   const expensesTotal = todayExpenses.reduce((s, e) => s + e.amountPaise, 0)
 
+  // Collections chart data
+  const colMethods: Array<{ key: keyof PaymentBreakdownRow; label: string; color: string; isCredit?: boolean }> = [
+    { key: 'cash',   label: 'Cash',   color: 'var(--green)' },
+    { key: 'upi',    label: 'UPI',    color: 'var(--accent)' },
+    { key: 'card',   label: 'Card',   color: 'var(--purple)' },
+    { key: 'split',  label: 'Split',  color: 'var(--amber)' },
+    { key: 'credit', label: 'Credit (due)', color: 'var(--red)', isCredit: true }
+  ]
+  const grandTotal = collections ? (collections.total + collections.credit || 1) : 1
+  const R = 44, cx = 54, cy = 54, sw = 20
+  const circ = 2 * Math.PI * R
+  let runOffset = 0
+  const segments = collections
+    ? colMethods
+        .filter((m) => (collections[m.key] as number) > 0)
+        .map((m) => {
+          const val = collections[m.key] as number
+          const dash = (val / grandTotal) * circ
+          const seg = { ...m, val, dash, offset: runOffset }
+          runOffset += dash
+          return seg
+        })
+    : []
+
+  const page: React.CSSProperties = {
+    maxWidth: 960,
+    margin: '0 auto',
+    padding: '1.75rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2rem',
+  }
+
   return (
-    <div className="p-6 max-w-5xl mx-auto flex flex-col gap-6">
-      {/* Header */}
+    <div style={page}>
+
+      {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Business date: <span className="font-medium text-gray-700">{today}</span>
-          {' · '}Welcome, {user?.name}
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--ink-1)' }}>
+          Dashboard
+        </h1>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>
+          {today} · {new Date().toLocaleDateString('en-IN', { weekday: 'long' })}
         </p>
       </div>
 
-      {/* Today's Sales — 5 cards */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Today's Sales</h2>
-        {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
-        ) : (
-          <div className="grid grid-cols-5 gap-4">
-            {[
-              { label: 'Retail',     value: paiseToCurrency(sales?.retailTotalPaise ?? 0) },
-              { label: 'Wholesale',  value: paiseToCurrency(sales?.wholesaleTotalPaise ?? 0) },
-              { label: 'Combined',   value: paiseToCurrency(sales?.combinedTotalPaise ?? 0), highlight: true },
-              { label: 'Invoices',   value: String(sales?.invoiceCount ?? 0) },
-              { label: 'Expenses',   value: paiseToCurrency(expensesTotal) }
-            ].map((card) => (
-              <div key={card.label} className={`border rounded-xl p-4 bg-white ${card.highlight ? 'border-indigo-200' : ''}`}>
-                <div className="text-xs text-gray-500 mb-1">{card.label}</div>
-                <div className={`text-2xl font-bold ${card.highlight ? 'text-indigo-700' : 'text-gray-900'}`}>
-                  {card.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Stat row */}
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ height: 84, borderRadius: 'var(--r-lg)', background: 'var(--bg-fill)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+          <StatCard label="Retail" value={paiseToCurrency(sales?.retailTotalPaise ?? 0)} />
+          <StatCard label="Wholesale" value={paiseToCurrency(sales?.wholesaleTotalPaise ?? 0)} />
+          <StatCard label="Combined" value={paiseToCurrency(sales?.combinedTotalPaise ?? 0)} accent />
+          <StatCard label="Invoices" value={String(sales?.invoiceCount ?? 0)} sub="today" />
+          <StatCard label="Expenses" value={paiseToCurrency(expensesTotal)} />
+        </div>
+      )}
 
-      {/* Today's Collections card */}
-      {!loading && collections && (() => {
-        const methods: Array<{ key: keyof PaymentBreakdownRow; label: string; color: string; isCredit?: boolean }> = [
-          { key: 'cash',   label: 'Cash',   color: '#16a34a' },
-          { key: 'upi',    label: 'UPI',    color: '#2563eb' },
-          { key: 'card',   label: 'Card',   color: '#7c3aed' },
-          { key: 'split',  label: 'Split',  color: '#d97706' },
-          { key: 'credit', label: 'Credit', color: '#dc2626', isCredit: true }
+      {/* Quick actions */}
+      {(() => {
+        const actions: Array<{ label: string; screen: Parameters<typeof navigate>[0]; icon: ReactElement; primary?: boolean }> = [
+          {
+            label: 'Retail',
+            screen: 'RetailBilling',
+            primary: true,
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+            )
+          },
+          {
+            label: 'Wholesale',
+            screen: 'WholesaleBilling',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            )
+          },
+          {
+            label: 'Packing',
+            screen: 'Packing',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+                <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+              </svg>
+            )
+          },
+          {
+            label: 'Expenses',
+            screen: 'Expenses',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            )
+          },
         ]
-        const active = methods.filter((m) => (collections[m.key] as number) > 0)
-        const hasAnyCollected = collections.total > 0
-        const hasCredit = collections.credit > 0
-        const grandTotal = collections.total + collections.credit || 1
-        const R = 44, cx = 54, cy = 54, stroke = 22
-        const circumference = 2 * Math.PI * R
-        const allSegments = methods
-          .filter((m) => (collections[m.key] as number) > 0)
-          .reduce<Array<{ label: string; color: string; val: number; dash: number; offset: number }>>(
-            (acc, m) => {
-              const val = collections[m.key] as number
-              const frac = val / grandTotal
-              const dash = frac * circumference
-              const last = acc[acc.length - 1]
-              const off = last ? last.offset + last.dash : 0
-              acc.push({ label: m.label, color: m.color, val, dash, offset: off })
-              return acc
-            }, []
-          )
-
         return (
-          <div>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Today's Collections</h2>
-            <div className="border rounded-xl bg-white p-4">
-              {!hasAnyCollected && !hasCredit ? (
-                <p className="text-sm text-gray-400">No sales recorded today.</p>
-              ) : (
-                <div className="flex items-center gap-8">
-                  {/* SVG donut */}
-                  <svg width="108" height="108" viewBox="0 0 108 108" className="flex-shrink-0">
-                    <circle cx={cx} cy={cy} r={R} fill="none" stroke="#f3f4f6" strokeWidth={stroke} />
-                    {allSegments.map((s, i) => (
-                      <circle key={i} cx={cx} cy={cy} r={R} fill="none"
-                        stroke={s.color} strokeWidth={stroke}
-                        strokeDasharray={`${s.dash} ${circumference - s.dash}`}
-                        strokeDashoffset={circumference - s.offset}
-                        style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
-                      />
-                    ))}
-                    <text x={cx} y={cy - 4} textAnchor="middle" fontSize="9" fill="#6b7280">Collected</text>
-                    <text x={cx} y={cy + 9} textAnchor="middle" fontSize="10" fontWeight="600" fill="#111827">
-                      {paiseToCurrency(collections.total)}
-                    </text>
-                  </svg>
-                  {/* Legend */}
-                  <div className="flex flex-col gap-1.5 flex-1">
-                    {active.map((m) => {
-                      const val = collections[m.key] as number
-                      const pct = grandTotal > 0 ? Math.round(val / grandTotal * 100) : 0
-                      return (
-                        <div key={m.key} className="flex items-center gap-2 text-sm">
-                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                          <span className="w-14 text-gray-700 font-medium">{m.label}</span>
-                          <span className="font-mono text-gray-900">{paiseToCurrency(val)}</span>
-                          <span className="text-gray-400 text-xs">{pct}%</span>
-                          {m.isCredit && <span className="text-xs text-red-500">(outstanding)</span>}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+            {actions.map((a) => (
+              <button
+                key={a.screen}
+                onClick={() => navigate(a.screen)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.625rem',
+                  padding: '1.25rem 1rem',
+                  background: a.primary ? 'var(--accent)' : 'var(--bg-surface)',
+                  border: a.primary ? 'none' : '1px solid var(--border)',
+                  borderRadius: 'var(--r-lg)',
+                  boxShadow: a.primary ? '0 4px 16px oklch(0.58 0.2 260 / 0.22)' : 'var(--shadow-xs)',
+                  color: a.primary ? '#fff' : 'var(--ink-1)',
+                  cursor: 'pointer',
+                  fontSize: '0.9375rem',
+                  fontWeight: 600,
+                  letterSpacing: '-0.01em',
+                  transition: 'opacity 120ms ease, transform 120ms ease',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)' }}
+                onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
+              >
+                {a.icon}
+                {a.label}
+              </button>
+            ))}
           </div>
         )
       })()}
 
-      {/* Quick links */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Links</h2>
-        <div className="flex flex-wrap gap-3">
-          {[
-            { label: 'Retail Billing',     screen: 'RetailBilling',    color: 'bg-indigo-600 hover:bg-indigo-700' },
-            { label: 'Wholesale Billing',  screen: 'WholesaleBilling', color: 'bg-amber-600 hover:bg-amber-700' },
-            { label: 'Packing',            screen: 'Packing',          color: 'bg-green-700 hover:bg-green-800' },
-            { label: 'Bulk Inventory',     screen: 'BulkInventory',    color: 'bg-gray-700 hover:bg-gray-800' }
-          ].map((link) => (
-            <button key={link.screen}
-              onClick={() => navigate(link.screen as Parameters<typeof navigate>[0])}
-              className={`${link.color} text-white px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors`}>
-              {link.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Collections + Recent invoices — 2 col */}
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1rem', alignItems: 'start' }}>
 
-      {/* Recent Invoices */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Invoices</h2>
-        <div className="border rounded-xl bg-white overflow-hidden">
-          {recentInvoices.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-gray-400">No invoices yet.</p>
+        {/* Collections donut */}
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <SectionHead title="Collections" />
+          {!collections || (!collections.total && !collections.credit) ? (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--ink-3)', paddingTop: '0.5rem' }}>No sales today.</p>
           ) : (
-            <table className="w-full text-sm">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              <svg width="108" height="108" viewBox="0 0 108 108">
+                <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--bg-fill)" strokeWidth={sw} />
+                {segments.map((s, i) => (
+                  <circle key={i} cx={cx} cy={cy} r={R} fill="none"
+                    stroke={s.color} strokeWidth={sw}
+                    strokeDasharray={`${s.dash} ${circ - s.dash}`}
+                    strokeDashoffset={circ - s.offset}
+                    style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
+                  />
+                ))}
+                <text x={cx} y={cy - 5} textAnchor="middle" fontSize="9" fill="var(--ink-3)" fontFamily="var(--font-sans)">collected</text>
+                <text x={cx} y={cy + 9} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--ink-1)" fontFamily="var(--font-sans)">
+                  {paiseToCurrency(collections.total)}
+                </text>
+              </svg>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {segments.map((s) => {
+                  const pct = Math.round(s.val / grandTotal * 100)
+                  return (
+                    <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                      <span style={{ flex: 1, color: 'var(--ink-2)' }}>{s.label}</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 500, color: 'var(--ink-1)' }}>{paiseToCurrency(s.val)}</span>
+                      <span style={{ color: 'var(--ink-3)', width: 28, textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recent invoices */}
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem 1.25rem 0.75rem', borderBottom: '1px solid var(--border)' }}>
+            <SectionHead title="Recent Invoices" />
+          </div>
+          {recentInvoices.length === 0 ? (
+            <p style={{ padding: '1.25rem', fontSize: '0.8125rem', color: 'var(--ink-3)' }}>No invoices yet.</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
               <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
-                  <th className="px-4 py-2">Invoice No.</th>
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2">Date / Time</th>
-                  <th className="px-4 py-2">Total</th>
+                <tr style={{ color: 'var(--ink-3)', fontWeight: 500 }}>
+                  {['Invoice', 'Type', 'Time', 'Total'].map((h, i) => (
+                    <th key={h} style={{ padding: '0.5rem 1rem', textAlign: i === 3 ? 'right' : 'left', fontWeight: 500, fontSize: '0.75rem', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {recentInvoices.map((inv) => (
-                  <tr key={inv.id}
+                  <tr
+                    key={inv.id}
+                    className="trow-hover"
                     onClick={() => setModalInvoiceId(inv.id)}
-                    className="border-b last:border-0 hover:bg-gray-50 cursor-pointer transition-colors">
-                    <td className="px-4 py-2 font-mono text-xs">{inv.invoiceNo}</td>
-                    <td className="px-4 py-2">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${inv.type === 'retail' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
+                    style={{ cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                  >
+                    <td style={{ padding: '0.625rem 1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
+                      {inv.invoiceNo}
+                    </td>
+                    <td style={{ padding: '0.625rem 1rem' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        padding: '0.125rem 0.5rem',
+                        borderRadius: 'var(--r-full)',
+                        fontSize: '0.6875rem',
+                        fontWeight: 500,
+                        background: inv.type === 'retail' ? 'var(--accent-soft)' : 'oklch(0.96 0.025 75)',
+                        color: inv.type === 'retail' ? 'var(--accent)' : 'oklch(0.48 0.15 75)',
+                      }}>
                         {inv.type}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-500">
-                      {new Date(inv.invoiceDatetime).toLocaleString()}
+                    <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.75rem' }}>
+                      {new Date(inv.invoiceDatetime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-4 py-2 font-mono font-semibold">{paiseToCurrency(inv.totalPaise)}</td>
+                    <td style={{ padding: '0.625rem 1rem', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--ink-1)' }}>
+                      {paiseToCurrency(inv.totalPaise)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -208,46 +312,49 @@ export default function DashboardScreen(): ReactElement {
         </div>
       </div>
 
-      {/* Recent Expenses */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Expenses</h2>
-        <div className="border rounded-xl bg-white overflow-hidden">
-          {recentExpenses.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-gray-400">No expenses recorded.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Category</th>
-                  <th className="px-4 py-2 text-right">Amount</th>
-                  <th className="px-4 py-2">Notes</th>
-                </tr>
-              </thead>
+      {/* Recent expenses */}
+      {recentExpenses.length > 0 && (
+        <div>
+          <SectionHead title="Recent Expenses" />
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
               <tbody>
                 {recentExpenses.map((e) => (
-                  <tr key={e.id} className="border-b last:border-0">
-                    <td className="px-4 py-2 text-xs text-gray-500">{e.date}</td>
-                    <td className="px-4 py-2">{e.category}</td>
-                    <td className="px-4 py-2 text-right font-mono">{paiseToCurrency(e.amountPaise)}</td>
-                    <td className="px-4 py-2 text-gray-400 text-xs">{e.notes ?? '—'}</td>
+                  <tr key={e.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.75rem', width: 100 }}>{e.date}</td>
+                    <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-1)', fontWeight: 500 }}>{e.category}</td>
+                    <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.8125rem' }}>{e.notes ?? ''}</td>
+                    <td style={{ padding: '0.625rem 1rem', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--red)' }}>
+                      {paiseToCurrency(e.amountPaise)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* Invoice detail modal */}
       {modalInvoiceId && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setModalInvoiceId(null)}>
-          <div className="bg-white rounded-xl shadow-2xl w-96 max-h-[85vh] overflow-y-auto p-5"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-800 text-sm">Invoice Detail</h3>
-              <button onClick={() => setModalInvoiceId(null)}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer text-xl leading-none">×</button>
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.35)', zIndex: 'var(--z-backdrop)' as unknown as number, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}
+          onClick={() => setModalInvoiceId(null)}
+        >
+          <div
+            style={{ background: 'var(--bg-surface)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--shadow-lg)', width: 400, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', zIndex: 'var(--z-modal)' as unknown as number }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--ink-1)' }}>Invoice Detail</span>
+              <button
+                onClick={() => setModalInvoiceId(null)}
+                style={{ width: 28, height: 28, borderRadius: 'var(--r-full)', background: 'var(--bg-fill)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--ink-2)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
             </div>
             <InvoiceDetailPanel invoiceId={modalInvoiceId} />
           </div>

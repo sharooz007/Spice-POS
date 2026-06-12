@@ -1,67 +1,122 @@
+/* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
-  --ev-c-white: #ffffff;
-  --ev-c-white-soft: #f8f8f8;
-  --ev-c-white-mute: #f2f2f2;
+  /* Background layers */
+  --bg-base:       oklch(0.97 0.005 250);   /* window / page bg */
+  --bg-surface:    oklch(1 0 0);            /* cards, panels */
+  --bg-elevated:   oklch(1 0 0);            /* modals, popovers */
+  --bg-grouped:    oklch(0.955 0.006 250);  /* grouped-list bg */
+  --bg-fill:       oklch(0.92 0.004 250);   /* input bg */
+  --bg-fill-hover: oklch(0.895 0.005 250);
 
-  --ev-c-black: #1b1b1f;
-  --ev-c-black-soft: #222222;
-  --ev-c-black-mute: #282828;
+  /* Ink / text */
+  --ink-1: oklch(0.13 0 0);    /* primary text */
+  --ink-2: oklch(0.46 0 0);    /* secondary text */
+  --ink-3: oklch(0.63 0 0);    /* placeholder / caption */
+  --ink-4: oklch(0.78 0 0);    /* disabled */
 
-  --ev-c-gray-1: #515c67;
-  --ev-c-gray-2: #414853;
-  --ev-c-gray-3: #32363f;
+  /* Accent — system blue */
+  --accent:       oklch(0.58 0.2 260);      /* #007AFF equivalent */
+  --accent-hover: oklch(0.52 0.21 260);
+  --accent-soft:  oklch(0.93 0.03 260);     /* tinted bg */
 
-  --ev-c-text-1: rgba(255, 255, 245, 0.86);
-  --ev-c-text-2: rgba(235, 235, 245, 0.6);
-  --ev-c-text-3: rgba(235, 235, 245, 0.38);
+  /* Semantic colors */
+  --green:  oklch(0.55 0.18 145);
+  --red:    oklch(0.52 0.22 25);
+  --amber:  oklch(0.68 0.19 75);
+  --purple: oklch(0.52 0.22 300);
 
-  --ev-button-alt-border: transparent;
-  --ev-button-alt-text: var(--ev-c-text-1);
-  --ev-button-alt-bg: var(--ev-c-gray-3);
-  --ev-button-alt-hover-border: transparent;
-  --ev-button-alt-hover-text: var(--ev-c-text-1);
-  --ev-button-alt-hover-bg: var(--ev-c-gray-2);
+  /* Borders */
+  --border:       oklch(0.88 0.004 250);
+  --border-focus: var(--accent);
+
+  /* Shadows (precise, not heavy) */
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.06);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.08), 0 2px 4px oklch(0 0 0 / 0.04);
+  --shadow-lg: 0 16px 40px oklch(0 0 0 / 0.12), 0 4px 12px oklch(0 0 0 / 0.06);
+
+  /* Radius */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 9999px;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+
+  /* Z-index scale */
+  --z-dropdown: 30;
+  --z-sticky:   40;
+  --z-backdrop: 50;
+  --z-modal:    60;
+  --z-toast:    70;
+  --z-tooltip:  80;
 }
 
-:root {
-  --color-background: var(--ev-c-black);
-  --color-background-soft: var(--ev-c-black-soft);
-  --color-background-mute: var(--ev-c-black-mute);
-
-  --color-text: var(--ev-c-text-1);
-}
-
-*,
-*::before,
-*::after {
+/* ── Reset & base ──────────────────────────────────────────────────── */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-ul {
-  list-style: none;
+html {
+  font-size: 14px;
+  text-rendering: optimizeLegibility;
 }
 
 body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--ink-1);
+  line-height: 1.5;
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar (macOS-style thin) ──────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: oklch(0.75 0 0 / 0.5); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.6 0 0 / 0.6); }
+
+/* ── Focus ring (system-style) ─────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Selection ─────────────────────────────────────────────────────── */
+::selection {
+  background: oklch(0.58 0.2 260 / 0.2);
+}
+
+/* ── Base input / button tokens ────────────────────────────────────── */
+input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: 0.9286rem; /* 13px */
+  color: var(--ink-1);
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* ── Utility — monospaced figures for tables ───────────────────────── */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ── Reduced motion ────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
