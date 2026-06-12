@@ -1,0 +1,120 @@
+import type {
+  PingRequest, PingResponse, LoginRequest, LoginResponse,
+  Result, Category, Product,
+  CreateCategoryRequest, CreateProductRequest, CreateVariantRequest,
+  UpdateProductRequest, UpdateVariantRequest,
+  PriceMenuEntry, PriceHistoryRow, SetVariantPriceRequest, SetProductLooseRateRequest, GetCurrentPriceRequest,
+  BulkStockRow, BulkArrivalRow, BulkAdjustmentRow, RecordBulkArrivalRequest, RecordBulkAdjustmentRequest,
+  ValidatePackingRunRequest, ValidatePackingRunResult, CommitPackingRunRequest, PackingRunRow,
+  RetailStockRow, RetailMovementRow, RecordRetailAdjustmentRequest,
+  PrintLabelsRequest, LabelPrintLogRow,
+  CreateRetailSaleRequest, SavedInvoice, BarcodeResult,
+  CreateWholesaleSaleRequest, RecordPartyPaymentRequest,
+  RetailItemRow, WholesaleItemRow, LooseItemRow,
+  CustomerRow, PaymentRow, CreateCustomerRequest, UpdateCustomerRequest,
+  SupplierRow, PurchaseEntryRow, ExpenseRow, RecordPurchaseRequest, RecordExpenseRequest,
+  DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
+  InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
+  PaymentBreakdownRow,
+  InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
+  UpdateInvoiceDetailsRequest
+} from '../shared/types'
+
+declare global {
+  interface Window {
+    api: {
+      ping: (req: PingRequest) => Promise<PingResponse>
+      auth: { login: (req: LoginRequest) => Promise<LoginResponse> }
+      products: {
+        listCategories: () => Promise<Result<Category[]>>
+        generateBarcode: (req: { productName: string; weightGrams: number }) => Promise<Result<string>>
+        createCategory: (req: CreateCategoryRequest & { userId: number }) => Promise<Result<Category>>
+        listProducts: () => Promise<Result<Product[]>>
+        createProduct: (req: CreateProductRequest & { userId: number }) => Promise<Result<number>>
+        createVariant: (req: CreateVariantRequest & { userId: number }) => Promise<Result<number>>
+        updateProduct: (req: UpdateProductRequest & { userId: number }) => Promise<Result<void>>
+        updateVariant: (req: UpdateVariantRequest & { userId: number }) => Promise<Result<void>>
+        toggleProductEnabled: (req: { id: number; userId: number }) => Promise<Result<void>>
+        toggleVariantEnabled: (req: { id: number; userId: number }) => Promise<Result<void>>
+        deleteProduct: (req: { productId: number; userId: number }) => Promise<Result<void>>
+      }
+      pricing: {
+        getCurrentPrice: (req: GetCurrentPriceRequest) => Promise<Result<PriceMenuEntry | null>>
+        listAllEntries: () => Promise<Result<PriceMenuEntry[]>>
+        setVariantPrice: (req: SetVariantPriceRequest) => Promise<Result<void>>
+        setProductLooseRate: (req: SetProductLooseRateRequest) => Promise<Result<void>>
+        listPriceHistory: (req: { variantId: number }) => Promise<Result<PriceHistoryRow[]>>
+      }
+      bulkInventory: {
+        getBulkStock: (req: { productId: number }) => Promise<Result<BulkStockRow | null>>
+        listAllBulkStock: () => Promise<Result<BulkStockRow[]>>
+        recordArrival: (req: RecordBulkArrivalRequest) => Promise<Result<void>>
+        recordAdjustment: (req: RecordBulkAdjustmentRequest) => Promise<Result<void>>
+        listArrivals: (req: { productId: number }) => Promise<Result<BulkArrivalRow[]>>
+        listAdjustments: (req: { productId: number }) => Promise<Result<BulkAdjustmentRow[]>>
+        deleteArrival: (req: { arrivalId: number; userId: number }) => Promise<Result<void>>
+      }
+      packing: {
+        validate: (req: ValidatePackingRunRequest) => Promise<ValidatePackingRunResult>
+        commit: (req: CommitPackingRunRequest) => Promise<Result<number>>
+        listRuns: (req?: { productId?: number }) => Promise<Result<PackingRunRow[]>>
+      }
+      retailInventory: {
+        getStock: (req?: { variantId?: number }) => Promise<Result<RetailStockRow[]>>
+        recordAdjustment: (req: RecordRetailAdjustmentRequest) => Promise<Result<void>>
+        listMovements: (req: { variantId: number }) => Promise<Result<RetailMovementRow[]>>
+      }
+      labels: {
+        printLabels: (req: PrintLabelsRequest) => Promise<Result<void>>
+        listPrintLog: (req?: { variantId?: number }) => Promise<Result<LabelPrintLogRow[]>>
+      }
+      billing: {
+        lookupBarcode: (req: { barcode: string }) => Promise<Result<BarcodeResult | null>>
+        createRetailSale: (req: CreateRetailSaleRequest) => Promise<Result<SavedInvoice>>
+        createWholesaleSale: (req: CreateWholesaleSaleRequest) => Promise<Result<SavedInvoice>>
+        recordPartyPayment: (req: RecordPartyPaymentRequest) => Promise<Result<void>>
+        listRetailItems: () => Promise<Result<RetailItemRow[]>>
+        listWholesaleItems: () => Promise<Result<{ packets: WholesaleItemRow[]; loose: LooseItemRow[] }>>
+      }
+      print: { receipt: (req: { invoiceId: number }) => Promise<Result<void>> }
+      customers: {
+        list: (req?: { type?: 'retail' | 'wholesale' }) => Promise<Result<CustomerRow[]>>
+        get: (req: { id: number }) => Promise<Result<CustomerRow | null>>
+        create: (req: CreateCustomerRequest) => Promise<Result<number>>
+        update: (req: UpdateCustomerRequest) => Promise<Result<void>>
+        listPayments: (req: { customerId: number }) => Promise<Result<PaymentRow[]>>
+        updateCustomerPhone: (customerId: number, phone: string) => Promise<Result<void>>
+      }
+      purchases: {
+        listSuppliers: () => Promise<Result<SupplierRow[]>>
+        createSupplier: (req: { name: string; phone?: string }) => Promise<Result<number>>
+        record: (req: RecordPurchaseRequest) => Promise<Result<void>>
+        list: (req?: { dateFrom?: string; dateTo?: string }) => Promise<Result<PurchaseEntryRow[]>>
+      }
+      expenses: {
+        record: (req: RecordExpenseRequest) => Promise<Result<void>>
+        list: (req?: { dateFrom?: string; dateTo?: string }) => Promise<Result<ExpenseRow[]>>
+      }
+      reports: {
+        dailySales: (req: DateRange) => Promise<Result<DailySalesRow[]>>
+        salesByProduct: (req: DateRange) => Promise<Result<SalesByProductRow[]>>
+        salesByVariant: (req: DateRange) => Promise<Result<SalesByVariantRow[]>>
+        inventory: () => Promise<Result<InventoryReportRow[]>>
+        lowStock: () => Promise<Result<LowStockRow[]>>
+        packing: (req: DateRange) => Promise<Result<PackingReportRun[]>>
+        profit: (req: DateRange) => Promise<Result<ProfitReportRow[]>>
+        dues: () => Promise<Result<DuesRow[]>>
+        expenses: (req: DateRange) => Promise<Result<ExpensesSummaryRow[]>>
+        paymentBreakdown: (req: { date: string }) => Promise<Result<PaymentBreakdownRow>>
+      }
+      invoiceHistory: {
+        search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>
+        getInvoice: (req: { invoiceId: number }) => Promise<Result<InvoiceRow | null>>
+        void: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
+        editDateTime: (req: EditInvoiceDateTimeRequest) => Promise<Result<InvoiceRow>>
+        getEditLog: (req: { invoiceId: number }) => Promise<Result<EditLogRow[]>>
+        updateDetails: (req: UpdateInvoiceDetailsRequest) => Promise<Result<InvoiceRow>>
+      }
+    }
+  }
+}

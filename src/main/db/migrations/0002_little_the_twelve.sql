@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `unit_type` text DEFAULT 'weight' NOT NULL;

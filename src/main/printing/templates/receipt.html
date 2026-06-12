@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: monospace; font-size: 12px; width: 100%; padding: 8px; }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .divider { border-top: 1px dashed #000; margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 1px 2px; vertical-align: top; }
+  .right { text-align: right; }
+  .row-total { font-weight: bold; }
+  .summary td { padding: 2px; }
+</style>
+</head>
+<body>
+  <div class="center bold" id="shop-name"></div>
+  <div class="center" id="shop-address"></div>
+  <div class="center" id="shop-phone"></div>
+  <div class="divider"></div>
+  <div class="center bold">RECEIPT</div>
+  <div>Invoice: <span id="invoice-no"></span></div>
+  <div>Date: <span id="invoice-date"></span></div>
+  <div class="divider"></div>
+  <table>
+    <thead>
+      <tr>
+        <td class="bold">Item</td>
+        <td class="bold right">Qty</td>
+        <td class="bold right">Rate</td>
+        <td class="bold right">Total</td>
+      </tr>
+    </thead>
+    <tbody id="lines"></tbody>
+  </table>
+  <div class="divider"></div>
+  <table class="summary">
+    <tr><td>Subtotal</td><td class="right" id="subtotal"></td></tr>
+    <tr id="discount-row" style="display:none"><td>Discount</td><td class="right" id="discount"></td></tr>
+    <tr><td class="bold">Total</td><td class="right bold" id="total"></td></tr>
+    <tr><td>Payment</td><td class="right" id="payment-mode"></td></tr>
+    <tr><td>Paid</td><td class="right" id="amount-paid"></td></tr>
+  </table>
+  <div class="divider"></div>
+  <div class="center">Thank you!</div>
+</body>
+</html>
