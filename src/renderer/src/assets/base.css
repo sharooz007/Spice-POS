@@ -1,39 +1,39 @@
 /* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
   /* Background layers */
-  --bg-base:       oklch(0.97 0.005 250);   /* window / page bg */
-  --bg-surface:    oklch(1 0 0);            /* cards, panels */
-  --bg-elevated:   oklch(1 0 0);            /* modals, popovers */
-  --bg-grouped:    oklch(0.955 0.006 250);  /* grouped-list bg */
-  --bg-fill:       oklch(0.92 0.004 250);   /* input bg */
-  --bg-fill-hover: oklch(0.895 0.005 250);
+  --bg-base:       oklch(0.15 0.018 260);   /* window / page bg */
+  --bg-surface:    oklch(0.19 0.014 260);   /* cards, panels */
+  --bg-elevated:   oklch(0.22 0.016 260);   /* modals, popovers */
+  --bg-grouped:    oklch(0.17 0.014 260);   /* grouped-list bg */
+  --bg-fill:       oklch(0.24 0.012 260);   /* input bg */
+  --bg-fill-hover: oklch(0.29 0.014 260);
 
   /* Ink / text */
-  --ink-1: oklch(0.13 0 0);    /* primary text */
-  --ink-2: oklch(0.46 0 0);    /* secondary text */
-  --ink-3: oklch(0.63 0 0);    /* placeholder / caption */
-  --ink-4: oklch(0.78 0 0);    /* disabled */
+  --ink-1: oklch(0.94 0.006 260);  /* primary text */
+  --ink-2: oklch(0.75 0.016 260);  /* secondary text */
+  --ink-3: oklch(0.58 0.024 260);  /* placeholder / caption */
+  --ink-4: oklch(0.43 0.02 260);   /* disabled */
 
   /* Accent — system blue */
-  --accent:       oklch(0.58 0.2 260);      /* #007AFF equivalent */
-  --accent-hover: oklch(0.52 0.21 260);
-  --accent-soft:  oklch(0.93 0.03 260);     /* tinted bg */
+  --accent:       oklch(0.64 0.19 260);
+  --accent-hover: oklch(0.7 0.18 260);
+  --accent-soft:  oklch(0.3 0.07 260);
 
   /* Semantic colors */
-  --green:  oklch(0.55 0.18 145);
-  --red:    oklch(0.52 0.22 25);
-  --amber:  oklch(0.68 0.19 75);
-  --purple: oklch(0.52 0.22 300);
+  --green:  oklch(0.68 0.18 145);
+  --red:    oklch(0.68 0.2 25);
+  --amber:  oklch(0.76 0.17 75);
+  --purple: oklch(0.72 0.18 300);
 
   /* Borders */
-  --border:       oklch(0.88 0.004 250);
+  --border:       oklch(0.34 0.018 260);
   --border-focus: var(--accent);
 
   /* Shadows (precise, not heavy) */
-  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.06);
-  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.04);
-  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.08), 0 2px 4px oklch(0 0 0 / 0.04);
-  --shadow-lg: 0 16px 40px oklch(0 0 0 / 0.12), 0 4px 12px oklch(0 0 0 / 0.06);
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.22);
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.22);
+  --shadow-md: 0 8px 18px oklch(0 0 0 / 0.22);
+  --shadow-lg: 0 18px 48px oklch(0 0 0 / 0.34);
 
   /* Radius */
   --r-xs: 6px;

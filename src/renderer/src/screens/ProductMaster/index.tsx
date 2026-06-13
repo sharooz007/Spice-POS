@@ -25,6 +25,13 @@ function paiseToCurrency(p: number): string {
   return '₹' + (p / 100).toFixed(2)
 }
 
+// ── Shared inline-style constants ─────────────────────────────────────────────
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)', marginBottom: 2,
+}
+const errorTextStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'var(--red)' }
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ProductMasterScreen(): ReactElement {
@@ -75,16 +82,25 @@ export default function ProductMasterScreen(): ReactElement {
       loadData()
     }
     return (
-      <form onSubmit={submit} className="flex gap-2 items-end mt-2">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Category name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm" required />
+      <div className="modal-overlay" onClick={() => setShowAddCategory(false)}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 380 }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '1rem' }}>
+            New Category
+          </h3>
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={labelStyle}>Category name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} required
+                placeholder="e.g. Spices & Masalas" autoFocus />
+            </div>
+            {err && <span style={errorTextStyle}>{err}</span>}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+              <button type="button" onClick={() => setShowAddCategory(false)} className="btn btn-secondary">Cancel</button>
+              <button type="submit" className="btn btn-primary">Create Category</button>
+            </div>
+          </form>
         </div>
-        {err && <span className="text-xs text-red-600">{err}</span>}
-        <button type="submit" className="btn btn-primary">Save</button>
-        <button type="button" onClick={() => setShowAddCategory(false)} className="px-3 py-1 rounded text-sm border cursor-pointer">Cancel</button>
-      </form>
+      </div>
     )
   }
 
@@ -121,52 +137,66 @@ export default function ProductMasterScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="form-panel" style={{marginTop:"0.75rem"}}>
-        <h3 className="font-semibold text-gray-800">{initial ? 'Edit Product' : 'New Product'}</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Category</label>
-            <select value={catId} onChange={(e) => setCatId(Number(e.target.value))}
-              className="border border-gray-300 rounded px-2 py-1 text-sm">
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Bulk low-stock threshold (g)</label>
-            <input type="number" value={bulkThresh} onChange={(e) => setBulkThresh(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" min={0} required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Wholesale rate (₹/kg)</label>
-            <input type="number" step="0.01" value={wRate} onChange={(e) => setWRate(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" min={0} required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Unit type</label>
-            <div className="flex gap-1">
-              {(['weight', 'volume'] as const).map((u) => (
-                <button key={u} type="button" onClick={() => setUnitType(u)}
-                  className={`px-3 py-1 rounded text-xs font-medium border cursor-pointer transition-colors ${
-                    unitType === u ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                  }`}>
-                  {u === 'weight' ? 'Weight (g/kg)' : 'Volume (ml/L)'}
-                </button>
-              ))}
+      <div className="modal-overlay" onClick={() => { setShowAddProduct(false); setEditingProduct(null) }}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '1rem' }}>
+            {initial ? 'Edit Product' : 'New Product'}
+          </h3>
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Product Name</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required
+                  placeholder="e.g. Chilli Powder" autoFocus />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Category</label>
+                <select value={catId} onChange={(e) => setCatId(Number(e.target.value))}>
+                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Bulk low-stock threshold (g)</label>
+                <input type="number" value={bulkThresh} onChange={(e) => setBulkThresh(e.target.value)}
+                  min={0} required />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Wholesale rate (₹/kg)</label>
+                <input type="number" step="0.01" value={wRate} onChange={(e) => setWRate(e.target.value)}
+                  min={0} required />
+              </div>
             </div>
-          </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={labelStyle}>Unit type</label>
+              <div style={{ display: 'flex', gap: '0.375rem' }}>
+                {(['weight', 'volume'] as const).map((u) => (
+                  <button key={u} type="button" onClick={() => setUnitType(u)}
+                    style={{
+                      padding: '0.3125rem 0.75rem', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem',
+                      fontWeight: 500, cursor: 'pointer', border: '1px solid',
+                      background: unitType === u ? 'var(--accent)' : 'var(--bg-fill)',
+                      color: unitType === u ? '#fff' : 'var(--ink-2)',
+                      borderColor: unitType === u ? 'var(--accent)' : 'var(--border)',
+                      transition: 'background 100ms ease',
+                    }}>
+                    {u === 'weight' ? 'Weight (g/kg)' : 'Volume (ml/L)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {err && <p style={errorTextStyle}>{err}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+              <button type="button" onClick={() => { setShowAddProduct(false); setEditingProduct(null) }}
+                className="btn btn-secondary">Cancel</button>
+              <button type="submit" className="btn btn-primary">
+                {initial ? 'Save Changes' : 'Create Product'}
+              </button>
+            </div>
+          </form>
         </div>
-        {err && <p className="text-xs text-red-600">{err}</p>}
-        <div className="flex gap-2">
-          <button type="submit" className="btn btn-primary">Save</button>
-          <button type="button" onClick={() => { setShowAddProduct(false); setEditingProduct(null) }}
-            className="px-4 py-1.5 rounded text-sm border cursor-pointer">Cancel</button>
-        </div>
-      </form>
+      </div>
     )
   }
 
@@ -210,37 +240,46 @@ export default function ProductMasterScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-blue-50 border border-blue-200 rounded p-3 flex flex-col gap-3 mt-2">
-        <h4 className="font-semibold text-gray-700 text-sm">{initial ? 'Edit Variant' : 'New Variant'}</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Label (e.g. 250g)</label>
-            <input value={label} onChange={(e) => setLabel(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Weight (grams)</label>
-            <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" min={1} required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Barcode (Code128)</label>
-            <input value={barcode} onChange={(e) => setBarcode(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm font-mono" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Low-stock threshold (pcs)</label>
-            <input type="number" value={thresh} onChange={(e) => setThresh(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" min={0} required />
-          </div>
+      <div className="modal-overlay" onClick={() => { setShowAddVariant(false); setEditingVariant(null) }}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.25rem' }}>
+            {initial ? 'Edit Variant' : 'New Variant'}
+          </h3>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginBottom: '1rem' }}>{productName}</p>
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Label (e.g. 250g)</label>
+                <input value={label} onChange={(e) => setLabel(e.target.value)} required
+                  placeholder="250g" autoFocus />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Weight (grams)</label>
+                <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
+                  min={1} required placeholder="250" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Barcode (Code128)</label>
+                <input value={barcode} onChange={(e) => setBarcode(e.target.value)}
+                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.02em' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={labelStyle}>Low-stock threshold (pcs)</label>
+                <input type="number" value={thresh} onChange={(e) => setThresh(e.target.value)}
+                  min={0} required />
+              </div>
+            </div>
+            {err && <p style={errorTextStyle}>{err}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+              <button type="button" onClick={() => { setShowAddVariant(false); setEditingVariant(null) }}
+                className="btn btn-secondary">Cancel</button>
+              <button type="submit" className="btn btn-primary">
+                {initial ? 'Save Changes' : 'Add Variant'}
+              </button>
+            </div>
+          </form>
         </div>
-        {err && <p className="text-xs text-red-600">{err}</p>}
-        <div className="flex gap-2">
-          <button type="submit" className="btn btn-primary">Save</button>
-          <button type="button" onClick={() => { setShowAddVariant(false); setEditingVariant(null) }}
-            className="px-4 py-1.5 rounded text-sm border cursor-pointer">Cancel</button>
-        </div>
-      </form>
+      </div>
     )
   }
 
@@ -248,14 +287,17 @@ export default function ProductMasterScreen(): ReactElement {
 
   function BarcodeModal({ variant }: { variant: ProductVariant }): ReactElement {
     return (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-        onClick={() => setBarcodeVariant(null)}>
-        <div className="bg-white rounded-xl shadow-xl p-6 flex flex-col items-center gap-3"
-          onClick={(e) => e.stopPropagation()}>
-          <h3 className="font-semibold text-gray-800">{variant.label} — {variant.barcode}</h3>
-          <BarcodeSvg value={variant.barcode} />
-          <button onClick={() => setBarcodeVariant(null)}
-            className="mt-2 px-4 py-1.5 border rounded text-sm cursor-pointer">Close</button>
+      <div className="modal-overlay" onClick={() => setBarcodeVariant(null)}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()}
+          style={{ maxWidth: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.125rem' }}>{variant.label}</h3>
+            <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: 'var(--ink-3)', letterSpacing: '0.03em' }}>{variant.barcode}</span>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '0.75rem 1rem' }}>
+            <BarcodeSvg value={variant.barcode} />
+          </div>
+          <button onClick={() => setBarcodeVariant(null)} className="btn btn-secondary" style={{ width: '100%' }}>Close</button>
         </div>
       </div>
     )
@@ -264,65 +306,208 @@ export default function ProductMasterScreen(): ReactElement {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="page">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-800">Product Master</h1>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)',
+      padding: '1.25rem',
+      gap: '1rem',
+      overflow: 'hidden',
+    }}>
+
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+        maxWidth: 1100,
+        width: '100%',
+        margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em' }}>
+            Product Master
+          </h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>
+            {products.length} product{products.length !== 1 ? 's' : ''} · {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
+          </p>
+        </div>
         {isAdmin && (
-          <div className="flex gap-2">
-            <button onClick={() => setShowAddCategory(true)}
-              className="px-3 py-1.5 border rounded text-sm cursor-pointer hover:bg-gray-50 transition-colors">
-              + Category
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => setShowAddCategory(true)} className="btn btn-secondary">
+              <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 14, height: 14 }}>
+                <path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/>
+              </svg>
+              Category
             </button>
-            <button onClick={() => { setEditingProduct(null); setShowAddProduct(true) }}
-              className="btn btn-primary">
-              + Product
+            <button onClick={() => { setEditingProduct(null); setShowAddProduct(true) }} className="btn btn-primary">
+              <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 14, height: 14 }}>
+                <path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/>
+              </svg>
+              Product
             </button>
           </div>
         )}
       </div>
 
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-      {showAddCategory && isAdmin && <AddCategoryForm />}
-      {showAddProduct && isAdmin && <ProductForm />}
-      {editingProduct && isAdmin && <ProductForm initial={editingProduct} />}
+      {error && <p style={{ ...errorTextStyle, maxWidth: 1100, width: '100%', margin: '0 auto' }}>{error}</p>}
 
-      {/* Product list */}
-      <div className="flex gap-4">
-        {/* Left: product list */}
-        <div className="w-64 flex-shrink-0">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Products</div>
-          <div className="flex flex-col gap-1">
-            {products.map((p) => (
-              <div key={p.id}
-                onClick={() => setSelectedProductId(p.id)}
-                className={`px-3 py-2 rounded cursor-pointer text-sm flex justify-between items-center transition-colors ${
-                  selectedProductId === p.id ? 'list-item active' : 'list-item'
-                } ${!p.enabled ? 'opacity-50' : ''}`}>
-                <span>{p.name}</span>
-                <span className={`text-xs ${selectedProductId === p.id ? 'text-blue-200' : 'text-gray-400'}`}>
-                  {p.categoryName}
-                </span>
+      {/* ── Main content: master-detail ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: selectedProduct ? 'clamp(260px, 22%, 320px) 1fr' : '1fr',
+        gap: '0.75rem',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+        maxWidth: 1100,
+        width: '100%',
+        margin: '0 auto',
+      }}>
+
+        {/* ── Left: product sidebar ── */}
+        <div className="card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 'var(--r-lg)',
+          minHeight: 0,
+          ...(selectedProduct ? {} : { maxWidth: 380, margin: '0 auto', width: '100%' }),
+        }}>
+          <div style={{
+            padding: '0.75rem 0.875rem',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <span className="section-label" style={{ margin: 0, padding: 0 }}>Products</span>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', fontVariantNumeric: 'tabular-nums' }}>
+              {products.length}
+            </span>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '0.25rem 0' }}>
+            {products.map((p) => {
+              const isSelected = selectedProductId === p.id
+              return (
+                <div key={p.id}
+                  onClick={() => setSelectedProductId(p.id)}
+                  style={{
+                    padding: '0.5rem 0.875rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem',
+                    background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                    borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+                    transition: 'background 80ms ease, border-color 80ms ease',
+                    opacity: p.enabled ? 1 : 0.45,
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget.style.background = 'var(--bg-fill)') }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget.style.background = 'transparent') }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '0.8125rem',
+                      fontWeight: isSelected ? 600 : 500,
+                      color: isSelected ? 'var(--accent)' : 'var(--ink-1)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>{p.name}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', marginTop: 1 }}>
+                      {p.categoryName}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 500,
+                      padding: '0.0625rem 0.375rem',
+                      borderRadius: 'var(--r-full)',
+                      background: p.variants.length ? 'var(--bg-fill)' : 'oklch(0.24 0.065 25)',
+                      color: p.variants.length ? 'var(--ink-3)' : 'var(--red)',
+                    }}>
+                      {p.variants.length} var{p.variants.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+            {products.length === 0 && (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--ink-3)' }}>No products yet</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-4)', marginTop: 2 }}>Create your first product above.</div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
-        {/* Right: product detail */}
+        {/* ── Right: product detail ── */}
         {selectedProduct && (
-          <div className="card" style={{flex:1,padding:"1.25rem"}}>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h2 className="font-bold text-gray-800 text-lg">{selectedProduct.name}</h2>
-                <p className="text-sm text-gray-500">
-                  {selectedProduct.categoryName} · Bulk threshold: {selectedProduct.bulkLowStockGrams}g ·
-                  Wholesale: {paiseToCurrency(selectedProduct.wholesaleRatePerKgPaise)}/kg
-                </p>
+          <div className="card" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderRadius: 'var(--r-lg)',
+            minHeight: 0,
+          }}>
+            {/* Product header */}
+            <div style={{
+              padding: '1rem 1.25rem',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexShrink: 0,
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.01em' }}>
+                    {selectedProduct.name}
+                  </h2>
+                  <span style={{
+                    fontSize: '0.625rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                    borderRadius: 'var(--r-full)',
+                    background: selectedProduct.enabled ? 'oklch(0.25 0.07 145)' : 'oklch(0.24 0.065 25)',
+                    color: selectedProduct.enabled ? 'var(--green)' : 'var(--red)',
+                  }}>
+                    {selectedProduct.enabled ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+                {/* Metadata chips */}
+                <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                  {[
+                    { label: selectedProduct.categoryName, icon: '📂' },
+                    { label: `Threshold: ${selectedProduct.bulkLowStockGrams}g`, icon: '📦' },
+                    { label: `Wholesale: ${paiseToCurrency(selectedProduct.wholesaleRatePerKgPaise)}/kg`, icon: '💰' },
+                    { label: selectedProduct.unitType === 'weight' ? 'Weight (g/kg)' : 'Volume (ml/L)', icon: '⚖️' },
+                  ].map((chip) => (
+                    <span key={chip.label} style={{
+                      fontSize: '0.6875rem',
+                      color: 'var(--ink-3)',
+                      background: 'var(--bg-fill)',
+                      padding: '0.1875rem 0.5rem',
+                      borderRadius: 'var(--r-full)',
+                      border: '1px solid var(--border)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}>
+                      <span style={{ fontSize: '0.625rem' }}>{chip.icon}</span> {chip.label}
+                    </span>
+                  ))}
+                </div>
               </div>
               {isAdmin && (
-                <div className="flex gap-2">
+                <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
                   <button
                     onClick={() => { setEditingProduct(selectedProduct); setShowAddProduct(false) }}
-                    className="px-3 py-1 border rounded text-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                    className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.375rem 0.75rem' }}>
                     Edit
                   </button>
                   <button
@@ -330,95 +515,140 @@ export default function ProductMasterScreen(): ReactElement {
                       await window.api.products.toggleProductEnabled({ id: selectedProduct.id, userId: user!.id })
                       loadData()
                     }}
-                    className={`px-3 py-1 rounded text-sm cursor-pointer transition-colors ${
-                      selectedProduct.enabled
-                        ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                        : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
-                    }`}>
+                    className="btn" style={{
+                      fontSize: '0.8125rem', padding: '0.375rem 0.75rem',
+                      background: selectedProduct.enabled ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.07 145)',
+                      color: selectedProduct.enabled ? 'var(--red)' : 'var(--green)',
+                      borderColor: selectedProduct.enabled ? 'oklch(0.44 0.13 25)' : 'oklch(0.45 0.11 145)',
+                    }}>
                     {selectedProduct.enabled ? 'Disable' : 'Enable'}
                   </button>
                   <button
                     onClick={() => { setDeleteError(''); setDeleteConfirm(true) }}
-                    className="btn btn-danger">
+                    className="btn btn-danger" style={{ fontSize: '0.8125rem', padding: '0.375rem 0.75rem' }}>
                     Delete
                   </button>
                   <button
                     onClick={() => { setEditingVariant(null); setShowAddVariant(true) }}
-                    className="btn btn-primary">
-                    + Variant
+                    className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.375rem 0.75rem' }}>
+                    <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 12, height: 12 }}>
+                      <path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/>
+                    </svg>
+                    Variant
                   </button>
                 </div>
               )}
             </div>
 
-            {showAddVariant && isAdmin && <VariantForm productId={selectedProduct.id} productName={selectedProduct.name} />}
-            {editingVariant && isAdmin && <VariantForm productId={selectedProduct.id} productName={selectedProduct.name} initial={editingVariant} />}
-
-            {/* Variants table */}
-            <table className="w-full text-sm mt-3">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
-                  <th className="pb-2 pr-4">Label</th>
-                  <th className="pb-2 pr-4">Weight</th>
-                  <th className="pb-2 pr-4">Barcode</th>
-                  <th className="pb-2 pr-4">Threshold</th>
-                  <th className="pb-2 pr-4">Status</th>
-                  {isAdmin && <th className="pb-2">Actions</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {selectedProduct.variants.map((v) => (
-                  <tr key={v.id} className={`border-b last:border-0 ${!v.enabled ? 'opacity-50' : ''}`}>
-                    <td className="py-2 pr-4 font-medium">{v.label}</td>
-                    <td className="py-2 pr-4 text-gray-600">{v.weightGrams}g</td>
-                    <td className="py-2 pr-4 font-mono text-gray-600">{v.barcode}</td>
-                    <td className="py-2 pr-4 text-gray-600">{v.retailLowStockPcs} pcs</td>
-                    <td className="py-2 pr-4">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${v.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {v.enabled ? 'Active' : 'Disabled'}
-                      </span>
-                    </td>
-                    {isAdmin && (
-                      <td className="py-2">
-                        <div className="flex gap-2">
-                          <button onClick={() => setBarcodeVariant(v)}
-                            className="text-blue-600 hover:underline text-xs cursor-pointer">Barcode</button>
-                          <button onClick={() => { setEditingVariant(v); setShowAddVariant(false) }}
-                            className="text-gray-600 hover:underline text-xs cursor-pointer">Edit</button>
-                          <button
-                            onClick={async () => {
-                              await window.api.products.toggleVariantEnabled({ id: v.id, userId: user!.id })
-                              loadData()
-                            }}
-                            className="text-red-600 hover:underline text-xs cursor-pointer">
-                            {v.enabled ? 'Disable' : 'Enable'}
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Variants section */}
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+              {selectedProduct.variants.length === 0 ? (
+                <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, color: 'var(--ink-4)', margin: '0 auto 0.75rem' }}>
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                  </svg>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No variants</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>
+                    Add a variant to set up packet sizes and barcodes.
+                  </div>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{ paddingLeft: '1.25rem' }}>Label</th>
+                      <th>Weight</th>
+                      <th>Barcode</th>
+                      <th>Low Stock</th>
+                      <th>Status</th>
+                      {isAdmin && <th style={{ textAlign: 'right', paddingRight: '1.25rem' }}>Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedProduct.variants.map((v) => (
+                      <tr key={v.id} style={{ opacity: v.enabled ? 1 : 0.45 }}>
+                        <td style={{ paddingLeft: '1.25rem', fontWeight: 600 }}>{v.label}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontVariantNumeric: 'tabular-nums' }}>
+                          {v.weightGrams}g
+                        </td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-2)', letterSpacing: '0.02em' }}>
+                          {v.barcode}
+                        </td>
+                        <td>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontVariantNumeric: 'tabular-nums' }}>
+                            {v.retailLowStockPcs}
+                          </span>
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', marginLeft: 3 }}>pcs</span>
+                        </td>
+                        <td>
+                          <span style={{
+                            fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                            borderRadius: 'var(--r-full)',
+                            background: v.enabled ? 'oklch(0.25 0.07 145)' : 'var(--bg-fill)',
+                            color: v.enabled ? 'var(--green)' : 'var(--ink-4)',
+                          }}>
+                            {v.enabled ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'right', paddingRight: '1.25rem' }}>
+                            <div style={{ display: 'flex', gap: '0.125rem', justifyContent: 'flex-end' }}>
+                              <button onClick={() => setBarcodeVariant(v)}
+                                className="btn btn-ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', color: 'var(--accent)' }}>
+                                Barcode
+                              </button>
+                              <button onClick={() => { setEditingVariant(v); setShowAddVariant(false) }}
+                                className="btn btn-ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+                                Edit
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await window.api.products.toggleVariantEnabled({ id: v.id, userId: user!.id })
+                                  loadData()
+                                }}
+                                className="btn btn-ghost"
+                                style={{
+                                  fontSize: '0.75rem', padding: '0.25rem 0.5rem',
+                                  color: v.enabled ? 'var(--red)' : 'var(--green)',
+                                }}>
+                                {v.enabled ? 'Disable' : 'Enable'}
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
       </div>
 
+      {/* ── Modals ── */}
+      {showAddCategory && isAdmin && <AddCategoryForm />}
+      {(showAddProduct || editingProduct) && isAdmin && <ProductForm initial={editingProduct ?? undefined} />}
+      {(showAddVariant || editingVariant) && isAdmin && selectedProduct && (
+        <VariantForm productId={selectedProduct.id} productName={selectedProduct.name} initial={editingVariant ?? undefined} />
+      )}
       {barcodeVariant && <BarcodeModal variant={barcodeVariant} />}
 
-      {/* Delete confirmation dialog */}
+      {/* Delete confirmation */}
       {deleteConfirm && selectedProduct && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Delete {selectedProduct.name}?</h3>
-            <p className="text-sm text-gray-600 mb-4">This cannot be undone.</p>
-            {deleteError && <p className="text-xs text-red-600 mb-3">{deleteError}</p>}
-            <div className="flex gap-2 justify-end">
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.375rem' }}>
+              Delete {selectedProduct.name}?
+            </h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--ink-3)', marginBottom: '1rem' }}>
+              This action cannot be undone. All variants will also be removed.
+            </p>
+            {deleteError && <p style={{ ...errorTextStyle, marginBottom: '0.75rem' }}>{deleteError}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
               <button
                 onClick={() => { setDeleteConfirm(false); setDeleteError('') }}
-                className="px-4 py-1.5 border rounded text-sm cursor-pointer hover:bg-gray-50 transition-colors">
-                Cancel
-              </button>
+                className="btn btn-secondary">Cancel</button>
               <button
                 onClick={async () => {
                   const res = await window.api.products.deleteProduct({ productId: selectedProduct.id, userId: user!.id })
@@ -430,8 +660,11 @@ export default function ProductMasterScreen(): ReactElement {
                   setTimeout(() => setSuccessMsg(''), 4000)
                   loadData()
                 }}
-                className="btn btn-danger">
-                Delete
+                className="btn"
+                style={{
+                  background: 'var(--red)', color: '#fff',
+                }}>
+                Delete Product
               </button>
             </div>
           </div>
@@ -440,7 +673,26 @@ export default function ProductMasterScreen(): ReactElement {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="fixed bottom-6 right-6 bg-green-700 text-white px-4 py-2 rounded shadow-lg text-sm z-50">
+        <div style={{
+          position: 'fixed',
+          bottom: '6.5rem',
+          right: '1.5rem',
+          background: 'oklch(0.25 0.07 145)',
+          color: 'var(--green)',
+          border: '1px solid oklch(0.45 0.11 145)',
+          padding: '0.625rem 1rem',
+          borderRadius: 'var(--r-md)',
+          fontSize: '0.8125rem',
+          fontWeight: 500,
+          boxShadow: 'var(--shadow-md)',
+          zIndex: 'var(--z-toast)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 14, height: 14, flexShrink: 0 }}>
+            <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z" clipRule="evenodd"/>
+          </svg>
           {successMsg}
         </div>
       )}

@@ -470,8 +470,8 @@ export function registerHandlers(): void {
     wrap(() => reportsSvc.duesReport()))
   ipcMain.handle('reports.expenses', (_e, req: DateRange): Result<ExpensesSummaryRow[]> =>
     wrap(() => reportsSvc.expensesReport(req)))
-  ipcMain.handle('reports.paymentBreakdown', (_e, req: { date: string }): Result<PaymentBreakdownRow> =>
-    wrap(() => reportsSvc.paymentBreakdown(req.date)))
+  ipcMain.handle('reports.paymentBreakdown', (_e, req: DateRange): Result<PaymentBreakdownRow> =>
+    wrap(() => reportsSvc.paymentBreakdown(req)))
 
   // ── invoiceHistory ──────────────────────────────────────────────────────────
   ipcMain.handle('invoiceHistory.search', (_e, req: SearchInvoicesRequest): Result<InvoiceRow[]> =>

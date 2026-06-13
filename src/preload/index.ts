@@ -104,7 +104,7 @@ const api = {
     profit: (req: DateRange): Promise<Result<ProfitReportRow[]>> => ipcRenderer.invoke('reports.profit', req),
     dues: (): Promise<Result<DuesRow[]>> => ipcRenderer.invoke('reports.dues'),
     expenses: (req: DateRange): Promise<Result<ExpensesSummaryRow[]>> => ipcRenderer.invoke('reports.expenses', req),
-    paymentBreakdown: (req: { date: string }): Promise<Result<PaymentBreakdownRow>> => ipcRenderer.invoke('reports.paymentBreakdown', req)
+    paymentBreakdown: (req: DateRange): Promise<Result<PaymentBreakdownRow>> => ipcRenderer.invoke('reports.paymentBreakdown', req)
   },
   invoiceHistory: {
     search: (req: SearchInvoicesRequest): Promise<Result<InvoiceRow[]>> => ipcRenderer.invoke('invoiceHistory.search', req),

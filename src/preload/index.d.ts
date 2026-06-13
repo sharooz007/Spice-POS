@@ -105,7 +105,7 @@ declare global {
         profit: (req: DateRange) => Promise<Result<ProfitReportRow[]>>
         dues: () => Promise<Result<DuesRow[]>>
         expenses: (req: DateRange) => Promise<Result<ExpensesSummaryRow[]>>
-        paymentBreakdown: (req: { date: string }) => Promise<Result<PaymentBreakdownRow>>
+        paymentBreakdown: (req: DateRange) => Promise<Result<PaymentBreakdownRow>>
       }
       invoiceHistory: {
         search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>

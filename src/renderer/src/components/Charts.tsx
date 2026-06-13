@@ -31,28 +31,46 @@ const ink2 = 'var(--ink-2)'
 const ink3 = 'var(--ink-3)'
 const border = 'var(--border)'
 
-function EmptyChart({ height = 140 }: { height?: number }): ReactElement {
+export interface ChartPalette {
+  ink1: string
+  ink2: string
+  ink3: string
+  border: string
+  tooltipBg: string
+  tooltipShadow: string
+}
+
+const defaultChartPalette: ChartPalette = {
+  ink1,
+  ink2,
+  ink3,
+  border,
+  tooltipBg: 'var(--bg-elevated)',
+  tooltipShadow: 'var(--shadow-sm)'
+}
+
+function EmptyChart({ height = 140, palette = defaultChartPalette }: { height?: number; palette?: ChartPalette }): ReactElement {
   return (
-    <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ink3, fontSize: 13 }}>
+    <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: palette.ink3, fontSize: 13 }}>
       No data
     </div>
   )
 }
 
-function MoneyTooltip({ active, payload, label }: TooltipContentProps): ReactElement | null {
+function MoneyTooltip({ active, payload, label, palette = defaultChartPalette }: TooltipContentProps & { palette?: ChartPalette }): ReactElement | null {
   if (!active || !payload?.length) return null
   const point = payload[0]
   return (
     <div style={{
-      background: 'var(--bg-elevated)',
-      border: `1px solid ${border}`,
+      background: palette.tooltipBg,
+      border: `1px solid ${palette.border}`,
       borderRadius: 'var(--r-sm)',
       padding: '0.5rem 0.625rem',
-      boxShadow: 'var(--shadow-sm)',
-      color: ink1,
+      boxShadow: palette.tooltipShadow,
+      color: palette.ink1,
       fontSize: 12,
     }}>
-      <div style={{ color: ink3, marginBottom: 2 }}>{label}</div>
+      <div style={{ color: palette.ink3, marginBottom: 2 }}>{label}</div>
       <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>
         {paiseToCurrency(Number(point.value ?? 0))}
       </div>
@@ -63,34 +81,38 @@ function MoneyTooltip({ active, payload, label }: TooltipContentProps): ReactEle
 export function MoneyAreaChart({
   data,
   color,
-  height = 150
+  height = 150,
+  palette = defaultChartPalette,
+  gradientId = 'money-area-fill'
 }: {
   data: MoneyPoint[]
   color: string
   height?: number
+  palette?: ChartPalette
+  gradientId?: string
 }): ReactElement {
-  if (data.length === 0) return <EmptyChart height={height} />
+  if (data.length === 0) return <EmptyChart height={height} palette={palette} />
 
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <defs>
-            <linearGradient id="money-area-fill" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.28} />
               <stop offset="100%" stopColor={color} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke={border} strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke={palette.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" hide />
           <YAxis hide domain={[0, 'dataMax']} />
-          <Tooltip content={(props) => <MoneyTooltip {...props} />} cursor={{ stroke: border }} />
+          <Tooltip content={(props) => <MoneyTooltip {...props} palette={palette} />} cursor={{ stroke: palette.border }} />
           <Area
             type="monotone"
             dataKey="value"
             stroke={color}
             strokeWidth={2}
-            fill="url(#money-area-fill)"
+            fill={`url(#${gradientId})`}
             dot={{ r: 2, strokeWidth: 0, fill: color }}
             activeDot={{ r: 4, strokeWidth: 0, fill: color }}
             isAnimationActive={false}
@@ -105,15 +127,20 @@ export function SalesSplitChart({
   retail,
   wholesale,
   colors,
-  height = 150
+  height = 150,
+  palette = defaultChartPalette
 }: {
   retail: number
   wholesale: number
   colors: { retail: string; wholesale: string }
   height?: number
+  palette?: ChartPalette
 }): ReactElement {
   const total = retail + wholesale
-  if (total === 0) return <EmptyChart height={height} />
+  if (total === 0) return <EmptyChart height={height} palette={palette} />
+  const chartSize = Math.min(138, height)
+  const outerRadius = Math.max(42, Math.floor(chartSize * 0.42))
+  const innerRadius = Math.max(30, Math.floor(outerRadius * 0.72))
 
   const data = [
     { label: 'Retail', value: retail, color: colors.retail },
@@ -121,23 +148,23 @@ export function SalesSplitChart({
   ].filter((row) => row.value > 0)
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '138px 1fr', alignItems: 'center', gap: 14, minHeight: height }}>
-      <div style={{ height: 138 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `${chartSize}px 1fr`, alignItems: 'center', gap: 14, minHeight: height }}>
+      <div style={{ height: chartSize }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               dataKey="value"
               nameKey="label"
-              innerRadius={42}
-              outerRadius={58}
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
               paddingAngle={2}
               stroke="transparent"
               isAnimationActive={false}
             >
               {data.map((row) => <Cell key={row.label} fill={row.color} />)}
             </Pie>
-            <Tooltip content={(props) => <MoneyTooltip {...props} />} />
+            <Tooltip content={(props) => <MoneyTooltip {...props} palette={palette} />} />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -145,8 +172,8 @@ export function SalesSplitChart({
         {data.map((row) => (
           <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <span style={{ width: 10, height: 10, borderRadius: 3, background: row.color, flexShrink: 0 }} />
-            <span style={{ color: ink2 }}>{row.label}</span>
-            <span style={{ color: ink1, fontWeight: 700, fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' }}>
+            <span style={{ color: palette.ink2 }}>{row.label}</span>
+            <span style={{ color: palette.ink1, fontWeight: 700, fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' }}>
               {paiseToCurrency(row.value)}
             </span>
           </div>

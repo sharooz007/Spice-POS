@@ -235,25 +235,35 @@ export function expensesReport(range: DateRange): ExpensesSummaryRow[] {
     .all()
 }
 
-export function paymentBreakdown(date: string): PaymentBreakdownRow {
+export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
   const rows = getDb().all<{ payment_mode: string; amount_paid_paise: number; total_paise: number; payment_split: string | null }>(sql`
     SELECT payment_mode, amount_paid_paise, total_paise, payment_split
     FROM invoices
-    WHERE business_date = ${date} AND status = 'active'
+    WHERE business_date BETWEEN ${range.dateFrom} AND ${range.dateTo}
+      AND status = 'active'
   `)
   const result: PaymentBreakdownRow = {
     cash: 0, upi: 0, card: 0, credit: 0,
     cashCount: 0, upiCount: 0, cardCount: 0, creditCount: 0,
     total: 0
   }
-  const addPayment = (mode: string, amount: number): boolean => {
-    if (!Number.isFinite(amount)) return false
-    if (mode === 'cash' || mode === 'upi' || mode === 'card') {
-      result[mode] += amount
-      result.total += amount
-      return true
+  const normalizeMode = (mode: unknown): 'cash' | 'upi' | 'card' | 'credit' | 'split' | null => {
+    if (typeof mode !== 'string') return null
+    const normalized = mode.trim().toLowerCase()
+    if (normalized === 'cash' || normalized === 'upi' || normalized === 'card' || normalized === 'credit' || normalized === 'split') {
+      return normalized
     }
-    return false
+    return null
+  }
+  const addPayment = (mode: unknown, amount: number): 'cash' | 'upi' | 'card' | null => {
+    const normalized = normalizeMode(mode)
+    if (!Number.isFinite(amount)) return null
+    if (normalized === 'cash' || normalized === 'upi' || normalized === 'card') {
+      result[normalized] += amount
+      result.total += amount
+      return normalized
+    }
+    return null
   }
   const addCount = (mode: 'cash' | 'upi' | 'card' | 'credit'): void => {
     if (mode === 'cash') result.cashCount += 1
@@ -262,11 +272,12 @@ export function paymentBreakdown(date: string): PaymentBreakdownRow {
     else result.creditCount += 1
   }
   for (const r of rows) {
-    if (r.payment_mode === 'credit') {
+    const mode = normalizeMode(r.payment_mode)
+    if (mode === 'credit') {
       result.credit += r.total_paise
       addCount('credit')
-    } else if (r.payment_mode === 'split') {
-      let splitRows: Array<{ mode?: unknown; amount?: unknown }> = []
+    } else if (mode === 'split') {
+      let splitRows: Array<{ mode?: unknown; method?: unknown; amount?: unknown; amountPaise?: unknown }> = []
       try {
         splitRows = r.payment_split ? JSON.parse(r.payment_split) : []
       } catch {
@@ -274,16 +285,21 @@ export function paymentBreakdown(date: string): PaymentBreakdownRow {
       }
       const countedModes = new Set<'cash' | 'upi' | 'card'>()
       for (const split of splitRows) {
-        if (typeof split.mode === 'string' && typeof split.amount === 'number') {
-          if (addPayment(split.mode, split.amount) && (split.mode === 'cash' || split.mode === 'upi' || split.mode === 'card')) {
-            countedModes.add(split.mode)
-          }
+        const amount = typeof split.amount === 'number'
+          ? split.amount
+          : typeof split.amountPaise === 'number'
+            ? split.amountPaise
+            : null
+        const paidMode = amount !== null ? addPayment(split.mode ?? split.method, amount) : null
+        if (paidMode) {
+          countedModes.add(paidMode)
         }
       }
       for (const mode of countedModes) addCount(mode)
     } else {
-      if (addPayment(r.payment_mode, r.amount_paid_paise) && (r.payment_mode === 'cash' || r.payment_mode === 'upi' || r.payment_mode === 'card')) {
-        addCount(r.payment_mode)
+      const paidMode = addPayment(mode, r.amount_paid_paise)
+      if (paidMode) {
+        addCount(paidMode)
       }
     }
   }

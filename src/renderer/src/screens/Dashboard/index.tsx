@@ -62,7 +62,7 @@ export default function DashboardScreen(): ReactElement {
         window.api.expenses.list({ dateFrom: today, dateTo: today }),
         window.api.invoiceHistory.search({}),
         window.api.expenses.list(),
-        window.api.reports.paymentBreakdown({ date: today }),
+        window.api.reports.paymentBreakdown({ dateFrom: today, dateTo: today }),
       ])
       if (sRes.ok) setSales(sRes.data[0] ?? null)
       if (eRes.ok) setTodayExpenses(eRes.data)
@@ -124,7 +124,7 @@ export default function DashboardScreen(): ReactElement {
       )}
 
       {/* Payment breakdown */}
-      {!loading && paymentBreakdown && (paymentBreakdown.cash + paymentBreakdown.upi + paymentBreakdown.card + paymentBreakdown.credit) > 0 && (
+      {!loading && paymentBreakdown && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <SectionHead title="Payment Breakdown" />

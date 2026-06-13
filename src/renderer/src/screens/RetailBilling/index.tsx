@@ -199,12 +199,21 @@ export default function RetailBillingScreen(): ReactElement {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 'calc(100dvh - 96px)',
+      height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)',
+      padding: '0.875rem',
+      gap: '0.75rem',
+      overflow: 'hidden',
+    }}>
 
       {/* Success banner */}
       {lastInvoice && (
-        <div className="success-banner" style={{ margin: '0.75rem 0.75rem 0', borderRadius: 'var(--r-md)' }}>
-          <span style={{ fontWeight: 500 }}>{lastInvoice.invoiceNo} &mdash; {paiseToCurrency(lastInvoice.totalPaise)} collected</span>
+        <div className="success-banner" style={{ borderRadius: 'var(--r-md)', flexShrink: 0 }}>
+          <span style={{ fontWeight: 500 }}>{lastInvoice.invoiceNo} - {paiseToCurrency(lastInvoice.totalPaise)} collected</span>
           <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>
             <button onClick={() => window.open(waLink(lastInvoice), '_blank')}
               style={{ fontSize: '0.75rem', color: 'oklch(0.42 0.18 145)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -218,12 +227,25 @@ export default function RetailBillingScreen(): ReactElement {
         </div>
       )}
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', gap: '0', margin: '0.75rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'clamp(280px, 17vw, 340px) minmax(420px, 1fr) clamp(300px, 17vw, 340px)',
+        gap: '0.75rem',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+      }}>
 
         {/* Left: product tiles */}
-        <div className="card" style={{ width: 264, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 'var(--r-lg)', marginRight: '0.625rem' }}>
+        <div className="card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 'var(--r-lg)',
+          minHeight: 0,
+        }}>
           {/* Barcode input */}
-          <div style={{ padding: '0.625rem', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <div style={{ position: 'relative' }}>
               <input ref={barcodeRef} value={barcodeInput}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => { setBarcodeInput(e.target.value); setBarcodeError('') }}
@@ -237,17 +259,14 @@ export default function RetailBillingScreen(): ReactElement {
                 </div>
               )}
             </div>
-          </div>
-          {/* Search */}
-          <div style={{ padding: '0.5rem 0.625rem', borderBottom: '1px solid var(--border)' }}>
             <input value={tileSearch} onChange={(e) => setTileSearch(e.target.value)} placeholder="Search items" />
           </div>
           {/* Tiles */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0.625rem' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', minHeight: 0 }}>
             {Object.entries(grouped).map(([productName, variants]) => (
-              <div key={productName} style={{ marginBottom: '0.875rem' }}>
+              <div key={productName} style={{ marginBottom: '1rem' }}>
                 <div className="section-label">{productName}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.375rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: '0.5rem' }}>
                   {variants.map((t) => {
                     const avail = availableStock(t.variantId)
                     const soldOut = avail <= 0
@@ -258,7 +277,11 @@ export default function RetailBillingScreen(): ReactElement {
                         className={`pos-tile${isFlashing ? ' flash-red' : ''}`}
                         onClick={() => !soldOut && addFromTile(t)}
                         disabled={soldOut}
-                        style={soldOut ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                        style={{
+                          minHeight: 72,
+                          padding: '0.625rem',
+                          ...(soldOut ? { opacity: 0.4, cursor: 'not-allowed' } : {})
+                        }}
                       >
                         <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--ink-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.label}</div>
                         <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>{paiseToCurrency(t.retailPricePaise)}</div>
@@ -280,13 +303,34 @@ export default function RetailBillingScreen(): ReactElement {
         </div>
 
         {/* Centre: bill lines */}
-        <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginRight: '0.625rem', borderRadius: 'var(--r-lg)' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 'var(--r-lg)', minHeight: 0 }}>
+          <div style={{
+            padding: '0.875rem 1rem',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+          }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)' }}>Current Bill</h2>
+              <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--ink-3)' }}>
+                {lines.length ? `${lines.length} item${lines.length === 1 ? '' : 's'} in cart` : 'Ready for scan or tile selection'}
+              </p>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, color: 'var(--ink-1)', fontVariantNumeric: 'tabular-nums' }}>
+              {paiseToCurrency(totalPaise)}
+            </span>
+          </div>
           {lines.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.625rem', minHeight: 0 }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, color: 'var(--ink-4)' }}>
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
               </svg>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--ink-3)' }}>Scan a barcode or tap a tile</span>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No items added</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>Scan a barcode or select a product tile.</div>
+              </div>
             </div>
           ) : (
             <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -335,7 +379,24 @@ export default function RetailBillingScreen(): ReactElement {
         </div>
 
         {/* Right: payment panel */}
-        <div className="card" style={{ width: 256, flexShrink: 0, display: 'flex', flexDirection: 'column', padding: '1rem', gap: '0.875rem', overflowY: 'auto', borderRadius: 'var(--r-lg)' }}>
+        <div className="card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '1rem',
+          gap: '0.875rem',
+          overflowY: 'auto',
+          borderRadius: 'var(--r-lg)',
+          minHeight: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)' }}>Checkout</h2>
+              <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--ink-3)' }}>Retail sale payment</p>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--green)' }}>
+              {paiseToCurrency(Math.max(0, totalPaise))}
+            </span>
+          </div>
 
           {/* Discount */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>

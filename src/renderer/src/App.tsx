@@ -201,7 +201,7 @@ function BottomNav({ currentScreen, navigate, user, logout }: {
               right: isRightHalf ? `calc(${((totalTabs - 1 - tabIdx) / totalTabs) * 100}% + 4px)` : 'auto',
               minWidth: 200,
               zIndex: 50,
-              background: 'oklch(1 0 0 / 0.96)',
+              background: 'var(--bg-elevated)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--r-lg)',
               boxShadow: 'var(--shadow-lg)',
@@ -254,7 +254,7 @@ function BottomNav({ currentScreen, navigate, user, logout }: {
           zIndex: 40,
           display: 'flex',
           alignItems: 'stretch',
-          background: 'oklch(1 0 0 / 0.88)',
+          background: 'oklch(0.2 0.014 260 / 0.92)',
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -322,7 +322,7 @@ function BottomNav({ currentScreen, navigate, user, logout }: {
             onClick={logout}
             title="Sign out"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.375rem 0.75rem', borderRadius: 'var(--r-sm)', background: 'transparent', border: 'none', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--ink-3)', cursor: 'pointer', transition: 'background 120ms ease, color 120ms ease' }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'oklch(0.97 0.012 25)'; el.style.color = 'var(--red)' }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'oklch(0.24 0.065 25)'; el.style.color = 'var(--red)' }}
             onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = 'var(--ink-3)' }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
@@ -353,7 +353,7 @@ export default function App(): ReactElement {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--ink-1)', paddingBottom: 64 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--ink-1)', paddingBottom: 96 }}>
       <main>
         <Screen />
       </main>

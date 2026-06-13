@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, type ReactElement, type CSSProperties } from 'react'
+import { Fragment, useState, useEffect, useRef, type ReactElement, type CSSProperties } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency, gramsToKg, formatQuantity } from '@shared/money'
-import { MoneyAreaChart, PaymentMethodChart, SalesSplitChart } from '../../components/Charts'
+import { MoneyAreaChart, PaymentMethodChart } from '../../components/Charts'
 import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   PackingReportRun, ProfitReportRow,
@@ -67,6 +67,7 @@ const T = {
 
 function Card({ children, style, onClick }: { children: React.ReactNode; style?: CSSProperties; onClick?: () => void }): ReactElement {
   const [hov, setHov] = useState(false)
+  const interactive = Boolean(onClick)
   return (
     <div
       onClick={onClick}
@@ -74,13 +75,13 @@ function Card({ children, style, onClick }: { children: React.ReactNode; style?:
       onMouseLeave={() => setHov(false)}
       style={{
         background: T.surface,
-        border: `1px solid ${hov ? T.borderHover : T.border}`,
+        border: `1px solid ${interactive && hov ? T.borderHover : T.border}`,
         borderRadius: T.r,
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: hov ? '0 8px 32px rgba(0,0,0,0.4)' : T.shadow,
-        transition: 'all 200ms ease',
-        transform: hov ? 'translateY(-2px)' : 'none',
+        boxShadow: T.shadow,
+        transition: 'border-color 180ms ease, background 180ms ease',
+        transform: 'none',
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
@@ -110,7 +111,7 @@ function Pill({
         border: active ? 'none' : `1px solid ${T.border}`,
         background: active ? c : hov ? T.surfaceHover : 'transparent',
         color: active ? '#fff' : hov ? T.ink1 : T.ink2,
-        transition: 'all 150ms ease',
+        transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
         whiteSpace: 'nowrap',
       }}
     >
@@ -138,22 +139,17 @@ interface KpiProps {
   icon?: ReactElement; color?: string; accent?: boolean
 }
 function KpiCard({ label, value, sub, icon, color, accent }: KpiProps): ReactElement {
-  const [hov, setHov] = useState(false)
   const c = color ?? T.accent
   return (
     <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
       style={{
         background: accent ? `linear-gradient(135deg, ${c}cc, ${c}88)` : T.surface,
-        border: `1px solid ${hov ? T.borderHover : T.border}`,
+        border: `1px solid ${accent ? `${c}44` : T.border}`,
         borderRadius: T.r,
         padding: '20px 22px',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: hov ? `0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px ${c}33` : T.shadow,
-        transform: hov ? 'translateY(-3px)' : 'none',
-        transition: 'all 220ms ease',
+        boxShadow: T.shadow,
         display: 'flex', flexDirection: 'column', gap: 6,
         position: 'relative', overflow: 'hidden',
       }}
@@ -271,11 +267,29 @@ function ByVariantGrouped({ groups }: { groups: Array<{ productName: string; row
             const totalRev = g.rows.reduce((s, r) => s + r.revenuePaise, 0)
             const open = expanded.has(g.productName)
             return (
-              <> 
-                <TRow key={g.productName} onClick={() => toggle(g.productName)}>
+              <Fragment key={g.productName}>
+                <TRow>
                   <td style={{ ...tdStyle, fontWeight: 600, color: T.ink1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: T.ink3, fontSize: 10 }}>{open ? '▼' : '▶'}</span>
-                    {g.productName}
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => toggle(g.productName)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        border: 0,
+                        background: 'transparent',
+                        color: T.ink1,
+                        font: 'inherit',
+                        fontWeight: 600,
+                        padding: 0,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ color: T.ink3, fontSize: 10 }}>{open ? '▼' : '▶'}</span>
+                      {g.productName}
+                    </button>
                     <Badge color={T.accent}>{g.rows.length} var</Badge>
                   </td>
                   <td style={{ ...tdMono, textAlign: 'right' }}>{totalQty}</td>
@@ -288,7 +302,7 @@ function ByVariantGrouped({ groups }: { groups: Array<{ productName: string; row
                     <td style={{ ...tdMono, textAlign: 'right' }}>{paiseToCurrency(r.revenuePaise)}</td>
                   </TRow>
                 ))}
-              </>
+              </Fragment>
             )
           })}
         </tbody>
@@ -335,12 +349,14 @@ function SecHead({ title, action }: { title: string; action?: ReactElement }): R
   )
 }
 
-// ─── Action button (placeholder) ─────────────────────────────────────────────
+// ─── Action button ───────────────────────────────────────────────────────────
 
-function ActionBtn({ children, icon }: { children: string; icon?: ReactElement }): ReactElement {
+function ActionBtn({ children, icon, onClick }: { children: string; icon?: ReactElement; onClick: () => void }): ReactElement {
   const [hov, setHov] = useState(false)
   return (
     <button
+      type="button"
+      onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -349,7 +365,7 @@ function ActionBtn({ children, icon }: { children: string; icon?: ReactElement }
         background: hov ? T.surfaceHover : T.surface,
         border: `1px solid ${hov ? T.borderHover : T.border}`,
         color: T.ink2, cursor: 'pointer',
-        transition: 'all 150ms ease',
+        transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
       }}
     >
       {icon}
@@ -407,23 +423,26 @@ export default function ReportsScreen(): ReactElement {
   async function load(): Promise<void> {
     const id = ++loadRef.current
     setError('')
-    // Always load KPI + collections
-    const [kpiRes, colRes] = await Promise.all([
+    // Always load summary data used above the tabbed report tables.
+    const [kpiRes, colRes, expRes, profitRes] = await Promise.all([
       window.api.reports.dailySales(range),
-      window.api.reports.paymentBreakdown({ date: range.dateTo }),
+      window.api.reports.paymentBreakdown(range),
+      window.api.expenses.list(range),
+      isAdmin ? window.api.reports.profit(range) : Promise.resolve(null),
     ])
     if (id !== loadRef.current) return
-    if (kpiRes.ok) setKpiDaily(kpiRes.data)
+    if (kpiRes.ok) {
+      setKpiDaily(kpiRes.data)
+      setDailyRows(kpiRes.data)
+    }
     if (colRes.ok) setCollections(colRes.data)
+    if (expRes.ok) setExpenses(expRes.data)
+    if (profitRes && profitRes.ok) setProfitRows(profitRes.data)
 
     if (tab === 'invoices') {
       const r = await window.api.invoiceHistory.search({ dateFrom: range.dateFrom, dateTo: range.dateTo })
       if (id !== loadRef.current) return
       if (r.ok) setInvoices(r.data); else setError(r.error)
-    } else if (tab === 'daily') {
-      const r = await window.api.reports.dailySales(range)
-      if (id !== loadRef.current) return
-      if (r.ok) setDailyRows(r.data); else setError(r.error)
     } else if (tab === 'byProduct') {
       const r = await window.api.reports.salesByProduct(range)
       if (id !== loadRef.current) return
@@ -436,14 +455,6 @@ export default function ReportsScreen(): ReactElement {
       const r = await window.api.reports.packing(range)
       if (id !== loadRef.current) return
       if (r.ok) setPackingRuns(r.data); else setError(r.error)
-    } else if (tab === 'profit' && isAdmin) {
-      const r = await window.api.reports.profit(range)
-      if (id !== loadRef.current) return
-      if (r.ok) setProfitRows(r.data); else setError(r.error)
-    } else if (tab === 'expenses') {
-      const r = await window.api.expenses.list(range)
-      if (id !== loadRef.current) return
-      if (r.ok) setExpenses(r.data); else setError(r.error)
     } else if (tab === 'factory') {
       // Fetch all products, then collect all arrivals across all products
       const prodRes = await window.api.products.listProducts()
@@ -518,9 +529,17 @@ export default function ReportsScreen(): ReactElement {
     minHeight: '100vh',
     background: T.bg,
     fontFamily: T.font,
-    padding: '0 0 60px',
+    padding: '0 0 132px',
   }
   const inner: CSSProperties = { maxWidth: 1280, margin: '0 auto', padding: '0 28px' }
+  const chartPalette = {
+    ink1: T.ink1,
+    ink2: T.ink2,
+    ink3: T.ink3,
+    border: T.border,
+    tooltipBg: '#151923',
+    tooltipShadow: T.shadowSm,
+  }
 
   return (
     <div style={page}>
@@ -546,10 +565,12 @@ export default function ReportsScreen(): ReactElement {
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <ActionBtn icon={<svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M5 4v3H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-2h1a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1Zm2 0h6v3H7V4Zm-1 9v-1h8v2H6v-1Zm8-4a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" clipRule="evenodd"/></svg>}>Print</ActionBtn>
-              <ActionBtn icon={<svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v5.19l1.72-1.72a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 1 1 1.06-1.06l1.72 1.72V3.75A.75.75 0 0 1 10 3ZM3.75 14a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H3.75Z" clipRule="evenodd"/></svg>}>Export Excel</ActionBtn>
-              <ActionBtn icon={<svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2Zm-.75 4.5a.75.75 0 0 1 1.5 0v3.94l1.78 1.78a.75.75 0 0 1-1.06 1.06l-2-2A.75.75 0 0 1 9.25 11V6.5Z"/></svg>}>Sync Data</ActionBtn>
-              <ActionBtn icon={<svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path d="M10 3.75a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM17.25 4.5a.75.75 0 0 0 0-1.5h-5.5a.75.75 0 0 0 0 1.5h5.5ZM5 3.75a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM4.25 17a.75.75 0 0 0 0-1.5h-1.5a.75.75 0 0 0 0 1.5h1.5ZM17.25 17a.75.75 0 0 0 0-1.5h-5.5a.75.75 0 0 0 0 1.5h5.5ZM9 10a.75.75 0 0 1-.75.75h-6.5a.75.75 0 0 1 0-1.5h6.5A.75.75 0 0 1 9 10ZM17.25 10.75a.75.75 0 0 0 0-1.5h-1.5a.75.75 0 0 0 0 1.5h1.5ZM14 10a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM10 16.25a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"/></svg>}>Report Settings</ActionBtn>
+              <ActionBtn
+                onClick={() => { void load() }}
+                icon={<svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M4.93 4.93a7.5 7.5 0 0 1 10.607.075.75.75 0 1 1-1.074 1.047 6 6 0 1 0 1.293 6.487.75.75 0 0 1 1.365.62A7.5 7.5 0 1 1 3.87 3.872L2.75 2.75A.75.75 0 0 1 3.28 1.47h3.44a.75.75 0 0 1 .75.75v3.44a.75.75 0 0 1-1.28.53L4.93 4.93Z" clipRule="evenodd"/></svg>}
+              >
+                Refresh
+              </ActionBtn>
             </div>
           </div>
 
@@ -567,21 +588,40 @@ export default function ReportsScreen(): ReactElement {
         </div>
 
         {/* ── KPI GRID ──────────────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
           <KpiCard label="Total Sales" value={paiseToCurrency(totalSales)} sub={`${totalInvoices} invoices`} icon={Icons.sales} color={T.accent} accent />
           <KpiCard label="Retail Revenue" value={paiseToCurrency(totalRetail)} icon={Icons.retail} color={T.accent} />
           <KpiCard label="Wholesale Revenue" value={paiseToCurrency(totalWholesale)} icon={Icons.wholesale} color={T.amber} />
           <KpiCard label="Invoice Count" value={String(totalInvoices)} sub="total bills" icon={Icons.invoice} color={T.sky} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 36 }}>
-          <KpiCard label="Net Revenue" value={paiseToCurrency(totalSales - totalExpenses)} sub="sales − expenses" icon={Icons.revenue} color={T.green} accent />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+          <KpiCard label="Net Revenue" value={paiseToCurrency(totalSales - totalExpenses)} sub="sales - expenses" icon={Icons.revenue} color={T.green} accent />
           {isAdmin && <KpiCard label="Profit" value={paiseToCurrency(totalProfit)} sub="known-cost lines only" icon={Icons.profit} color={T.green} />}
           <KpiCard label="Expenses" value={paiseToCurrency(totalExpenses)} icon={Icons.expense} color={T.red} />
-          <KpiCard label="Invoices" value={String(invoices.length)} sub="loaded in view" icon={Icons.invoice} color={T.sky} />
+          <KpiCard label="Collected" value={paiseToCurrency(collections?.total ?? 0)} sub="paid amount" icon={Icons.dues} color={T.sky} />
         </div>
 
         {/* ── ANALYTICS BLOCK ───────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginBottom: 28 }}>
+          {col && (
+            <Card style={{ padding: '22px 24px' }}>
+              <SecHead title="Payment Breakdown" action={
+                <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
+                  Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
+                </span>
+              } />
+              <PaymentMethodChart
+                data={colMethods}
+                palette={{
+                  label: T.ink1,
+                  value: T.ink2,
+                  muted: T.ink3,
+                  track: 'rgba(255,255,255,0.045)',
+                  bar: 'rgba(203,213,225,0.92)'
+                }}
+              />
+            </Card>
+          )}
 
           {/* Revenue Chart */}
           <Card style={{ padding: '22px 24px' }}>
@@ -594,7 +634,7 @@ export default function ReportsScreen(): ReactElement {
             </div>
             <MoneyAreaChart
               data={chartMode === 'revenue'
-                ? dailyRows.slice().reverse().map((r) => ({ label: r.businessDate, value: r.combinedTotalPaise }))
+                ? kpiDaily.slice().map((r) => ({ label: r.businessDate, value: r.combinedTotalPaise }))
                 : expenses.slice().reduce<Array<{ label: string; value: number }>>((acc, e) => {
                     const ex = acc.find((x) => x.label === e.date)
                     if (ex) ex.value += e.amountPaise; else acc.push({ label: e.date, value: e.amountPaise })
@@ -602,46 +642,16 @@ export default function ReportsScreen(): ReactElement {
                   }, []).sort((a, b) => a.label.localeCompare(b.label))
               }
               color={chartMode === 'revenue' ? T.accent : T.red}
+              height={128}
+              palette={chartPalette}
+              gradientId="reports-money-area-fill"
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 12, color: T.ink3 }}>
               <span>{fmtDate(range.dateFrom)}</span>
               <span>{fmtDate(range.dateTo)}</span>
             </div>
           </Card>
-
-          {/* Sales Split Donut + Payment Breakdown */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Card style={{ padding: '22px 24px' }}>
-              <SecHead title="Sales Split" />
-              <SalesSplitChart
-                retail={totalRetail}
-                wholesale={totalWholesale}
-                colors={{ retail: T.accent, wholesale: T.amber }}
-              />
-            </Card>
-          </div>
         </div>
-
-        {/* Payment Breakdown */}
-        {col && (col.cash + col.upi + col.card + col.credit) > 0 && (
-          <Card style={{ padding: '22px 24px', marginBottom: 36 }}>
-            <SecHead title="Payment Breakdown" action={
-              <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
-                Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
-              </span>
-            } />
-            <PaymentMethodChart
-              data={colMethods}
-              palette={{
-                label: T.ink1,
-                value: T.ink2,
-                muted: T.ink3,
-                track: 'rgba(255,255,255,0.045)',
-                bar: 'rgba(203,213,225,0.92)'
-              }}
-            />
-          </Card>
-        )}
 
         {/* ── TABS ──────────────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 20 }}>
@@ -665,7 +675,7 @@ export default function ReportsScreen(): ReactElement {
                     border: 'none',
                     background: active ? T.accent : 'transparent',
                     color: active ? '#fff' : T.ink2,
-                    transition: 'all 180ms ease',
+                    transition: 'background 180ms ease, color 180ms ease',
                     whiteSpace: 'nowrap',
                   }}
                 >

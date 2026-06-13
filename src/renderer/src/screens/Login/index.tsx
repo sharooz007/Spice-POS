@@ -132,8 +132,8 @@ export default function LoginScreen(): ReactElement {
                 fontSize: '0.8125rem',
                 color: 'var(--red)',
                 textAlign: 'center',
-                background: 'oklch(0.97 0.012 25)',
-                border: '1px solid oklch(0.9 0.04 25)',
+                background: 'oklch(0.24 0.065 25)',
+                border: '1px solid oklch(0.44 0.13 25)',
                 borderRadius: 'var(--r-sm)',
                 padding: '0.5rem 0.75rem',
               }}

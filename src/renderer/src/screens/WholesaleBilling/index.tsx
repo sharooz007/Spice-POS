@@ -236,124 +236,173 @@ export default function WholesaleBillingScreen(): ReactElement {
     : 0
 
   return (
-    <div style={{display:"flex",flexDirection:"column",height:"100%",background:"var(--bg-base)"}}>
-      
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 'calc(100dvh - 96px)',
+      height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)',
+      padding: '0.875rem',
+      gap: '0.75rem',
+      overflow: 'hidden',
+    }}>
 
+      {/* Success banner */}
       {lastInvoice && (
-        <div className="bg-green-50 border-b border-green-200 px-4 py-2 flex items-center justify-between text-sm flex-shrink-0">
-          <span className="text-green-800 font-medium">
+        <div className="success-banner" style={{ borderRadius: 'var(--r-md)', flexShrink: 0 }}>
+          <span style={{ fontWeight: 500 }}>
             {lastInvoice.invoiceNo} · {paiseToCurrency(lastInvoice.totalPaise)}
             {lastInvoice.balanceDuePaise > 0 && ` · Due: ${paiseToCurrency(lastInvoice.balanceDuePaise)}`}
           </span>
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>
             <button onClick={() => window.open(waLink(lastInvoice), '_blank')}
-              className="text-green-700 underline cursor-pointer text-xs">WhatsApp</button>
-            <button onClick={() => setLastInvoice(null)} className="text-green-600 text-xs cursor-pointer">Dismiss</button>
+              style={{ fontSize: '0.75rem', color: 'oklch(0.42 0.18 145)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              WhatsApp
+            </button>
+            <button onClick={() => setLastInvoice(null)}
+              style={{ fontSize: '0.75rem', color: 'oklch(0.5 0.1 145)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Dismiss
+            </button>
           </div>
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'clamp(220px, 15vw, 280px) minmax(420px, 1fr) clamp(300px, 17vw, 340px)',
+        gap: '0.75rem',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+      }}>
 
         {/* ── Left: product list ── */}
-        <div className="w-56 flex-shrink-0 border-r bg-white overflow-y-auto">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 pt-3 pb-1">Products</div>
-          {enabledProducts.map((p) => {
-            const inOrder = orders.some((o) => o.productId === p.id)
-            const isActive = activeProductId === p.id
-            const bulkG = bulkMap[p.id]?.qtyGrams ?? 0
-            return (
-              <div key={p.id}
-                onClick={() => startOrder(p.id)}
-                className={`list-item${isActive ? " active" : ""}`} style={{borderBottom:"1px solid var(--border)",borderRadius:0}}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-800">{p.name}</span>
-                  {inOrder && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">✓</span>}
+        <div className="card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 'var(--r-lg)',
+          minHeight: 0,
+        }}>
+          <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)' }}>
+            <div className="section-label">Products</div>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            {enabledProducts.map((p) => {
+              const inOrder = orders.some((o) => o.productId === p.id)
+              const isActive = activeProductId === p.id
+              const bulkG = bulkMap[p.id]?.qtyGrams ?? 0
+              return (
+                <div key={p.id}
+                  onClick={() => startOrder(p.id)}
+                  className={`list-item${isActive ? ' active' : ''}`}
+                  style={{ borderBottom: '1px solid var(--border)', borderRadius: 0, padding: '0.625rem 0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--ink-1)' }}>{p.name}</span>
+                    {inOrder && (
+                      <span style={{
+                        fontSize: '0.6875rem',
+                        background: 'oklch(0.25 0.06 75)',
+                        color: 'oklch(0.86 0.13 75)',
+                        padding: '0.0625rem 0.375rem',
+                        borderRadius: 'var(--r-full)',
+                        fontWeight: 500,
+                      }}>✓</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>
+                    Bulk: {formatQuantity(bulkG, p.unitType)}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  Bulk: {formatQuantity(bulkG, p.unitType)}
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
-        {/* ── Center: order entry + confirmed orders ── */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* ── Centre: order entry + confirmed orders ── */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 'var(--r-lg)', minHeight: 0 }}>
 
-          {/* Order entry form */}
-          {draft && activeProd && (
-            <div className="border-b bg-white p-4 flex flex-col gap-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-gray-800">{activeProd.name}</h2>
-                <span className="text-xs text-gray-500">
-                  Bulk available: {formatQuantity(bulkAvailG, activeProd.unitType)} ·
-                  Wholesale rate: {paiseToCurrency(activeProd.wholesaleRatePerKgPaise)}/{bulkUnit(activeProd.unitType)}
+          {/* Order entry form or header */}
+          {draft && activeProd ? (
+            <div style={{
+              padding: '1rem',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)' }}>{activeProd.name}</h2>
+                <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>
+                  Bulk available: {formatQuantity(bulkAvailG, activeProd.unitType)} · Wholesale rate: {paiseToCurrency(activeProd.wholesaleRatePerKgPaise)}/{bulkUnit(activeProd.unitType)}
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Total ordered ({bulkUnit(activeProd.unitType)})</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Total ordered ({bulkUnit(activeProd.unitType)})</label>
                   <input type="number" step="0.001" min="0" value={draft.totalKgStr}
                     onChange={(e) => updateDraftTotalKg(e.target.value)}
-                    autoFocus
-                    className="border border-gray-300 rounded px-2 py-1.5 text-sm" />
+                    autoFocus />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>
                     From bulk ({bulkUnit(activeProd.unitType)}) — max {formatQuantity(bulkAvailG, activeProd.unitType)}
                   </label>
                   <input type="number" step="0.001" min="0"
                     max={(bulkAvailG / 1000).toFixed(3)}
                     value={draft.bulkKgStr}
-                    onChange={(e) => updateDraftBulkKg(e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1.5 text-sm" />
+                    onChange={(e) => updateDraftBulkKg(e.target.value)} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Rate (₹/{bulkUnit(activeProd.unitType)})</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Rate (₹/{bulkUnit(activeProd.unitType)})</label>
                   <input type="number" step="0.01" min="0" value={draft.rateStr}
-                    onChange={(e) => updateDraftRate(e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1.5 text-sm" />
+                    onChange={(e) => updateDraftRate(e.target.value)} />
                 </div>
               </div>
 
-              {/* Packet section — always visible */}
+              {/* Packet section — always visible when variants exist */}
               {activeProd.variants.some((v) => v.enabled) && (
-                <div className="bg-amber-50 border border-amber-200 rounded p-3">
+                <div style={{
+                  background: 'oklch(0.25 0.06 75)',
+                  border: '1px solid oklch(0.48 0.11 75)',
+                  borderRadius: 'var(--r-md)',
+                  padding: '0.75rem',
+                }}>
                   {remainingG > 0 ? (
-                    <div className="text-xs font-semibold text-amber-800 mb-2">
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'oklch(0.86 0.13 75)', marginBottom: '0.5rem' }}>
                       To fill from packets: {formatQuantity(remainingG, activeProd.unitType)}
                       {selectedPacketG > 0 && (
-                        <span className={`ml-2 ${Math.abs(selectedPacketG - remainingG) <= 10 ? 'text-green-700' : 'text-amber-600'}`}>
+                        <span style={{ marginLeft: '0.5rem', color: Math.abs(selectedPacketG - remainingG) <= 10 ? 'var(--green)' : 'oklch(0.86 0.13 75)' }}>
                           · Selected: {formatQuantity(selectedPacketG, activeProd.unitType)}
                           {selectedPacketG !== remainingG && ` (${selectedPacketG > remainingG ? '+' : ''}${formatQuantity(selectedPacketG - remainingG, activeProd.unitType)})`}
                         </span>
                       )}
                     </div>
                   ) : (
-                    <div className="text-xs font-semibold text-amber-700 mb-2">
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'oklch(0.86 0.13 75)', marginBottom: '0.5rem' }}>
                       Also use from packets (optional)
                       {selectedPacketG > 0 && (
-                        <span className="ml-2 text-gray-600">· {formatQuantity(selectedPacketG, activeProd.unitType)} selected</span>
+                        <span style={{ marginLeft: '0.5rem', color: 'var(--ink-3)' }}>· {formatQuantity(selectedPacketG, activeProd.unitType)} selected</span>
                       )}
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                     {activeProd.variants.filter((v) => v.enabled).map((v) => {
                       const stock = retailMap[v.id]?.qtyPcs ?? 0
                       const sel = draft.packetSels.find((s) => s.variantId === v.id)
                       const pcs = sel?.pcs ?? 0
                       return (
-                        <div key={v.id} className="flex items-center gap-2">
-                          <div className="flex-1 text-xs">
-                            <div className="font-medium">{v.label}</div>
-                            <div className="text-gray-500">{stock} pcs avail</div>
+                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'oklch(0.86 0.13 75)' }}>{v.label}</div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--ink-3)' }}>{stock} pcs avail</div>
                           </div>
                           <input type="number" min="0" max={stock} value={pcs || ''}
                             onChange={(e) => updatePacketSel(v.id, parseInt(e.target.value) || 0)}
                             placeholder="0"
-                            className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center" />
+                            style={{ width: 56, textAlign: 'center' }} />
                         </div>
                       )
                     })}
@@ -361,94 +410,146 @@ export default function WholesaleBillingScreen(): ReactElement {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button onClick={confirmDraft}
-                  className="btn btn-amber">
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn btn-amber" onClick={confirmDraft}>
                   {orders.some((o) => o.productId === draft.productId) ? 'Update Order' : 'Add to Order'}
                 </button>
-                <button onClick={() => { setDraft(null); setActiveProductId(null) }}
-                  className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={() => { setDraft(null); setActiveProductId(null) }}>
                   Cancel
                 </button>
                 {orders.some((o) => o.productId === draft.productId) && (
-                  <button onClick={() => removeOrder(draft.productId)}
-                    className="px-4 py-1.5 border border-red-300 text-red-600 rounded text-sm cursor-pointer hover:bg-red-50 transition-colors">
+                  <button className="btn" onClick={() => removeOrder(draft.productId)}
+                    style={{
+                      background: 'oklch(0.24 0.065 25)',
+                      color: 'var(--red)',
+                      borderColor: 'oklch(0.44 0.13 25)',
+                    }}>
                     Remove
                   </button>
                 )}
               </div>
             </div>
+          ) : (
+            <div style={{
+              padding: '0.875rem 1rem',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0,
+            }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)' }}>Wholesale Order</h2>
+                <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--ink-3)' }}>
+                  {orders.length ? `${orders.length} product${orders.length === 1 ? '' : 's'} in order` : 'Select a product to start an order'}
+                </p>
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, color: 'var(--ink-1)', fontVariantNumeric: 'tabular-nums' }}>
+                {paiseToCurrency(totalPaise)}
+              </span>
+            </div>
           )}
 
-          {/* Confirmed orders table */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {orders.length === 0 && !draft && (
-              <p className="text-sm text-gray-400">Select a product from the left to start an order.</p>
-            )}
-            {orders.length > 0 && (
-              <div className="card" style={{overflow:"hidden"}}>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
-                      <th className="px-3 py-2">Product</th>
-                      <th className="px-3 py-2">Bulk</th>
-                      <th className="px-3 py-2">Packets</th>
-                      <th className="px-3 py-2 text-right">Rate</th>
-                      <th className="px-3 py-2 text-right">Total</th>
-                      <th className="px-3 py-2 w-8"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((o) => {
-                      const p = products.find((x) => x.id === o.productId)
-                      if (!p) return null
-                      const bulkG = parseKg(o.bulkKgStr)
-                      const packetDesc = o.packetSels
-                        .filter((s) => s.pcs > 0)
-                        .map((s) => {
-                          const v = p.variants.find((v) => v.id === s.variantId)
-                          return v ? `${s.pcs}×${v.label}` : ''
-                        }).join(', ')
-                      return (
-                        <tr key={o.productId} className="border-b last:border-0 hover:bg-gray-50">
-                          <td className="px-3 py-2 font-medium cursor-pointer" onClick={() => startOrder(o.productId)}>
-                            {p.name}
-                          </td>
-                          <td className="px-3 py-2 text-gray-600">
-                            {bulkG > 0 ? formatQuantity(bulkG, p.unitType) : '—'}
-                          </td>
-                          <td className="px-3 py-2 text-gray-600 text-xs">{packetDesc || '—'}</td>
-                          <td className="px-3 py-2 text-right font-mono text-xs">
-                            {paiseToCurrency(o.ratePaise)}/{bulkUnit(p.unitType)}
-                          </td>
-                          <td className="px-3 py-2 text-right font-mono font-semibold">
-                            {paiseToCurrency(orderLineTotal(o, products))}
-                          </td>
-                          <td className="px-3 py-2">
-                            <button onClick={() => removeOrder(o.productId)}
-                              className="text-red-400 hover:text-red-600 cursor-pointer text-lg leading-none">×</button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+          {/* Confirmed orders table or empty state */}
+          {orders.length === 0 && !draft ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.625rem', minHeight: 0 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, color: 'var(--ink-4)' }}>
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No items in order</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>Select a product from the left to start an order.</div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : orders.length > 0 ? (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Bulk</th>
+                    <th>Packets</th>
+                    <th style={{ textAlign: 'right' }}>Rate</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
+                    <th style={{ width: 32 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((o) => {
+                    const p = products.find((x) => x.id === o.productId)
+                    if (!p) return null
+                    const bulkG = parseKg(o.bulkKgStr)
+                    const packetDesc = o.packetSels
+                      .filter((s) => s.pcs > 0)
+                      .map((s) => {
+                        const v = p.variants.find((v) => v.id === s.variantId)
+                        return v ? `${s.pcs}×${v.label}` : ''
+                      }).join(', ')
+                    return (
+                      <tr key={o.productId}>
+                        <td>
+                          <div style={{ fontWeight: 500, cursor: 'pointer' }} onClick={() => startOrder(o.productId)}>{p.name}</div>
+                        </td>
+                        <td style={{ color: 'var(--ink-2)' }}>
+                          {bulkG > 0 ? formatQuantity(bulkG, p.unitType) : '—'}
+                        </td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--ink-2)' }}>{packetDesc || '—'}</td>
+                        <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontVariantNumeric: 'tabular-nums' }}>
+                          {paiseToCurrency(o.ratePaise)}/{bulkUnit(p.unitType)}
+                        </td>
+                        <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                          {paiseToCurrency(orderLineTotal(o, products))}
+                        </td>
+                        <td>
+                          <button onClick={() => removeOrder(o.productId)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', fontSize: '1.125rem', lineHeight: 1, padding: '0 0.25rem' }}
+                            onMouseEnter={(e) => ((e.target as HTMLButtonElement).style.color = 'var(--red)')}
+                            onMouseLeave={(e) => ((e.target as HTMLButtonElement).style.color = 'var(--ink-4)')}
+                          >×</button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </div>
 
         {/* ── Right: payment panel ── */}
-        <div className="w-72 flex-shrink-0 border-l bg-white flex flex-col p-4 gap-4 overflow-y-auto">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">Discount</label>
-              <div className="flex gap-1">
+        <div className="card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '1rem',
+          gap: '0.875rem',
+          overflowY: 'auto',
+          borderRadius: 'var(--r-lg)',
+          minHeight: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)' }}>Checkout</h2>
+              <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--ink-3)' }}>Wholesale sale payment</p>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--green)' }}>
+              {paiseToCurrency(Math.max(0, totalPaise))}
+            </span>
+          </div>
+
+          {/* Discount */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Discount</label>
+              <div style={{ display: 'flex', gap: 3 }}>
                 {(['amount', 'pct'] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => { setDiscountType(t); setDiscountStr(''); setDiscountPaise(0) }}
-                    className={`px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-colors ${
-                      discountType === t ? 'bg-amber-600 text-white border-amber-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                    }`}>
+                  <button key={t} type="button"
+                    onClick={() => { setDiscountType(t); setDiscountStr(''); setDiscountPaise(0) }}
+                    style={{
+                      padding: '0.125rem 0.5rem', borderRadius: 'var(--r-xs)', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', border: '1px solid',
+                      background: discountType === t ? 'var(--accent)' : 'transparent',
+                      color: discountType === t ? '#fff' : 'var(--ink-3)',
+                      borderColor: discountType === t ? 'var(--accent)' : 'var(--border)',
+                    }}>
                     {t === 'amount' ? '₹' : '%'}
                   </button>
                 ))}
@@ -457,96 +558,120 @@ export default function WholesaleBillingScreen(): ReactElement {
             <input type="number" step={discountType === 'pct' ? '0.1' : '0.01'} min="0" max={discountType === 'pct' ? '100' : undefined}
               value={discountStr}
               onChange={(e) => {
-                const v = e.target.value
-                setDiscountStr(v)
+                const v = e.target.value; setDiscountStr(v)
                 const n = parseFloat(v) || 0
-                setDiscountPaise(discountType === 'pct'
-                  ? Math.round(subtotalPaise * Math.min(n, 100) / 100)
-                  : Math.round(n * 100))
+                setDiscountPaise(discountType === 'pct' ? Math.round(subtotalPaise * Math.min(n, 100) / 100) : Math.round(n * 100))
               }}
-              placeholder={discountType === 'pct' ? '0 – 100' : '0.00'}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm" />
-          </div>
-
-          <div className="border-t pt-3 flex flex-col gap-1 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span><span className="font-mono">{paiseToCurrency(subtotalPaise)}</span>
-            </div>
-            {discountPaise > 0 && (
-              <div className="flex justify-between text-gray-500">
-                <span>Discount</span>
-                <span className="font-mono text-red-500">
-                  {discountType === 'pct'
-                    ? `−${parseFloat(discountStr) || 0}% (−${paiseToCurrency(discountPaise)})`
-                    : `− ${paiseToCurrency(discountPaise)}`}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-base border-t mt-1 pt-1">
-              <span>Total</span><span className="font-mono">{paiseToCurrency(totalPaise)}</span>
-            </div>
-          </div>
-
-          <div className="border-t pt-3">
-            <CustomerAutocomplete
-              type="wholesale"
-              name={partyName}
-              phone={partyPhone}
-              onNameChange={setPartyName}
-              onPhoneChange={setPartyPhone}
-              onSelect={onSelectParty}
-              onClearSelection={() => { setSelectedPartyId(null); setPartyHadBlankPhone(false) }}
-              nameLabel="Party (optional)"
+              placeholder={discountType === 'pct' ? '0-100' : '0.00'}
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Payment mode</label>
-            <div className="grid grid-cols-3 gap-1">
+          <hr className="divider" />
+
+          {/* Totals */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--ink-3)' }}>
+              <span>Subtotal</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{paiseToCurrency(subtotalPaise)}</span>
+            </div>
+            {discountPaise > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--red)' }}>
+                <span>Discount</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>
+                  {discountType === 'pct' ? `-${parseFloat(discountStr)||0}%` : `-${paiseToCurrency(discountPaise)}`}
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', marginTop: '0.25rem', paddingTop: '0.375rem', borderTop: '1px solid var(--border)' }}>
+              <span>Total</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-1)' }}>{paiseToCurrency(totalPaise)}</span>
+            </div>
+          </div>
+
+          <hr className="divider" />
+
+          {/* Party */}
+          <CustomerAutocomplete
+            type="wholesale"
+            name={partyName}
+            phone={partyPhone}
+            onNameChange={setPartyName}
+            onPhoneChange={setPartyPhone}
+            onSelect={onSelectParty}
+            onClearSelection={() => { setSelectedPartyId(null); setPartyHadBlankPhone(false) }}
+            nameLabel="Party (optional)"
+          />
+
+          <hr className="divider" />
+
+          {/* Payment mode */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Payment mode</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem' }}>
               {(['cash', 'upi', 'card', 'split', 'credit', 'partial'] as PayMode[]).map((m) => (
-                <button key={m} onClick={() => {
-                  setPayMode(m)
-                  setSplitSummary('')
-                  if (m === 'split') setShowSplitModal(true)
-                  else setAmountPaidStr(m === 'credit' ? '0.00' : (totalPaise / 100).toFixed(2))
-                }}
-                  className={`py-1.5 rounded text-xs font-medium cursor-pointer transition-colors border ${
-                    payMode === m ? 'bg-amber-600 text-white border-amber-600' : 'border-gray-300 hover:bg-gray-50'
-                  }`}>
+                <button key={m}
+                  onClick={() => {
+                    setPayMode(m)
+                    setSplitSummary('')
+                    if (m === 'split') setShowSplitModal(true)
+                    else setAmountPaidStr(m === 'credit' ? '0.00' : (totalPaise / 100).toFixed(2))
+                  }}
+                  style={{
+                    padding: '0.375rem 0', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
+                    border: '1px solid',
+                    background: payMode === m ? 'var(--accent)' : 'var(--bg-fill)',
+                    color: payMode === m ? '#fff' : 'var(--ink-2)',
+                    borderColor: payMode === m ? 'var(--accent)' : 'var(--border)',
+                    transition: 'background 100ms ease',
+                  }}>
                   {m.charAt(0).toUpperCase() + m.slice(1)}
                 </button>
               ))}
             </div>
             {payMode === 'split' && splitSummary && (
-              <p className="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 border border-amber-200">{splitSummary}</p>
+              <div style={{ fontSize: '0.75rem', color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 'var(--r-sm)', padding: '0.375rem 0.5rem', marginTop: 2 }}>
+                {splitSummary}
+              </div>
             )}
           </div>
 
+          {/* Amount paid / credit message */}
           {payMode === 'split' ? null : payMode !== 'credit' ? (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Amount Paid (₹)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Amount Paid (₹)</label>
               <input type="number" step="0.01" value={amountPaidStr}
-                onChange={(e) => setAmountPaidStr(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                onChange={(e) => setAmountPaidStr(e.target.value)} />
             </div>
           ) : (
-            <p className="text-xs text-amber-700 bg-amber-50 rounded px-3 py-2 border border-amber-200">
+            <div style={{
+              fontSize: '0.75rem',
+              color: 'oklch(0.86 0.13 75)',
+              background: 'oklch(0.25 0.06 75)',
+              borderRadius: 'var(--r-sm)',
+              padding: '0.5rem 0.625rem',
+              border: '1px solid oklch(0.48 0.11 75)',
+            }}>
               Full amount goes to party dues. No cash collected.
-            </p>
+            </div>
           )}
 
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Balance due</span>
-            <span className={`font-mono font-semibold ${(totalPaise - (payMode === 'credit' ? 0 : amountPaid)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+          {/* Balance */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--ink-3)' }}>Balance due</span>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontWeight: 700,
+              color: (totalPaise - (payMode === 'credit' ? 0 : amountPaid)) > 0 ? 'var(--red)' : 'var(--green)',
+            }}>
               {paiseToCurrency(Math.max(0, totalPaise - (payMode === 'credit' ? 0 : amountPaid)))}
             </span>
           </div>
 
-          {saleError && <p className="text-sm text-red-600">{saleError}</p>}
+          {saleError && <p style={{ fontSize: '0.8125rem', color: 'var(--red)' }}>{saleError}</p>}
 
-          <button onClick={confirmSale}
+          <button className="btn btn-success"
+            onClick={confirmSale}
             disabled={orders.length === 0 || loading}
-            className="bg-green-600 disabled:bg-green-300 text-white font-bold py-3 rounded-lg cursor-pointer hover:bg-green-700 disabled:cursor-not-allowed transition-colors">
+            style={{ width: '100%', height: 44, fontSize: '0.9375rem', fontWeight: 700, marginTop: 'auto' }}>
             {loading ? 'Processing…' : 'Confirm Sale'}
           </button>
         </div>
