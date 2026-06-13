@@ -92,7 +92,8 @@ const api = {
   },
   expenses: {
     record: (req: RecordExpenseRequest): Promise<Result<void>> => ipcRenderer.invoke('expenses.record', req),
-    list: (req?: { dateFrom?: string; dateTo?: string }): Promise<Result<ExpenseRow[]>> => ipcRenderer.invoke('expenses.list', req)
+    list: (req?: { dateFrom?: string; dateTo?: string }): Promise<Result<ExpenseRow[]>> => ipcRenderer.invoke('expenses.list', req),
+    delete: (req: { expenseId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('expenses.delete', req)
   },
   reports: {
     dailySales: (req: DateRange): Promise<Result<DailySalesRow[]>> => ipcRenderer.invoke('reports.dailySales', req),

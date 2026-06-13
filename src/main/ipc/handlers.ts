@@ -450,6 +450,8 @@ export function registerHandlers(): void {
     wrap(() => purchasesSvc.recordExpense(req)))
   ipcMain.handle('expenses.list', (_e, req?: { dateFrom?: string; dateTo?: string }): Result<ExpenseRow[]> =>
     wrap(() => purchasesSvc.listExpenses(req?.dateFrom, req?.dateTo)))
+  ipcMain.handle('expenses.delete', (_e, req: { expenseId: number; userId: number }): Result<void> =>
+    wrap(() => purchasesSvc.deleteExpense(req.expenseId, req.userId)))
 
   // ── reports ─────────────────────────────────────────────────────────────────
   ipcMain.handle('reports.dailySales', (_e, req: DateRange): Result<DailySalesRow[]> =>

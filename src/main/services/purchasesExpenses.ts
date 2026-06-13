@@ -1,8 +1,8 @@
 // src/main/services/purchasesExpenses.ts — Purchases (record-keeping) + Expenses
 // CRITICAL: recordPurchase NEVER touches bulk_stock, bulk_arrivals, or any cost column.
-import { desc, gte, lte, and } from 'drizzle-orm'
+import { desc, gte, lte, and, eq } from 'drizzle-orm'
 import { getDb } from '../db'
-import { suppliers, purchaseEntries, expenses } from '../db/schema'
+import { suppliers, purchaseEntries, expenses, users } from '../db/schema'
 import type {
   SupplierRow, PurchaseEntryRow, ExpenseRow,
   RecordPurchaseRequest, RecordExpenseRequest
@@ -79,4 +79,10 @@ export function listExpenses(dateFrom?: string, dateTo?: string): ExpenseRow[] {
     amountPaise: r.amountPaise, notes: r.notes ?? null,
     createdAt: r.createdAt instanceof Date ? r.createdAt.getTime() : Number(r.createdAt)
   }))
+}
+export function deleteExpense(expenseId: number, userId: number): void {
+  const db = getDb()
+  const user = db.select().from(users).where(eq(users.id, userId)).get()
+  if (user?.role !== 'admin') throw new Error('Admin access required to delete expenses')
+  db.delete(expenses).where(eq(expenses.id, expenseId)).run()
 }

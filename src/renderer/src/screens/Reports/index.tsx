@@ -2,6 +2,8 @@ import { Fragment, useState, useEffect, useRef, type ReactElement, type CSSPrope
 import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency, gramsToKg, formatQuantity } from '@shared/money'
 import { MoneyAreaChart, PaymentMethodChart } from '../../components/Charts'
+import InvoiceDetailPanel from '../../components/InvoiceDetailPanel'
+import ExpenseDetailModal from '../../components/ExpenseDetailModal'
 import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   PackingReportRun, ProfitReportRow,
@@ -397,6 +399,10 @@ export default function ReportsScreen(): ReactElement {
   const [collections, setCollections] = useState<PaymentBreakdownRow | null>(null)
   const [kpiDaily, setKpiDaily] = useState<DailySalesRow[]>([])
   const [error, setError] = useState('')
+
+  // modal states
+  const [modalInvoiceId, setModalInvoiceId] = useState<number | null>(null)
+  const [modalExpense, setModalExpense] = useState<ExpenseRow | null>(null)
 
   // ── Handle preset changes ──────────────────────────────────────────────────
 
@@ -882,7 +888,7 @@ export default function ReportsScreen(): ReactElement {
                   </tr></thead>
                   <tbody>
                     {expenses.map((e) => (
-                      <TRow key={e.id}>
+                      <TRow key={e.id} onClick={() => setModalExpense(e)}>
                         <td style={{ ...tdStyle, color: T.ink3, fontSize: 12, fontFamily: T.mono }}>{e.date}</td>
                         <td style={tdStyle}>
                           <Badge color={T.amber}>{e.category}</Badge>
@@ -923,7 +929,7 @@ export default function ReportsScreen(): ReactElement {
                   </thead>
                   <tbody>
                     {invoices.map((inv) => (
-                      <TRow key={inv.id}>
+                      <TRow key={inv.id} onClick={() => setModalInvoiceId(inv.id)}>
                         <td style={{ ...tdStyle, fontFamily: T.mono, fontSize: 12, color: T.accent, fontWeight: 600 }}>
                           {inv.invoiceNo}
                           {inv.status === 'void' && (
@@ -1053,6 +1059,47 @@ export default function ReportsScreen(): ReactElement {
               </div>
             )}
           </Card>
+        )}
+
+        {/* Invoice Detail Modal */}
+        {modalInvoiceId && (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.35)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}
+            onClick={() => setModalInvoiceId(null)}
+          >
+            <div
+              style={{ background: T.bg, borderRadius: T.r, boxShadow: T.shadow, width: 440, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', border: `1px solid ${T.border}`, zIndex: 101 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <span style={{ fontWeight: 600, fontSize: '1rem', color: T.ink1 }}>Invoice Detail</span>
+                <button
+                  onClick={() => setModalInvoiceId(null)}
+                  style={{ width: 28, height: 28, borderRadius: T.rFull, background: T.surface, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: T.ink2 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <InvoiceDetailPanel invoiceId={modalInvoiceId} onUpdated={(deleted) => {
+                if (deleted) setModalInvoiceId(null)
+                load()
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Expense Detail Modal */}
+        {modalExpense && (
+          <ExpenseDetailModal
+            expense={modalExpense}
+            onClose={() => setModalExpense(null)}
+            onDeleted={() => {
+              setModalExpense(null)
+              load()
+            }}
+          />
         )}
 
       </div>

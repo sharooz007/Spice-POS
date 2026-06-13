@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactElement, type FormEvent } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency } from '@shared/money'
+import ExpenseDetailModal from '../../components/ExpenseDetailModal'
 import type { ExpenseRow } from '@shared/types'
 
 const CATEGORIES = ['Rent', 'Utilities', 'Salary', 'Packaging', 'Transport', 'Maintenance', 'Other']
@@ -9,6 +10,7 @@ export default function ExpensesScreen(): ReactElement {
   const { user } = useAppStore()
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
   const [view, setView] = useState<'daily' | 'monthly'>('daily')
+  const [modalExpense, setModalExpense] = useState<ExpenseRow | null>(null)
 
   // Form
   const [category, setCategory] = useState(CATEGORIES[0])
@@ -96,9 +98,9 @@ export default function ExpensesScreen(): ReactElement {
                 <span>{d}</span><span className="font-mono">{paiseToCurrency(total)}</span>
               </div>
               {expenses.filter((e) => e.date === d).map((e) => (
-                <div key={e.id} className="flex justify-between text-xs text-gray-600">
+                <div key={e.id} onClick={() => setModalExpense(e)} className="flex justify-between text-xs text-gray-600 hover:bg-gray-50 p-1.5 rounded cursor-pointer transition-colors -mx-1.5">
                   <span>{e.category}{e.notes ? ` — ${e.notes}` : ''}</span>
-                  <span className="font-mono">{paiseToCurrency(e.amountPaise)}</span>
+                  <span className="font-mono text-gray-800">{paiseToCurrency(e.amountPaise)}</span>
                 </div>
               ))}
             </div>
@@ -124,6 +126,18 @@ export default function ExpensesScreen(): ReactElement {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Expense Detail Modal */}
+      {modalExpense && (
+        <ExpenseDetailModal
+          expense={modalExpense}
+          onClose={() => setModalExpense(null)}
+          onDeleted={() => {
+            setModalExpense(null)
+            load()
+          }}
+        />
       )}
     </div>
   )

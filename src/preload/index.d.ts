@@ -94,6 +94,7 @@ declare global {
       expenses: {
         record: (req: RecordExpenseRequest) => Promise<Result<void>>
         list: (req?: { dateFrom?: string; dateTo?: string }) => Promise<Result<ExpenseRow[]>>
+        delete: (req: { expenseId: number; userId: number }) => Promise<Result<void>>
       }
       reports: {
         dailySales: (req: DateRange) => Promise<Result<DailySalesRow[]>>

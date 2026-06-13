@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency } from '@shared/money'
 import { businessDate } from '@shared/businessDate'
 import InvoiceDetailPanel from '../../components/InvoiceDetailPanel'
+import ExpenseDetailModal from '../../components/ExpenseDetailModal'
 import { PaymentMethodChart } from '../../components/Charts'
 import type { DailySalesRow, ExpenseRow, InvoiceRow, PaymentBreakdownRow } from '@shared/types'
 
@@ -54,6 +55,7 @@ export default function DashboardScreen(): ReactElement {
   const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdownRow | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalInvoiceId, setModalInvoiceId] = useState<number | null>(null)
+  const [modalExpense, setModalExpense] = useState<ExpenseRow | null>(null)
 
   async function loadData(): Promise<void> {
     const [sRes, eRes, invRes, expRes, paymentRes] = await Promise.all([
@@ -288,7 +290,7 @@ export default function DashboardScreen(): ReactElement {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
               <tbody>
                 {recentExpenses.map((e) => (
-                  <tr key={e.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <tr key={e.id} onClick={() => setModalExpense(e)} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }} className="trow-hover">
                     <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.75rem', width: 100 }}>{e.date}</td>
                     <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-1)', fontWeight: 500 }}>{e.category}</td>
                     <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.8125rem' }}>{e.notes ?? ''}</td>
@@ -330,6 +332,18 @@ export default function DashboardScreen(): ReactElement {
             }} />
           </div>
         </div>
+      )}
+
+      {/* Expense Detail Modal */}
+      {modalExpense && (
+        <ExpenseDetailModal
+          expense={modalExpense}
+          onClose={() => setModalExpense(null)}
+          onDeleted={() => {
+            setModalExpense(null)
+            loadData()
+          }}
+        />
       )}
     </div>
   )
