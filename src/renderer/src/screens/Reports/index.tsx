@@ -527,7 +527,7 @@ export default function ReportsScreen(): ReactElement {
   ]
   const tabs = allTabs.filter((t) => !t.adminOnly || isAdmin)
 
-  const needsRange = ['invoices', 'daily', 'byProduct', 'byVariant', 'packing', 'profit', 'expenses', 'factory'].includes(tab)
+  const needsRange = ['invoices', 'repayments', 'daily', 'byProduct', 'byVariant', 'packing', 'profit', 'expenses', 'factory'].includes(tab)
 
   // label for range subtitle
   const rangeLabel = `${fmtDate(range.dateFrom)} – ${fmtDate(range.dateTo)}`
