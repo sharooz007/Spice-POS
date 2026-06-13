@@ -513,6 +513,12 @@ export default function ReportsScreen(): ReactElement {
     ...(col.creditRepaid > 0 ? [{ label: 'Repaid', value: col.creditRepaid, count: 0, color: T.amber }] : []),
   ] : []
 
+  const repaymentMethods = col && col.creditRepaid > 0 ? [
+    ...(col.repaidCash > 0 ? [{ label: 'Cash', value: col.repaidCash, count: 0, color: T.green }] : []),
+    ...(col.repaidUpi > 0 ? [{ label: 'UPI', value: col.repaidUpi, count: 0, color: T.accent }] : []),
+    ...(col.repaidCard > 0 ? [{ label: 'Card', value: col.repaidCard, count: 0, color: T.purple }] : []),
+  ] : []
+
   // Tabs config
   const allTabs: Array<{ key: ReportTab; label: string; adminOnly?: boolean }> = [
     { key: 'invoices',   label: 'Invoices' },
@@ -617,30 +623,52 @@ export default function ReportsScreen(): ReactElement {
         {/* ── ANALYTICS BLOCK ───────────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginBottom: 28 }}>
           {col && (
-            <Card style={{ padding: '22px 24px' }}>
-              <SecHead title="Payment Breakdown" action={
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                  <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
-                    Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
-                  </span>
-                  {col.creditRepaid > 0 && (
-                    <span style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: T.font }}>
-                      (Includes {paiseToCurrency(col.creditRepaid)} from past dues)
+            <>
+              <Card style={{ padding: '22px 24px' }}>
+                <SecHead title="Payment Breakdown" action={
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                    <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
+                      Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
                     </span>
-                  )}
-                </div>
-              } />
-              <PaymentMethodChart
-                data={colMethods}
-                palette={{
-                  label: T.ink1,
-                  value: T.ink2,
-                  muted: T.ink3,
-                  track: 'rgba(255,255,255,0.045)',
-                  bar: 'rgba(203,213,225,0.92)'
-                }}
-              />
-            </Card>
+                    {col.creditRepaid > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: T.font }}>
+                        (Includes {paiseToCurrency(col.creditRepaid)} from past dues)
+                      </span>
+                    )}
+                  </div>
+                } />
+                <PaymentMethodChart
+                  data={colMethods}
+                  palette={{
+                    label: T.ink1,
+                    value: T.ink2,
+                    muted: T.ink3,
+                    track: 'rgba(255,255,255,0.045)',
+                    bar: 'rgba(203,213,225,0.92)'
+                  }}
+                />
+              </Card>
+              
+              {col.creditRepaid > 0 && (
+                <Card style={{ padding: '22px 24px' }}>
+                  <SecHead title="Repayment Breakdown" action={
+                    <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
+                      Total Repaid: <span style={{ color: T.amber, fontWeight: 600 }}>{paiseToCurrency(col.creditRepaid)}</span>
+                    </span>
+                  } />
+                  <PaymentMethodChart
+                    data={repaymentMethods}
+                    palette={{
+                      label: T.ink1,
+                      value: T.ink2,
+                      muted: T.ink3,
+                      track: 'rgba(255,255,255,0.045)',
+                      bar: 'rgba(203,213,225,0.92)'
+                    }}
+                  />
+                </Card>
+              )}
+            </>
           )}
 
           {/* Revenue Chart */}

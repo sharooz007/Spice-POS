@@ -550,6 +550,9 @@ export interface PaymentBreakdownRow {
   card: number
   credit: number  // total_paise of credit invoices (not yet collected)
   creditRepaid: number // Cash/UPI/Card collected for PAST dues today
+  repaidCash: number
+  repaidUpi: number
+  repaidCard: number
   cashCount: number
   upiCount: number
   cardCount: number

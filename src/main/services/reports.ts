@@ -257,6 +257,7 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
 
   const result: PaymentBreakdownRow = {
     cash: 0, upi: 0, card: 0, credit: 0, creditRepaid: 0,
+    repaidCash: 0, repaidUpi: 0, repaidCard: 0,
     cashCount: 0, upiCount: 0, cardCount: 0, creditCount: 0,
     total: 0
   }
@@ -274,7 +275,12 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
     if (normalized === 'cash' || normalized === 'upi' || normalized === 'card') {
       result[normalized] += amount
       result.total += amount
-      if (isRepayment) result.creditRepaid += amount
+      if (isRepayment) {
+        result.creditRepaid += amount
+        if (normalized === 'cash') result.repaidCash += amount
+        else if (normalized === 'upi') result.repaidUpi += amount
+        else if (normalized === 'card') result.repaidCard += amount
+      }
       return normalized
     }
     return null
