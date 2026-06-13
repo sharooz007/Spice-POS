@@ -383,8 +383,8 @@ export default function ReportsScreen(): ReactElement {
   const isAdmin = user?.role === 'admin'
 
   const [tab, setTab] = useState<ReportTab>('invoices')
-  const [preset, setPreset] = useState<DatePreset>('month')
-  const [range, setRange] = useState<DateRange>({ dateFrom: monthStartStr(), dateTo: todayStr() })
+  const [preset, setPreset] = useState<DatePreset>('today')
+  const [range, setRange] = useState<DateRange>({ dateFrom: todayStr(), dateTo: todayStr() })
   const [chartMode, setChartMode] = useState<'revenue' | 'expenses'>('revenue')
 
   // data state
