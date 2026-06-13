@@ -66,7 +66,7 @@ export default function DashboardScreen(): ReactElement {
       ])
       if (sRes.ok) setSales(sRes.data[0] ?? null)
       if (eRes.ok) setTodayExpenses(eRes.data)
-      if (invRes.ok) setRecentInvoices(invRes.data.filter((inv) => inv.status === 'active').slice(0, 10))
+      if (invRes.ok) setRecentInvoices(invRes.data.slice(0, 10))
       if (expRes.ok) setRecentExpenses(expRes.data.slice(0, 5))
       if (paymentRes.ok) setPaymentBreakdown(paymentRes.data)
       setLoading(false)
@@ -241,6 +241,18 @@ export default function DashboardScreen(): ReactElement {
                   >
                     <td style={{ padding: '0.625rem 1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
                       {inv.invoiceNo}
+                      {inv.status === 'void' && (
+                        <span style={{
+                          marginLeft: '0.5rem',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: 'var(--r-full)',
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          background: 'var(--red-soft)',
+                          color: 'var(--red)',
+                          letterSpacing: '0.05em'
+                        }}>VOID</span>
+                      )}
                     </td>
                     <td style={{ padding: '0.625rem 1rem' }}>
                       <span style={{
@@ -258,7 +270,7 @@ export default function DashboardScreen(): ReactElement {
                     <td style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontSize: '0.75rem' }}>
                       {new Date(inv.invoiceDatetime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td style={{ padding: '0.625rem 1rem', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--ink-1)' }}>
+                    <td style={{ padding: '0.625rem 1rem', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: inv.status === 'void' ? 'var(--red)' : 'var(--ink-1)', textDecoration: inv.status === 'void' ? 'line-through' : 'none' }}>
                       {paiseToCurrency(inv.totalPaise)}
                     </td>
                   </tr>

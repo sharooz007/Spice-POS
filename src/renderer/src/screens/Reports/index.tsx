@@ -926,6 +926,13 @@ export default function ReportsScreen(): ReactElement {
                       <TRow key={inv.id}>
                         <td style={{ ...tdStyle, fontFamily: T.mono, fontSize: 12, color: T.accent, fontWeight: 600 }}>
                           {inv.invoiceNo}
+                          {inv.status === 'void' && (
+                            <span style={{
+                              marginLeft: 8, padding: '2px 6px', borderRadius: T.rFull,
+                              fontSize: 10, fontWeight: 700, background: T.redSoft, color: T.red,
+                              letterSpacing: '0.05em'
+                            }}>VOID</span>
+                          )}
                         </td>
                         <td style={tdStyle}>
                           <Badge color={inv.type === 'retail' ? T.accent : T.amber}>{inv.type}</Badge>
@@ -937,7 +944,7 @@ export default function ReportsScreen(): ReactElement {
                         <td style={tdStyle}>
                           <Badge color={inv.paymentMode === 'credit' ? T.red : T.green}>{inv.paymentMode}</Badge>
                         </td>
-                        <td style={{ ...tdMono, textAlign: 'right' }}>{paiseToCurrency(inv.totalPaise)}</td>
+                        <td style={{ ...tdMono, textAlign: 'right', textDecoration: inv.status === 'void' ? 'line-through' : 'none', color: inv.status === 'void' ? T.red : T.ink1 }}>{paiseToCurrency(inv.totalPaise)}</td>
                         <td style={{ ...tdMono, textAlign: 'right', color: T.green }}>{paiseToCurrency(inv.amountPaidPaise)}</td>
                         <td style={{ ...tdMono, textAlign: 'right', color: inv.balanceDuePaise > 0 ? T.red : T.ink3 }}>
                           {inv.balanceDuePaise > 0 ? paiseToCurrency(inv.balanceDuePaise) : '—'}

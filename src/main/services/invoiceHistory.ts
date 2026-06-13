@@ -245,6 +245,84 @@ export function voidInvoice(invoiceId: number, userId: number): void {
   })
 }
 
+export function unvoidInvoice(invoiceId: number, userId: number): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    // Admin check — fetch from DB, never trust renderer (rules.md #14)
+    const user = tx.select({ role: users.role }).from(users).where(eq(users.id, userId)).get()
+    if (!user || user.role !== 'admin') throw new Error('Admin access required')
+
+    const inv = tx
+      .select({
+        id: invoices.id,
+        status: invoices.status,
+        customerId: invoices.customerId,
+        balanceDuePaise: invoices.balanceDuePaise
+      })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .get()
+    if (!inv) throw new Error('Invoice not found')
+    if (inv.status !== 'void') throw new Error('Invoice is not voided')
+
+    const lines = tx
+      .select({
+        itemType: invoiceLines.itemType,
+        variantId: invoiceLines.variantId,
+        productId: invoiceLines.productId,
+        qty: invoiceLines.qty
+      })
+      .from(invoiceLines)
+      .where(eq(invoiceLines.invoiceId, invoiceId))
+      .all()
+
+    const reversal = buildVoidReversal({
+      customerId: inv.customerId ?? null,
+      balanceDuePaise: inv.balanceDuePaise,
+      lines
+    })
+
+    for (const restock of reversal.packetRestocks) {
+      tx.update(retailPacketStock)
+        .set({ qtyPcs: sql`qty_pcs - ${restock.qtyPcs}` })
+        .where(eq(retailPacketStock.variantId, restock.variantId))
+        .run()
+    }
+
+    for (const restock of reversal.bulkRestocks) {
+      tx.update(bulkStock)
+        .set({ qtyGrams: sql`qty_grams - ${restock.qtyGrams}` })
+        .where(eq(bulkStock.productId, restock.productId))
+        .run()
+    }
+
+    if (reversal.creditReversal) {
+      tx.update(customers)
+        .set({ creditBalancePaise: sql`credit_balance_paise + ${reversal.creditReversal.amountPaise}` })
+        .where(eq(customers.id, reversal.creditReversal.customerId))
+        .run()
+    }
+
+    tx.update(invoices).set({ status: 'active' }).where(eq(invoices.id, invoiceId)).run()
+  })
+}
+
+export function deleteInvoice(invoiceId: number, userId: number): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    const user = tx.select({ role: users.role }).from(users).where(eq(users.id, userId)).get()
+    if (!user || user.role !== 'admin') throw new Error('Admin access required')
+
+    const inv = tx.select({ id: invoices.id, status: invoices.status }).from(invoices).where(eq(invoices.id, invoiceId)).get()
+    if (!inv) throw new Error('Invoice not found')
+    if (inv.status !== 'void') throw new Error('Invoice must be voided before it can be deleted')
+
+    tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId)).run()
+    tx.delete(invoiceDatetimeEditLog).where(eq(invoiceDatetimeEditLog.invoiceId, invoiceId)).run()
+    tx.delete(invoices).where(eq(invoices.id, invoiceId)).run()
+  })
+}
+
 export function editInvoiceDateTime(req: EditInvoiceDateTimeRequest): InvoiceRow {
   const db = getDb()
 

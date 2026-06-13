@@ -111,6 +111,8 @@ declare global {
         search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>
         getInvoice: (req: { invoiceId: number }) => Promise<Result<InvoiceRow | null>>
         void: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
+        unvoid: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
+        delete: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
         editDateTime: (req: EditInvoiceDateTimeRequest) => Promise<Result<InvoiceRow>>
         getEditLog: (req: { invoiceId: number }) => Promise<Result<EditLogRow[]>>
         updateDetails: (req: UpdateInvoiceDetailsRequest) => Promise<Result<InvoiceRow>>

@@ -483,6 +483,12 @@ export function registerHandlers(): void {
   ipcMain.handle('invoiceHistory.void', (_e, req: { invoiceId: number; userId: number }): Result<void> =>
     wrap(() => invoiceHistorySvc.voidInvoice(req.invoiceId, req.userId)))
 
+  ipcMain.handle('invoiceHistory.unvoid', (_e, req: { invoiceId: number; userId: number }): Result<void> =>
+    wrap(() => invoiceHistorySvc.unvoidInvoice(req.invoiceId, req.userId)))
+
+  ipcMain.handle('invoiceHistory.delete', (_e, req: { invoiceId: number; userId: number }): Result<void> =>
+    wrap(() => invoiceHistorySvc.deleteInvoice(req.invoiceId, req.userId)))
+
   ipcMain.handle('invoiceHistory.editDateTime', (_e, req: EditInvoiceDateTimeRequest): Result<InvoiceRow> =>
     wrap(() => invoiceHistorySvc.editInvoiceDateTime(req)))
 

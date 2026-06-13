@@ -18,6 +18,7 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
   const [loading, setLoading] = useState(true)
 
   const [showVoidConfirm, setShowVoidConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [actionError, setActionError] = useState('')
 
@@ -58,6 +59,24 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
     if (!res.ok) { setActionError(res.error); return }
     setShowVoidConfirm(false); setActionError('')
     await load(invoiceId)
+    onUpdated?.()
+  }
+
+  async function handleUnvoid(): Promise<void> {
+    if (!inv) return
+    const res = await window.api.invoiceHistory.unvoid({ invoiceId: inv.id, userId: user!.id })
+    if (!res.ok) { setActionError(res.error); return }
+    setActionError('')
+    await load(invoiceId)
+    onUpdated?.()
+  }
+
+  async function handleDelete(e: FormEvent): Promise<void> {
+    e.preventDefault()
+    if (!inv) return
+    const res = await window.api.invoiceHistory.delete({ invoiceId: inv.id, userId: user!.id })
+    if (!res.ok) { setActionError(res.error); return }
+    setShowDeleteConfirm(false); setActionError('')
     onUpdated?.()
   }
 
@@ -174,15 +193,27 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
             className="px-3 py-1.5 border rounded text-sm cursor-pointer hover:bg-gray-50 text-center transition-colors">
             Share WhatsApp
           </button>
-          <button onClick={() => { setShowEdit(true); setShowVoidConfirm(false); setActionError('') }}
+          <button onClick={() => { setShowEdit(true); setShowVoidConfirm(false); setShowDeleteConfirm(false); setActionError('') }}
             className="px-3 py-1.5 border border-amber-300 bg-amber-50 text-amber-800 rounded text-sm cursor-pointer hover:bg-amber-100 transition-colors">
             Edit Invoice
           </button>
           {inv.status === 'active' && (
-            <button onClick={() => { setShowVoidConfirm(true); setShowEdit(false); setActionError('') }}
+            <button onClick={() => { setShowVoidConfirm(true); setShowEdit(false); setShowDeleteConfirm(false); setActionError('') }}
               className="px-3 py-1.5 border border-red-300 bg-red-50 text-red-700 rounded text-sm cursor-pointer hover:bg-red-100 transition-colors">
               Void Invoice
             </button>
+          )}
+          {inv.status === 'void' && (
+            <>
+              <button onClick={() => handleUnvoid()}
+                className="px-3 py-1.5 border border-green-300 bg-green-50 text-green-700 rounded text-sm cursor-pointer hover:bg-green-100 transition-colors">
+                Undo Void
+              </button>
+              <button onClick={() => { setShowDeleteConfirm(true); setShowEdit(false); setShowVoidConfirm(false); setActionError('') }}
+                className="px-3 py-1.5 border border-red-300 bg-red-600 text-white rounded text-sm cursor-pointer hover:bg-red-700 transition-colors">
+                Delete Invoice
+              </button>
+            </>
           )}
         </div>
       )}
@@ -227,6 +258,18 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
           <div className="flex gap-2">
             <button type="submit" className="bg-red-600 text-white px-3 py-1 rounded text-sm cursor-pointer">Confirm Void</button>
             <button type="button" onClick={() => setShowVoidConfirm(false)} className="px-3 py-1 border rounded text-sm cursor-pointer">Cancel</button>
+          </div>
+        </form>
+      )}
+
+      {/* Delete confirm */}
+      {showDeleteConfirm && isAdmin && (
+        <form onSubmit={handleDelete} className="flex flex-col gap-2 border border-red-200 bg-red-50 rounded p-3">
+          <p className="text-xs font-bold text-red-800">This permanently deletes the invoice record. Stock has already been restored. This cannot be undone.</p>
+          {actionError && <p className="text-xs text-red-600">{actionError}</p>}
+          <div className="flex gap-2">
+            <button type="submit" className="bg-red-600 text-white px-3 py-1 rounded text-sm cursor-pointer">Delete Forever</button>
+            <button type="button" onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1 border rounded text-sm cursor-pointer">Cancel</button>
           </div>
         </form>
       )}
