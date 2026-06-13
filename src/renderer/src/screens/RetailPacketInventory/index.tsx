@@ -95,11 +95,11 @@ export default function RetailPacketInventoryScreen(): ReactElement {
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
           <button type="submit"
-            className="bg-orange-600 text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-orange-700 transition-colors">
+            className="btn btn-amber">
             Save
           </button>
           <button type="button" onClick={() => onDone()}
-            className="px-3 py-1.5 border rounded text-sm cursor-pointer">Cancel</button>
+            className="btn btn-secondary">Cancel</button>
         </div>
       </form>
     )
@@ -180,14 +180,14 @@ export default function RetailPacketInventoryScreen(): ReactElement {
   const selectedVariant = allVariants.find((v) => v.id === selectedVariantId)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">Retail Packet Inventory</h1>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="tab-bar">
           {(['stock', 'movements'] as Tab[]).map((t) => (
             <button key={t} onClick={() => { setTab(t); if (t === 'movements' && selectedVariantId) loadMovements(selectedVariantId) }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                tab === t ? 'active' : ''
               }`}>
               {t === 'stock' ? 'Stock' : 'Movements'}
             </button>
@@ -254,7 +254,7 @@ export default function RetailPacketInventoryScreen(): ReactElement {
                 <div key={p.id}
                   onClick={() => { const first = enabled[0]; if (first) selectVariant(first.id) }}
                   className={`px-3 py-2 rounded mb-1 cursor-pointer text-sm transition-colors ${
-                    isSelected ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                    isSelected ? 'list-item active' : 'list-item'
                   }`}>
                   <div className="font-medium">{p.name}</div>
                   <div className={`text-xs ${isSelected ? 'text-indigo-200' : 'text-gray-500'}`}>

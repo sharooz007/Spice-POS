@@ -33,7 +33,7 @@ export default function InvoiceHistoryScreen(): ReactElement {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="page">
       <h1 className="text-xl font-bold text-gray-800 mb-4">Invoice History</h1>
 
       <div className="flex flex-wrap gap-3 mb-4 items-end">
@@ -63,7 +63,7 @@ export default function InvoiceHistoryScreen(): ReactElement {
           </select>
         </div>
         <button onClick={search}
-          className="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-indigo-700 transition-colors">
+          className="btn btn-primary">
           Search
         </button>
       </div>
@@ -86,18 +86,27 @@ export default function InvoiceHistoryScreen(): ReactElement {
                 <tbody>
                   {results.map((inv) => (
                     <tr key={inv.id} onClick={() => setSelectedId(inv.id)}
-                      className={`border-b last:border-0 cursor-pointer hover:bg-gray-50 ${selectedId === inv.id ? 'bg-indigo-50' : ''}`}>
-                      <td className="px-3 py-2 font-mono text-xs">{inv.invoiceNo}</td>
+                      className={`border-b last:border-0 cursor-pointer hover:bg-gray-50 ${selectedId === inv.id ? 'bg-indigo-50' : ''} ${inv.status === 'void' ? 'bg-red-50/40' : ''}`}>
+                      <td className="px-3 py-2 font-mono text-xs">
+                        <span>{inv.invoiceNo}</span>
+                        {inv.status === 'void' && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-bold tracking-wide">
+                            VOID
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2">
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${inv.type === 'retail' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
                           {inv.type}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-xs">{inv.businessDate}</td>
-                      <td className="px-3 py-2 text-right font-mono">{paiseToCurrency(inv.totalPaise)}</td>
+                      <td className={`px-3 py-2 text-right font-mono ${inv.status === 'void' ? 'line-through text-red-500' : ''}`}>
+                        {paiseToCurrency(inv.totalPaise)}
+                      </td>
                       <td className="px-3 py-2">
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${inv.status === 'void' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {inv.status}
+                          {inv.status === 'void' ? 'VOID' : inv.status}
                         </span>
                       </td>
                     </tr>

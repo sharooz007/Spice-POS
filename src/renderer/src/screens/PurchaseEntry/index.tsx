@@ -60,20 +60,20 @@ export default function PurchaseEntryScreen(): ReactElement {
         <input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)}
           className="border border-gray-300 rounded px-2 py-1 text-sm w-28" />
         <button type="submit" className="bg-gray-700 text-white px-3 py-1 rounded text-sm cursor-pointer">Add</button>
-        <button type="button" onClick={() => setShowNewSupplier(false)} className="px-3 py-1 border rounded text-sm cursor-pointer">Cancel</button>
+        <button type="button" onClick={() => setShowNewSupplier(false)} className="btn btn-secondary">Cancel</button>
       </form>
     )
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="page">
       <h1 className="text-xl font-bold text-gray-800 mb-1">Purchase Entry</h1>
       {/* Explicit note: record-keeping only */}
       <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mb-4">
         Record-keeping only — does not affect stock or cost.
       </p>
 
-      <form onSubmit={submit} className="border rounded-lg p-4 bg-white flex flex-col gap-3 mb-6">
+      <form onSubmit={submit} className="form-panel" style={{marginBottom:"1.5rem"}}>
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">

@@ -199,64 +199,70 @@ export default function RetailBillingScreen(): ReactElement {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <div className="bg-indigo-700 text-white px-4 py-2 flex items-center justify-between flex-shrink-0">
-        <span className="font-bold text-lg">Retail Billing</span>
-        <span className="text-indigo-200 text-sm">Packed items only</span>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-base)' }}>
 
+      {/* Success banner */}
       {lastInvoice && (
-        <div className="bg-green-50 border-b border-green-200 px-4 py-2 flex items-center justify-between text-sm flex-shrink-0">
-          <span className="text-green-800 font-medium">{lastInvoice.invoiceNo} · {paiseToCurrency(lastInvoice.totalPaise)}</span>
-          <div className="flex gap-3">
-            <a href={waLink(lastInvoice)} target="_blank" rel="noopener noreferrer"
-              onClick={() => window.open(waLink(lastInvoice), '_blank')}
-              className="text-green-700 underline cursor-pointer text-xs">WhatsApp</a>
-            <button onClick={() => setLastInvoice(null)} className="text-green-600 text-xs cursor-pointer">Dismiss</button>
+        <div className="success-banner" style={{ margin: '0.75rem 0.75rem 0', borderRadius: 'var(--r-md)' }}>
+          <span style={{ fontWeight: 500 }}>{lastInvoice.invoiceNo} &mdash; {paiseToCurrency(lastInvoice.totalPaise)} collected</span>
+          <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>
+            <button onClick={() => window.open(waLink(lastInvoice), '_blank')}
+              style={{ fontSize: '0.75rem', color: 'oklch(0.42 0.18 145)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              WhatsApp
+            </button>
+            <button onClick={() => setLastInvoice(null)}
+              style={{ fontSize: '0.75rem', color: 'oklch(0.5 0.1 145)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Dismiss
+            </button>
           </div>
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Tile grid sidebar */}
-        <div className="flex flex-col w-72 flex-shrink-0 border-r bg-white overflow-hidden">
-          <div className="p-3 border-b flex-shrink-0">
-            <div className="relative">
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', gap: '0', margin: '0.75rem' }}>
+
+        {/* Left: product tiles */}
+        <div className="card" style={{ width: 264, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 'var(--r-lg)', marginRight: '0.625rem' }}>
+          {/* Barcode input */}
+          <div style={{ padding: '0.625rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative' }}>
               <input ref={barcodeRef} value={barcodeInput}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => { setBarcodeInput(e.target.value); setBarcodeError('') }}
                 onKeyDown={handleBarcodeScan}
                 placeholder="Scan barcode + Enter"
-                className="w-full border-2 border-indigo-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 font-mono" />
+                style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', letterSpacing: '0.02em' }}
+              />
               {barcodeError && (
-                <div className="absolute left-0 top-full mt-1 text-xs text-red-600 bg-white border border-red-200 rounded px-2 py-1 z-10 w-full">{barcodeError}</div>
+                <div style={{ position: 'absolute', left: 0, top: '100%', marginTop: 4, zIndex: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: '0.375rem 0.625rem', fontSize: '0.75rem', color: 'var(--red)', width: '100%', boxShadow: 'var(--shadow-sm)' }}>
+                  {barcodeError}
+                </div>
               )}
             </div>
           </div>
-          <div className="px-3 py-2 border-b flex-shrink-0">
-            <input value={tileSearch} onChange={(e) => setTileSearch(e.target.value)} placeholder="Search items…"
-              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+          {/* Search */}
+          <div style={{ padding: '0.5rem 0.625rem', borderBottom: '1px solid var(--border)' }}>
+            <input value={tileSearch} onChange={(e) => setTileSearch(e.target.value)} placeholder="Search items" />
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
+          {/* Tiles */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.625rem' }}>
             {Object.entries(grouped).map(([productName, variants]) => (
-              <div key={productName} className="mb-3">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 mb-1">{productName}</div>
-                <div className="grid grid-cols-2 gap-1.5">
+              <div key={productName} style={{ marginBottom: '0.875rem' }}>
+                <div className="section-label">{productName}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.375rem' }}>
                   {variants.map((t) => {
                     const avail = availableStock(t.variantId)
                     const soldOut = avail <= 0
                     const isFlashing = flashRed[t.variantId]
                     return (
-                      <button key={t.variantId}
+                      <button
+                        key={t.variantId}
+                        className={`pos-tile${isFlashing ? ' flash-red' : ''}`}
                         onClick={() => !soldOut && addFromTile(t)}
                         disabled={soldOut}
-                        className={`text-left border rounded-lg p-2 transition-colors ${
-                          isFlashing ? 'bg-red-100 border-red-400' :
-                          soldOut ? 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed' :
-                          'border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 cursor-pointer bg-white'
-                        }`}>
-                        <div className="text-xs font-medium text-gray-800 truncate">{t.label}</div>
-                        <div className="text-xs font-bold text-indigo-700">{paiseToCurrency(t.retailPricePaise)}</div>
-                        <div className={`text-xs ${soldOut ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                        style={soldOut ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                      >
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--ink-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.label}</div>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>{paiseToCurrency(t.retailPricePaise)}</div>
+                        <div style={{ fontSize: '0.6875rem', color: soldOut ? 'var(--red)' : 'var(--ink-4)', marginTop: 1 }}>
                           {soldOut ? 'Out of stock' : `${avail} avail`}
                         </div>
                       </button>
@@ -266,68 +272,85 @@ export default function RetailBillingScreen(): ReactElement {
               </div>
             ))}
             {filteredTiles.length === 0 && (
-              <p className="text-xs text-gray-400 p-2">{tileSearch ? 'No matches.' : 'No stock available.'}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ink-4)', padding: '0.5rem 0.25rem' }}>
+                {tileSearch ? 'No matches.' : 'No stock available.'}
+              </p>
             )}
           </div>
         </div>
 
         {/* Centre: bill lines */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto">
-            {lines.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">Scan a barcode or tap a tile to start billing</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-50 border-b">
-                  <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
-                    <th className="px-3 py-2">Item</th>
-                    <th className="px-3 py-2 w-24">Qty</th>
-                    <th className="px-3 py-2 text-right">Price</th>
-                    <th className="px-3 py-2 text-right">Total</th>
-                    <th className="px-3 py-2 w-8"></th>
+        <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginRight: '0.625rem', borderRadius: 'var(--r-lg)' }}>
+          {lines.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, color: 'var(--ink-4)' }}>
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--ink-3)' }}>Scan a barcode or tap a tile</span>
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th style={{ width: 88 }}>Qty</th>
+                    <th style={{ textAlign: 'right' }}>Price</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
+                    <th style={{ width: 32 }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {lines.map((l) => (
-                    <tr key={l.variantId} className="border-b last:border-0">
-                      <td className="px-3 py-2">
-                        <div className="font-medium">{l.productName}</div>
-                        <div className="text-xs text-gray-500">{l.label}</div>
+                    <tr key={l.variantId}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{l.productName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>{l.label}</div>
                       </td>
-                      <td className="px-3 py-2">
-                        <input type="number" min="1" value={l.qtyPcs}
-                          onChange={(e) => updateQty(l.variantId, parseInt(e.target.value) || 0)}
-                          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-indigo-400" />
-                        {stockCapMsg[l.variantId] && (
-                          <div className="text-xs text-amber-700 mt-0.5">{stockCapMsg[l.variantId]}</div>
-                        )}
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <input type="number" min="1" value={l.qtyPcs}
+                            onChange={(e) => updateQty(l.variantId, parseInt(e.target.value) || 0)}
+                            style={{ width: 72, textAlign: 'center' }} />
+                          {stockCapMsg[l.variantId] && (
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--amber)' }}>{stockCapMsg[l.variantId]}</div>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono">{paiseToCurrency(l.currentRetailPricePaise)}</td>
-                      <td className="px-3 py-2 text-right font-mono font-semibold">{paiseToCurrency(l.lineTotal)}</td>
-                      <td className="px-3 py-2">
+                      <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{paiseToCurrency(l.currentRetailPricePaise)}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{paiseToCurrency(l.lineTotal)}</td>
+                      <td>
                         <button onClick={() => { setLines((p) => p.filter((x) => x.variantId !== l.variantId)); focusBarcode() }}
-                          className="text-red-400 hover:text-red-600 cursor-pointer text-lg leading-none">×</button>
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', fontSize: '1.125rem', lineHeight: 1, padding: '0 0.25rem' }}
+                          onMouseEnter={(e) => ((e.target as HTMLButtonElement).style.color = 'var(--red)')}
+                          onMouseLeave={(e) => ((e.target as HTMLButtonElement).style.color = 'var(--ink-4)')}
+                        >×</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Right: inline payment panel */}
-        <div className="w-72 flex-shrink-0 border-l bg-white flex flex-col p-4 gap-4 overflow-y-auto">
+        {/* Right: payment panel */}
+        <div className="card" style={{ width: 256, flexShrink: 0, display: 'flex', flexDirection: 'column', padding: '1rem', gap: '0.875rem', overflowY: 'auto', borderRadius: 'var(--r-lg)' }}>
+
           {/* Discount */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">Discount</label>
-              <div className="flex gap-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Discount</label>
+              <div style={{ display: 'flex', gap: 3 }}>
                 {(['amount', 'pct'] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => { setDiscountType(t); setDiscountStr(''); setDiscountPaise(0) }}
-                    className={`px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-colors ${
-                      discountType === t ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                    }`}>
+                  <button key={t} type="button"
+                    onClick={() => { setDiscountType(t); setDiscountStr(''); setDiscountPaise(0) }}
+                    style={{
+                      padding: '0.125rem 0.5rem', borderRadius: 'var(--r-xs)', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', border: '1px solid',
+                      background: discountType === t ? 'var(--accent)' : 'transparent',
+                      color: discountType === t ? '#fff' : 'var(--ink-3)',
+                      borderColor: discountType === t ? 'var(--accent)' : 'var(--border)',
+                    }}>
                     {t === 'amount' ? '₹' : '%'}
                   </button>
                 ))}
@@ -336,97 +359,100 @@ export default function RetailBillingScreen(): ReactElement {
             <input type="number" step={discountType === 'pct' ? '0.1' : '0.01'} min="0" max={discountType === 'pct' ? '100' : undefined}
               value={discountStr}
               onChange={(e) => {
-                const v = e.target.value
-                setDiscountStr(v)
+                const v = e.target.value; setDiscountStr(v)
                 const n = parseFloat(v) || 0
-                setDiscountPaise(discountType === 'pct'
-                  ? Math.round(subtotalPaise * Math.min(n, 100) / 100)
-                  : Math.round(n * 100))
+                setDiscountPaise(discountType === 'pct' ? Math.round(subtotalPaise * Math.min(n, 100) / 100) : Math.round(n * 100))
               }}
-              placeholder={discountType === 'pct' ? '0 – 100' : '0.00'}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm" />
-          </div>
-
-          {/* Totals */}
-          <div className="border-t pt-3 flex flex-col gap-1 text-sm">
-            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span className="font-mono">{paiseToCurrency(subtotalPaise)}</span></div>
-            {discountPaise > 0 && (
-              <div className="flex justify-between text-gray-500">
-                <span>Discount</span>
-                <span className="font-mono text-red-500">
-                  {discountType === 'pct'
-                    ? `−${parseFloat(discountStr) || 0}% (−${paiseToCurrency(discountPaise)})`
-                    : `- ${paiseToCurrency(discountPaise)}`}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-base border-t mt-1 pt-1"><span>Total</span><span className="font-mono">{paiseToCurrency(totalPaise)}</span></div>
-          </div>
-
-          {/* Customer autocomplete */}
-          <div className="border-t pt-3">
-            <CustomerAutocomplete
-              type="retail"
-              name={customerName}
-              phone={customerPhone}
-              onNameChange={setCustomerName}
-              onPhoneChange={setCustomerPhone}
-              onSelect={onSelectCustomer}
-              onClearSelection={onClearSelection}
+              placeholder={discountType === 'pct' ? '0-100' : '0.00'}
             />
           </div>
 
+          <hr className="divider" />
+
+          {/* Totals */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--ink-3)' }}>
+              <span>Subtotal</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{paiseToCurrency(subtotalPaise)}</span>
+            </div>
+            {discountPaise > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--red)' }}>
+                <span>Discount</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>
+                  {discountType === 'pct' ? `-${parseFloat(discountStr)||0}%` : `-${paiseToCurrency(discountPaise)}`}
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', marginTop: '0.25rem', paddingTop: '0.375rem', borderTop: '1px solid var(--border)' }}>
+              <span>Total</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-1)' }}>{paiseToCurrency(totalPaise)}</span>
+            </div>
+          </div>
+
+          <hr className="divider" />
+
+          {/* Customer */}
+          <CustomerAutocomplete type="retail" name={customerName} phone={customerPhone}
+            onNameChange={setCustomerName} onPhoneChange={setCustomerPhone}
+            onSelect={onSelectCustomer} onClearSelection={onClearSelection} />
+
+          <hr className="divider" />
+
           {/* Payment mode */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Payment mode</label>
-            <div className="flex gap-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Payment</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
               {(['cash', 'upi', 'card', 'split'] as PayMode[]).map((m) => (
-                <button key={m} onClick={() => {
-                  setPayMode(m)
-                  setSplitSummary('')
-                  if (m === 'split') setShowSplitModal(true)
-                }}
-                  className={`flex-1 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors border ${payMode === m ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:bg-gray-50'}`}>
+                <button key={m}
+                  onClick={() => { setPayMode(m); setSplitSummary(''); if (m === 'split') setShowSplitModal(true) }}
+                  style={{
+                    padding: '0.375rem 0', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
+                    border: '1px solid',
+                    background: payMode === m ? 'var(--accent)' : 'var(--bg-fill)',
+                    color: payMode === m ? '#fff' : 'var(--ink-2)',
+                    borderColor: payMode === m ? 'var(--accent)' : 'var(--border)',
+                    transition: 'background 100ms ease',
+                  }}>
                   {m.charAt(0).toUpperCase() + m.slice(1)}
                 </button>
               ))}
             </div>
             {payMode === 'split' && splitSummary && (
-              <p className="text-xs text-indigo-700 bg-indigo-50 rounded px-2 py-1 border border-indigo-200">{splitSummary}</p>
+              <div style={{ fontSize: '0.75rem', color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 'var(--r-sm)', padding: '0.375rem 0.5rem', marginTop: 2 }}>
+                {splitSummary}
+              </div>
             )}
           </div>
 
-          {/* Amount paid — hidden for split (fully paid) */}
+          {/* Amount paid */}
           {payMode !== 'split' && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Amount Paid (₹)</label>
-              <input type="number" step="0.01" value={amountPaidStr}
-                onChange={(e) => setAmountPaidStr(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Amount Paid (₹)</label>
+              <input type="number" step="0.01" value={amountPaidStr} onChange={(e) => setAmountPaidStr(e.target.value)} />
             </div>
           )}
 
-          {/* Balance due */}
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Balance due</span>
-            <span className={`font-mono font-semibold ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+          {/* Balance */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--ink-3)' }}>Balance</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: balance > 0 ? 'var(--red)' : 'var(--green)' }}>
               {paiseToCurrency(Math.max(0, balance))}
             </span>
           </div>
 
-          {saleError && <p className="text-sm text-red-600">{saleError}</p>}
+          {saleError && <p style={{ fontSize: '0.8125rem', color: 'var(--red)' }}>{saleError}</p>}
 
-          <button onClick={confirmSale} disabled={!lines.length || loading}
-            className="bg-green-600 disabled:bg-green-300 text-white font-bold py-3 rounded-lg cursor-pointer hover:bg-green-700 disabled:cursor-not-allowed transition-colors">
-            {loading ? 'Processing…' : 'Confirm Sale'}
+          <button className="btn btn-success"
+            onClick={confirmSale}
+            disabled={!lines.length || loading}
+            style={{ width: '100%', height: 44, fontSize: '0.9375rem', fontWeight: 700, marginTop: 'auto' }}>
+            {loading ? 'Processing…' : `Confirm Sale`}
           </button>
         </div>
       </div>
 
       {showSplitModal && (
-        <SplitPaymentModal
-          totalPaise={totalPaise}
-          accentClass="indigo"
+        <SplitPaymentModal totalPaise={totalPaise} accentClass="indigo"
           onConfirm={(rows, summary) => { setSplitRows(rows.map((r) => ({ mode: r.method, amount: r.amountPaise }))); setSplitSummary(summary); setShowSplitModal(false) }}
           onCancel={() => { setPayMode('cash'); setShowSplitModal(false) }}
         />

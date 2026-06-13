@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency } from '@shared/money'
 import { businessDate } from '@shared/businessDate'
 import InvoiceDetailPanel from '../../components/InvoiceDetailPanel'
+import { PaymentMethodChart } from '../../components/Charts'
 import type { DailySalesRow, ExpenseRow, InvoiceRow, PaymentBreakdownRow } from '@shared/types'
 
 // ── Mini stat card ────────────────────────────────────────────────────────────
@@ -50,54 +51,38 @@ export default function DashboardScreen(): ReactElement {
   const [todayExpenses, setTodayExpenses] = useState<ExpenseRow[]>([])
   const [recentInvoices, setRecentInvoices] = useState<InvoiceRow[]>([])
   const [recentExpenses, setRecentExpenses] = useState<ExpenseRow[]>([])
-  const [collections, setCollections] = useState<PaymentBreakdownRow | null>(null)
+  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdownRow | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalInvoiceId, setModalInvoiceId] = useState<number | null>(null)
 
   useEffect(() => {
     async function load(): Promise<void> {
-      const [sRes, eRes, invRes, expRes, colRes] = await Promise.all([
+      const [sRes, eRes, invRes, expRes, paymentRes] = await Promise.all([
         window.api.reports.dailySales({ dateFrom: today, dateTo: today }),
         window.api.expenses.list({ dateFrom: today, dateTo: today }),
         window.api.invoiceHistory.search({}),
         window.api.expenses.list(),
-        window.api.reports.paymentBreakdown({ date: today })
+        window.api.reports.paymentBreakdown({ date: today }),
       ])
       if (sRes.ok) setSales(sRes.data[0] ?? null)
       if (eRes.ok) setTodayExpenses(eRes.data)
-      if (invRes.ok) setRecentInvoices(invRes.data.slice(0, 10))
+      if (invRes.ok) setRecentInvoices(invRes.data.filter((inv) => inv.status === 'active').slice(0, 10))
       if (expRes.ok) setRecentExpenses(expRes.data.slice(0, 5))
-      if (colRes.ok) setCollections(colRes.data)
+      if (paymentRes.ok) setPaymentBreakdown(paymentRes.data)
       setLoading(false)
     }
     load()
   }, [today])
 
   const expensesTotal = todayExpenses.reduce((s, e) => s + e.amountPaise, 0)
-
-  // Collections chart data
-  const colMethods: Array<{ key: keyof PaymentBreakdownRow; label: string; color: string; isCredit?: boolean }> = [
-    { key: 'cash',   label: 'Cash',   color: 'var(--green)' },
-    { key: 'upi',    label: 'UPI',    color: 'var(--accent)' },
-    { key: 'card',   label: 'Card',   color: 'var(--purple)' },
-    { key: 'split',  label: 'Split',  color: 'var(--amber)' },
-    { key: 'credit', label: 'Credit (due)', color: 'var(--red)', isCredit: true }
-  ]
-  const grandTotal = collections ? (collections.total + collections.credit || 1) : 1
-  const R = 44, cx = 54, cy = 54, sw = 20
-  const circ = 2 * Math.PI * R
-  let runOffset = 0
-  const segments = collections
-    ? colMethods
-        .filter((m) => (collections[m.key] as number) > 0)
-        .map((m) => {
-          const val = collections[m.key] as number
-          const dash = (val / grandTotal) * circ
-          const seg = { ...m, val, dash, offset: runOffset }
-          runOffset += dash
-          return seg
-        })
-    : []
+  const paymentMethods = paymentBreakdown ? [
+    { label: 'Cash', value: paymentBreakdown.cash, count: paymentBreakdown.cashCount, color: 'var(--green)' },
+    { label: 'UPI', value: paymentBreakdown.upi, count: paymentBreakdown.upiCount, color: 'var(--accent)' },
+    { label: 'Card', value: paymentBreakdown.card, count: paymentBreakdown.cardCount, color: 'var(--purple)' },
+    ...(paymentBreakdown.credit > 0 || paymentBreakdown.creditCount > 0
+      ? [{ label: 'Credit', value: paymentBreakdown.credit, count: paymentBreakdown.creditCount, color: 'var(--red)' }]
+      : []),
+  ] : []
 
   const page: React.CSSProperties = {
     maxWidth: 960,
@@ -135,6 +120,21 @@ export default function DashboardScreen(): ReactElement {
           <StatCard label="Combined" value={paiseToCurrency(sales?.combinedTotalPaise ?? 0)} accent />
           <StatCard label="Invoices" value={String(sales?.invoiceCount ?? 0)} sub="today" />
           <StatCard label="Expenses" value={paiseToCurrency(expensesTotal)} />
+        </div>
+      )}
+
+      {/* Payment breakdown */}
+      {!loading && paymentBreakdown && (paymentBreakdown.cash + paymentBreakdown.upi + paymentBreakdown.card + paymentBreakdown.credit) > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <SectionHead title="Payment Breakdown" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontVariantNumeric: 'tabular-nums' }}>
+              Collected: <strong style={{ color: 'var(--green)' }}>{paiseToCurrency(paymentBreakdown.total)}</strong>
+            </span>
+          </div>
+          <div className="card" style={{ padding: '1rem 1.25rem' }}>
+            <PaymentMethodChart data={paymentMethods} height={150} />
+          </div>
         </div>
       )}
 
@@ -216,53 +216,10 @@ export default function DashboardScreen(): ReactElement {
         )
       })()}
 
-      {/* Collections + Recent invoices — 2 col */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1rem', alignItems: 'start' }}>
-
-        {/* Collections donut */}
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <SectionHead title="Collections" />
-          {!collections || (!collections.total && !collections.credit) ? (
-            <p style={{ fontSize: '0.8125rem', color: 'var(--ink-3)', paddingTop: '0.5rem' }}>No sales today.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-              <svg width="108" height="108" viewBox="0 0 108 108">
-                <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--bg-fill)" strokeWidth={sw} />
-                {segments.map((s, i) => (
-                  <circle key={i} cx={cx} cy={cy} r={R} fill="none"
-                    stroke={s.color} strokeWidth={sw}
-                    strokeDasharray={`${s.dash} ${circ - s.dash}`}
-                    strokeDashoffset={circ - s.offset}
-                    style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
-                  />
-                ))}
-                <text x={cx} y={cy - 5} textAnchor="middle" fontSize="9" fill="var(--ink-3)" fontFamily="var(--font-sans)">collected</text>
-                <text x={cx} y={cy + 9} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--ink-1)" fontFamily="var(--font-sans)">
-                  {paiseToCurrency(collections.total)}
-                </text>
-              </svg>
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {segments.map((s) => {
-                  const pct = Math.round(s.val / grandTotal * 100)
-                  return (
-                    <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                      <span style={{ flex: 1, color: 'var(--ink-2)' }}>{s.label}</span>
-                      <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 500, color: 'var(--ink-1)' }}>{paiseToCurrency(s.val)}</span>
-                      <span style={{ color: 'var(--ink-3)', width: 28, textAlign: 'right' }}>{pct}%</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Recent invoices */}
+      {/* Recent invoices */}
+      <div>
+        <SectionHead title="Recent Invoices" />
         <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '1.25rem 1.25rem 0.75rem', borderBottom: '1px solid var(--border)' }}>
-            <SectionHead title="Recent Invoices" />
-          </div>
           {recentInvoices.length === 0 ? (
             <p style={{ padding: '1.25rem', fontSize: '0.8125rem', color: 'var(--ink-3)' }}>No invoices yet.</p>
           ) : (

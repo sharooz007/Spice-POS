@@ -236,11 +236,8 @@ export default function WholesaleBillingScreen(): ReactElement {
     : 0
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <div className="bg-amber-700 text-white px-4 py-2 flex items-center justify-between flex-shrink-0">
-        <span className="font-bold text-lg">Wholesale Billing</span>
-        <span className="text-amber-200 text-sm">Product-order flow · Bulk + Packets</span>
-      </div>
+    <div style={{display:"flex",flexDirection:"column",height:"100%",background:"var(--bg-base)"}}>
+      
 
       {lastInvoice && (
         <div className="bg-green-50 border-b border-green-200 px-4 py-2 flex items-center justify-between text-sm flex-shrink-0">
@@ -268,10 +265,7 @@ export default function WholesaleBillingScreen(): ReactElement {
             return (
               <div key={p.id}
                 onClick={() => startOrder(p.id)}
-                className={`px-3 py-2.5 cursor-pointer border-b transition-colors ${
-                  isActive ? 'bg-amber-50 border-l-2 border-l-amber-600' :
-                  'hover:bg-gray-50'
-                }`}>
+                className={`list-item${isActive ? " active" : ""}`} style={{borderBottom:"1px solid var(--border)",borderRadius:0}}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-800">{p.name}</span>
                   {inOrder && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">✓</span>}
@@ -369,11 +363,11 @@ export default function WholesaleBillingScreen(): ReactElement {
 
               <div className="flex gap-2">
                 <button onClick={confirmDraft}
-                  className="bg-amber-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-amber-700 transition-colors">
+                  className="btn btn-amber">
                   {orders.some((o) => o.productId === draft.productId) ? 'Update Order' : 'Add to Order'}
                 </button>
                 <button onClick={() => { setDraft(null); setActiveProductId(null) }}
-                  className="px-4 py-1.5 border rounded text-sm cursor-pointer">
+                  className="btn btn-secondary">
                   Cancel
                 </button>
                 {orders.some((o) => o.productId === draft.productId) && (
@@ -392,7 +386,7 @@ export default function WholesaleBillingScreen(): ReactElement {
               <p className="text-sm text-gray-400">Select a product from the left to start an order.</p>
             )}
             {orders.length > 0 && (
-              <div className="border rounded-lg bg-white overflow-hidden">
+              <div className="card" style={{overflow:"hidden"}}>
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">

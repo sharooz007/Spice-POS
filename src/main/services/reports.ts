@@ -236,20 +236,55 @@ export function expensesReport(range: DateRange): ExpensesSummaryRow[] {
 }
 
 export function paymentBreakdown(date: string): PaymentBreakdownRow {
-  const rows = getDb().all<{ payment_mode: string; amount_paid_paise: number; total_paise: number }>(sql`
-    SELECT payment_mode, amount_paid_paise, total_paise
+  const rows = getDb().all<{ payment_mode: string; amount_paid_paise: number; total_paise: number; payment_split: string | null }>(sql`
+    SELECT payment_mode, amount_paid_paise, total_paise, payment_split
     FROM invoices
     WHERE business_date = ${date} AND status = 'active'
   `)
-  const result: PaymentBreakdownRow = { cash: 0, upi: 0, card: 0, credit: 0, split: 0, total: 0 }
+  const result: PaymentBreakdownRow = {
+    cash: 0, upi: 0, card: 0, credit: 0,
+    cashCount: 0, upiCount: 0, cardCount: 0, creditCount: 0,
+    total: 0
+  }
+  const addPayment = (mode: string, amount: number): boolean => {
+    if (!Number.isFinite(amount)) return false
+    if (mode === 'cash' || mode === 'upi' || mode === 'card') {
+      result[mode] += amount
+      result.total += amount
+      return true
+    }
+    return false
+  }
+  const addCount = (mode: 'cash' | 'upi' | 'card' | 'credit'): void => {
+    if (mode === 'cash') result.cashCount += 1
+    else if (mode === 'upi') result.upiCount += 1
+    else if (mode === 'card') result.cardCount += 1
+    else result.creditCount += 1
+  }
   for (const r of rows) {
     if (r.payment_mode === 'credit') {
       result.credit += r.total_paise
+      addCount('credit')
+    } else if (r.payment_mode === 'split') {
+      let splitRows: Array<{ mode?: unknown; amount?: unknown }> = []
+      try {
+        splitRows = r.payment_split ? JSON.parse(r.payment_split) : []
+      } catch {
+        splitRows = []
+      }
+      const countedModes = new Set<'cash' | 'upi' | 'card'>()
+      for (const split of splitRows) {
+        if (typeof split.mode === 'string' && typeof split.amount === 'number') {
+          if (addPayment(split.mode, split.amount) && (split.mode === 'cash' || split.mode === 'upi' || split.mode === 'card')) {
+            countedModes.add(split.mode)
+          }
+        }
+      }
+      for (const mode of countedModes) addCount(mode)
     } else {
-      const key = r.payment_mode as 'cash' | 'upi' | 'card' | 'split'
-      if (key in result) (result[key] as number) += r.amount_paid_paise
-      else result.split += r.amount_paid_paise // partial/unknown → lump into split
-      result.total += r.amount_paid_paise
+      if (addPayment(r.payment_mode, r.amount_paid_paise) && (r.payment_mode === 'cash' || r.payment_mode === 'upi' || r.payment_mode === 'card')) {
+        addCount(r.payment_mode)
+      }
     }
   }
   return result

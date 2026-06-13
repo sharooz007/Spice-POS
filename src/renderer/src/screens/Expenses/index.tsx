@@ -47,10 +47,10 @@ export default function ExpensesScreen(): ReactElement {
   }, {})
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="page">
       <h1 className="text-xl font-bold text-gray-800 mb-4">Expenses</h1>
 
-      <form onSubmit={submit} className="border rounded-lg p-4 bg-white flex flex-col gap-3 mb-6">
+      <form onSubmit={submit} className="form-panel" style={{marginBottom:"1.5rem"}}>
         <div className="grid grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">Category</label>
@@ -79,10 +79,10 @@ export default function ExpensesScreen(): ReactElement {
         <button type="submit" className="bg-gray-700 text-white px-4 py-1.5 rounded text-sm cursor-pointer w-fit">Record Expense</button>
       </form>
 
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-4">
+      <div className="tab-bar" style={{marginBottom:"1rem"}}>
         {(['daily', 'monthly'] as const).map((v) => (
           <button key={v} onClick={() => setView(v)}
-            className={`px-4 py-1.5 rounded-md text-sm cursor-pointer transition-colors ${view === v ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`px-4 py-1.5 rounded-md text-sm cursor-pointer transition-colors ${view === v ? 'active' : ''}`}>
             {v === 'daily' ? 'Daily' : 'Monthly'}
           </button>
         ))}
@@ -106,7 +106,7 @@ export default function ExpensesScreen(): ReactElement {
           {Object.keys(dailyTotals).length === 0 && <p className="text-sm text-gray-400">No expenses.</p>}
         </div>
       ) : (
-        <div className="border rounded-lg bg-white overflow-hidden">
+        <div className="card" style={{overflow:"hidden"}}>
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
               <th className="px-4 py-2">Month</th><th className="px-4 py-2 text-right">Total</th>

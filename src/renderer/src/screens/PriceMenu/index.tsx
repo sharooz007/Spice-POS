@@ -221,12 +221,12 @@ export default function PriceMenuScreen(): ReactElement {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page">
       <h1 className="text-xl font-bold text-gray-800 mb-1">Price Menu</h1>
       {!isAdmin && <p className="text-xs text-gray-500 mb-3">View only — Admin can edit prices inline.</p>}
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="border rounded-xl bg-white overflow-hidden">
+      <div className="card" style={{overflow:"hidden"}}>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">

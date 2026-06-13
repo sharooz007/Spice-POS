@@ -107,14 +107,14 @@ export default function PackingScreen(): ReactElement {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="page">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">Packing</h1>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="tab-bar">
           {(['pack', 'history'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                tab === t ? 'active' : ''
               }`}>
               {t === 'pack' ? 'Pack' : 'History'}
             </button>
@@ -137,7 +137,7 @@ export default function PackingScreen(): ReactElement {
               return (
                 <div key={p.id} onClick={() => selectProduct(p.id)}
                   className={`px-3 py-2.5 rounded mb-1 cursor-pointer transition-colors ${
-                    selectedProductId === p.id ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                    selectedProductId === p.id ? 'list-item active' : 'list-item'
                   }`}>
                   <div className="font-medium text-sm">{p.name}</div>
                   <div className={`text-xs mt-0.5 ${selectedProductId === p.id ? 'text-indigo-200' : 'text-gray-500'}`}>
@@ -179,7 +179,7 @@ export default function PackingScreen(): ReactElement {
               </div>
 
               {/* Variant rows */}
-              <div className="border rounded-lg bg-white overflow-hidden">
+              <div className="card" style={{overflow:"hidden"}}>
                 <table className="w-full">
                   <thead>
                     <tr className="text-left text-xs text-gray-500 uppercase tracking-wide border-b bg-gray-50">
@@ -224,7 +224,7 @@ export default function PackingScreen(): ReactElement {
                 <button
                   onClick={handleCommit}
                   disabled={!canCommit}
-                  className="bg-indigo-600 disabled:bg-indigo-300 text-white px-6 py-1.5 rounded text-sm font-semibold cursor-pointer hover:bg-indigo-700 disabled:cursor-not-allowed transition-colors">
+                  className="btn btn-primary">
                   Commit Packing Run
                 </button>
               </div>
@@ -246,7 +246,7 @@ export default function PackingScreen(): ReactElement {
           {runs.map((run) => {
             const prod = products.find((p) => p.id === run.productId)
             return (
-              <div key={run.id} className="border rounded-lg p-4 bg-white">
+              <div key={run.id} className="card" style={{padding:"1.25rem"}}>
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="font-semibold text-gray-800">

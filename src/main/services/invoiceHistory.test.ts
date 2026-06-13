@@ -1,6 +1,6 @@
 // src/main/services/invoiceHistory.test.ts — C11, C13
 import { describe, it, expect } from 'vitest'
-import { computeNewBusinessDate, assertInvoiceImmutables } from './invoiceHistory'
+import { computeNewBusinessDate, assertInvoiceImmutables, buildVoidReversal } from './invoiceHistory'
 import { blendCost } from '../../shared/costing'
 
 describe('C11 — editInvoiceDateTime pure logic', () => {
@@ -46,5 +46,24 @@ describe('C13 — cost change never affects prices', () => {
     const newAvg2 = blendCost(40, 127.5, 20, 150)
     expect(newAvg2).toBeCloseTo(135, 5)
     expect(priceMenuRetailPricePaise).toBe(35000) // unchanged — cost never touched price
+  })
+})
+
+describe('void invoice reversal', () => {
+  it('restores packet and loose stock and reverses party credit due', () => {
+    const reversal = buildVoidReversal({
+      customerId: 42,
+      balanceDuePaise: 93500,
+      lines: [
+        { itemType: 'packet', variantId: 7, productId: 1, qty: 2 },
+        { itemType: 'packet', variantId: 7, productId: 1, qty: 3 },
+        { itemType: 'loose_bulk', variantId: null, productId: 11, qty: 1250 },
+        { itemType: 'loose_bulk', variantId: null, productId: 11, qty: 750 },
+      ]
+    })
+
+    expect(reversal.packetRestocks).toEqual([{ variantId: 7, qtyPcs: 5 }])
+    expect(reversal.bulkRestocks).toEqual([{ productId: 11, qtyGrams: 2000 }])
+    expect(reversal.creditReversal).toEqual({ customerId: 42, amountPaise: 93500 })
   })
 })

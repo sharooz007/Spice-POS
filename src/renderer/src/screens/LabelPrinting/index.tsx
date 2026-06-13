@@ -83,14 +83,14 @@ export default function LabelPrintingScreen(): ReactElement {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="page">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">Label Printing</h1>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="tab-bar">
           {(['print', 'log'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                tab === t ? 'active' : ''
               }`}>
               {t === 'print' ? 'Print Labels' : 'Print Log'}
             </button>
@@ -110,9 +110,7 @@ export default function LabelPrintingScreen(): ReactElement {
               return (
                 <div key={p.id}
                   onClick={() => { const first = enabled[0]; if (first) { setSelectedVariantId(first.id); setStatus(null) } }}
-                  className={`px-3 py-2 rounded mb-1 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-purple-600 text-white' : 'hover:bg-gray-100 text-gray-800'
-                  }`}>
+                  className={`list-item${isSelected ? " active" : ""}`} style={{marginBottom:4}}>
                   <div className="text-sm font-medium">{p.name}</div>
                   <div className={`text-xs ${isSelected ? 'text-purple-200' : 'text-gray-500'}`}>
                     {enabled.length} variant{enabled.length !== 1 ? 's' : ''}
@@ -206,7 +204,7 @@ export default function LabelPrintingScreen(): ReactElement {
       )}
 
       {tab === 'log' && (
-        <div className="border rounded-lg bg-white p-4">
+        <div className="card" style={{padding:"1.25rem"}}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-800 text-sm">Recent Label Prints</h2>
             <select value={selectedVariantId ?? ''} onChange={(e) => {

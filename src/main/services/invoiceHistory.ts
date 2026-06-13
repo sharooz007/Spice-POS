@@ -3,7 +3,8 @@
 import { eq, and, gte, lte, like, sql } from 'drizzle-orm'
 import { getDb } from '../db'
 import {
-  invoices, invoiceLines, invoiceDatetimeEditLog, users, customers
+  invoices, invoiceLines, invoiceDatetimeEditLog, users, customers,
+  retailPacketStock, bulkStock
 } from '../db/schema'
 import { businessDate } from '../../shared/businessDate'
 import type {
@@ -23,6 +24,42 @@ interface InvoiceSnapshot {
   subtotalPaise: number
   totalPaise: number
   lineCount: number
+}
+
+interface VoidReversalLine {
+  itemType: string
+  variantId: number | null
+  productId: number | null
+  qty: number
+}
+
+export function buildVoidReversal(input: {
+  customerId: number | null
+  balanceDuePaise: number
+  lines: VoidReversalLine[]
+}): {
+  packetRestocks: Array<{ variantId: number; qtyPcs: number }>
+  bulkRestocks: Array<{ productId: number; qtyGrams: number }>
+  creditReversal: { customerId: number; amountPaise: number } | null
+} {
+  const packetByVariant = new Map<number, number>()
+  const bulkByProduct = new Map<number, number>()
+
+  for (const line of input.lines) {
+    if (line.itemType === 'packet' && line.variantId != null) {
+      packetByVariant.set(line.variantId, (packetByVariant.get(line.variantId) ?? 0) + line.qty)
+    } else if (line.itemType === 'loose_bulk' && line.productId != null) {
+      bulkByProduct.set(line.productId, (bulkByProduct.get(line.productId) ?? 0) + line.qty)
+    }
+  }
+
+  return {
+    packetRestocks: [...packetByVariant].map(([variantId, qtyPcs]) => ({ variantId, qtyPcs })),
+    bulkRestocks: [...bulkByProduct].map(([productId, qtyGrams]) => ({ productId, qtyGrams })),
+    creditReversal: input.customerId != null && input.balanceDuePaise > 0
+      ? { customerId: input.customerId, amountPaise: input.balanceDuePaise }
+      : null
+  }
 }
 
 /** Assert that immutable fields haven't changed. Throws if violated. (rules.md #9) */
@@ -153,11 +190,57 @@ export function voidInvoice(invoiceId: number, userId: number): void {
     const user = tx.select({ role: users.role }).from(users).where(eq(users.id, userId)).get()
     if (!user || user.role !== 'admin') throw new Error('Admin access required')
 
-    const inv = tx.select({ id: invoices.id, status: invoices.status }).from(invoices).where(eq(invoices.id, invoiceId)).get()
+    const inv = tx
+      .select({
+        id: invoices.id,
+        status: invoices.status,
+        customerId: invoices.customerId,
+        balanceDuePaise: invoices.balanceDuePaise
+      })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .get()
     if (!inv) throw new Error('Invoice not found')
     if (inv.status === 'void') throw new Error('Invoice is already void')
 
-    // Status flag only — void is NOT a stock reversal (PRD §7.14)
+    const lines = tx
+      .select({
+        itemType: invoiceLines.itemType,
+        variantId: invoiceLines.variantId,
+        productId: invoiceLines.productId,
+        qty: invoiceLines.qty
+      })
+      .from(invoiceLines)
+      .where(eq(invoiceLines.invoiceId, invoiceId))
+      .all()
+
+    const reversal = buildVoidReversal({
+      customerId: inv.customerId ?? null,
+      balanceDuePaise: inv.balanceDuePaise,
+      lines
+    })
+
+    for (const restock of reversal.packetRestocks) {
+      tx.update(retailPacketStock)
+        .set({ qtyPcs: sql`qty_pcs + ${restock.qtyPcs}` })
+        .where(eq(retailPacketStock.variantId, restock.variantId))
+        .run()
+    }
+
+    for (const restock of reversal.bulkRestocks) {
+      tx.update(bulkStock)
+        .set({ qtyGrams: sql`qty_grams + ${restock.qtyGrams}` })
+        .where(eq(bulkStock.productId, restock.productId))
+        .run()
+    }
+
+    if (reversal.creditReversal) {
+      tx.update(customers)
+        .set({ creditBalancePaise: sql`credit_balance_paise - ${reversal.creditReversal.amountPaise}` })
+        .where(eq(customers.id, reversal.creditReversal.customerId))
+        .run()
+    }
+
     tx.update(invoices).set({ status: 'void' }).where(eq(invoices.id, invoiceId)).run()
   })
 }

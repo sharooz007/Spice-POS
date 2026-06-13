@@ -98,7 +98,7 @@ export default function BulkInventoryScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-green-50 border border-green-200 rounded p-4 flex flex-col gap-3">
+      <form onSubmit={submit} className="form-panel">
         <h3 className="font-semibold text-gray-800 text-sm">Record Bulk Arrival</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -136,11 +136,11 @@ export default function BulkInventoryScreen(): ReactElement {
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
           <button type="submit"
-            className="bg-green-700 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-green-800 transition-colors">
+            className="btn btn-success">
             Save Arrival
           </button>
           <button type="button" onClick={() => setShowArrival(false)}
-            className="px-4 py-1.5 border rounded text-sm cursor-pointer">Cancel</button>
+            className="btn btn-secondary">Cancel</button>
         </div>
       </form>
     )
@@ -171,7 +171,7 @@ export default function BulkInventoryScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-orange-50 border border-orange-200 rounded p-4 flex flex-col gap-3">
+      <form onSubmit={submit} className="form-panel">
         <h3 className="font-semibold text-gray-800 text-sm">Adjust Bulk Stock</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -200,11 +200,11 @@ export default function BulkInventoryScreen(): ReactElement {
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
           <button type="submit"
-            className="bg-orange-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-orange-700 transition-colors">
+            className="btn btn-amber">
             Save Adjustment
           </button>
           <button type="button" onClick={() => setShowAdjust(false)}
-            className="px-4 py-1.5 border rounded text-sm cursor-pointer">Cancel</button>
+            className="btn btn-secondary">Cancel</button>
         </div>
       </form>
     )
@@ -213,7 +213,7 @@ export default function BulkInventoryScreen(): ReactElement {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page">
       <h1 className="text-xl font-bold text-gray-800 mb-4">Bulk Inventory</h1>
       {pageError && <p className="text-red-600 text-sm mb-3">{pageError}</p>}
 
@@ -229,7 +229,7 @@ export default function BulkInventoryScreen(): ReactElement {
               <div key={p.id}
                 onClick={() => selectProduct(p.id)}
                 className={`px-3 py-2.5 rounded mb-1 cursor-pointer transition-colors ${
-                  selectedId === p.id ? 'bg-green-700 text-white' : 'hover:bg-gray-100 text-gray-800'
+                  selectedId === p.id ? 'list-item active' : 'list-item'
                 }`}>
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-sm">{p.name}</span>
@@ -255,7 +255,7 @@ export default function BulkInventoryScreen(): ReactElement {
         {selectedProduct && (
           <div className="flex-1 flex flex-col gap-4">
             {/* Stock summary */}
-            <div className="border rounded-lg p-4 bg-white">
+            <div className="card" style={{padding:"1.25rem"}}>
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="font-bold text-gray-800">{selectedProduct.name}</h2>
@@ -293,12 +293,12 @@ export default function BulkInventoryScreen(): ReactElement {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => { setShowAdjust(false); setShowArrival(true) }}
-                    className="bg-green-700 text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-green-800 transition-colors">
+                    className="btn btn-success">
                     Record Arrival
                   </button>
                   {isAdmin && (
                     <button onClick={() => { setShowArrival(false); setShowAdjust(true) }}
-                      className="bg-orange-600 text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-orange-700 transition-colors">
+                      className="btn btn-amber">
                       Adjust Stock
                     </button>
                   )}
@@ -310,7 +310,7 @@ export default function BulkInventoryScreen(): ReactElement {
             {showAdjust && isAdmin && <AdjustForm />}
 
             {/* Arrival history */}
-            <div className="border rounded-lg p-4 bg-white">
+            <div className="card" style={{padding:"1.25rem"}}>
               <h3 className="font-semibold text-gray-700 text-sm mb-3">Arrival History</h3>
               {arrivals.length === 0 ? (
                 <p className="text-sm text-gray-400">No arrivals recorded yet.</p>
@@ -376,7 +376,7 @@ export default function BulkInventoryScreen(): ReactElement {
                     </button>
                     <button
                       onClick={() => handleDeleteArrival(deleteConfirm)}
-                      className="bg-red-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-red-700 transition-colors"
+                      className="btn btn-danger"
                     >
                       Delete
                     </button>
@@ -387,7 +387,7 @@ export default function BulkInventoryScreen(): ReactElement {
 
             {/* Adjustment history — Admin only */}
             {isAdmin && (
-              <div className="border rounded-lg p-4 bg-white">
+              <div className="card" style={{padding:"1.25rem"}}>
                 <h3 className="font-semibold text-gray-700 text-sm mb-3">Adjustment History</h3>
                 {adjustments.length === 0 ? (
                   <p className="text-sm text-gray-400">No adjustments.</p>

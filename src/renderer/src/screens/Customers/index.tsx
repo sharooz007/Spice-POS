@@ -50,7 +50,7 @@ export default function CustomersScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-blue-50 border border-blue-200 rounded p-4 flex flex-col gap-3 mb-4">
+      <form onSubmit={submit} className="form-panel" style={{marginBottom:"1rem"}}>
         <h3 className="font-semibold text-sm text-gray-800">New {tab === 'retail' ? 'Customer' : 'Party'}</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -79,24 +79,24 @@ export default function CustomersScreen(): ReactElement {
         </div>
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer">Save</button>
-          <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 border rounded text-sm cursor-pointer">Cancel</button>
+          <button type="submit" className="btn btn-primary">Save</button>
+          <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary">Cancel</button>
         </div>
       </form>
     )
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">Customers & Parties</h1>
-        <button onClick={() => setShowCreate(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm cursor-pointer">+ Add</button>
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary">+ Add</button>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-4">
+      <div className="tab-bar" style={{marginBottom:"1rem"}}>
         {(['retail', 'wholesale'] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`tab-item ${tab === t ? "active" : ""}`}>
             {t === 'retail' ? 'Retail Customers' : 'Wholesale Parties'}
           </button>
         ))}
@@ -111,7 +111,7 @@ export default function CustomersScreen(): ReactElement {
           {customers.length === 0 && <p className="text-sm text-gray-400">No {tab === 'retail' ? 'customers' : 'parties'} yet.</p>}
           {customers.map((c) => (
             <div key={c.id} onClick={() => selectCustomer(c)}
-              className={`px-3 py-2.5 rounded mb-1 cursor-pointer transition-colors ${selected?.id === c.id ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-800'}`}>
+              className={`px-3 py-2.5 rounded mb-1 cursor-pointer transition-colors ${selected?.id === c.id ? 'list-item active' : 'list-item'}`}>
               <div className="font-medium text-sm">{c.name}</div>
               {c.businessName && <div className={`text-xs ${selected?.id === c.id ? 'text-blue-200' : 'text-gray-500'}`}>{c.businessName}</div>}
               {tab === 'wholesale' && c.creditBalancePaise > 0 && (
@@ -125,7 +125,7 @@ export default function CustomersScreen(): ReactElement {
 
         {/* Detail */}
         {selected && (
-          <div className="flex-1 border rounded-lg p-4 bg-white flex flex-col gap-4">
+          <div className="card" style={{flex:1,padding:"1.25rem",display:"flex",flexDirection:"column",gap:"1rem"}}>
             <div>
               <h2 className="font-bold text-gray-800">{selected.name}</h2>
               {selected.businessName && <p className="text-sm text-gray-500">{selected.businessName}</p>}

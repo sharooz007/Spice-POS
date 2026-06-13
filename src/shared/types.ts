@@ -538,7 +538,10 @@ export interface PaymentBreakdownRow {
   upi: number
   card: number
   credit: number  // total_paise of credit invoices (not yet collected)
-  split: number
+  cashCount: number
+  upiCount: number
+  cardCount: number
+  creditCount: number
   total: number   // sum of amount_paid_paise (excludes credit)
 }
 

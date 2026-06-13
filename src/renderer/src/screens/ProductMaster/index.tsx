@@ -82,7 +82,7 @@ export default function ProductMasterScreen(): ReactElement {
             className="border border-gray-300 rounded px-2 py-1 text-sm" required />
         </div>
         {err && <span className="text-xs text-red-600">{err}</span>}
-        <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm cursor-pointer">Save</button>
+        <button type="submit" className="btn btn-primary">Save</button>
         <button type="button" onClick={() => setShowAddCategory(false)} className="px-3 py-1 rounded text-sm border cursor-pointer">Cancel</button>
       </form>
     )
@@ -121,7 +121,7 @@ export default function ProductMasterScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-gray-50 border rounded p-4 flex flex-col gap-3 mt-2">
+      <form onSubmit={submit} className="form-panel" style={{marginTop:"0.75rem"}}>
         <h3 className="font-semibold text-gray-800">{initial ? 'Edit Product' : 'New Product'}</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -162,7 +162,7 @@ export default function ProductMasterScreen(): ReactElement {
         </div>
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer">Save</button>
+          <button type="submit" className="btn btn-primary">Save</button>
           <button type="button" onClick={() => { setShowAddProduct(false); setEditingProduct(null) }}
             className="px-4 py-1.5 rounded text-sm border cursor-pointer">Cancel</button>
         </div>
@@ -236,7 +236,7 @@ export default function ProductMasterScreen(): ReactElement {
         </div>
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer">Save</button>
+          <button type="submit" className="btn btn-primary">Save</button>
           <button type="button" onClick={() => { setShowAddVariant(false); setEditingVariant(null) }}
             className="px-4 py-1.5 rounded text-sm border cursor-pointer">Cancel</button>
         </div>
@@ -264,7 +264,7 @@ export default function ProductMasterScreen(): ReactElement {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">Product Master</h1>
         {isAdmin && (
@@ -274,7 +274,7 @@ export default function ProductMasterScreen(): ReactElement {
               + Category
             </button>
             <button onClick={() => { setEditingProduct(null); setShowAddProduct(true) }}
-              className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-blue-700 transition-colors">
+              className="btn btn-primary">
               + Product
             </button>
           </div>
@@ -296,7 +296,7 @@ export default function ProductMasterScreen(): ReactElement {
               <div key={p.id}
                 onClick={() => setSelectedProductId(p.id)}
                 className={`px-3 py-2 rounded cursor-pointer text-sm flex justify-between items-center transition-colors ${
-                  selectedProductId === p.id ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-800'
+                  selectedProductId === p.id ? 'list-item active' : 'list-item'
                 } ${!p.enabled ? 'opacity-50' : ''}`}>
                 <span>{p.name}</span>
                 <span className={`text-xs ${selectedProductId === p.id ? 'text-blue-200' : 'text-gray-400'}`}>
@@ -309,7 +309,7 @@ export default function ProductMasterScreen(): ReactElement {
 
         {/* Right: product detail */}
         {selectedProduct && (
-          <div className="flex-1 border rounded-lg p-4 bg-white">
+          <div className="card" style={{flex:1,padding:"1.25rem"}}>
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h2 className="font-bold text-gray-800 text-lg">{selectedProduct.name}</h2>
@@ -339,12 +339,12 @@ export default function ProductMasterScreen(): ReactElement {
                   </button>
                   <button
                     onClick={() => { setDeleteError(''); setDeleteConfirm(true) }}
-                    className="bg-red-600 text-white px-3 py-1 rounded text-sm cursor-pointer hover:bg-red-700 transition-colors">
+                    className="btn btn-danger">
                     Delete
                   </button>
                   <button
                     onClick={() => { setEditingVariant(null); setShowAddVariant(true) }}
-                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm cursor-pointer hover:bg-blue-700 transition-colors">
+                    className="btn btn-primary">
                     + Variant
                   </button>
                 </div>
@@ -430,7 +430,7 @@ export default function ProductMasterScreen(): ReactElement {
                   setTimeout(() => setSuccessMsg(''), 4000)
                   loadData()
                 }}
-                className="bg-red-600 text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-red-700 transition-colors">
+                className="btn btn-danger">
                 Delete
               </button>
             </div>

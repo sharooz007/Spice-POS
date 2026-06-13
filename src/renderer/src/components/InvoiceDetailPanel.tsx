@@ -101,6 +101,12 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
 
   return (
     <div className="flex flex-col gap-4">
+      {inv.status === 'void' && (
+        <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-center text-sm font-bold tracking-wide text-red-700">
+          VOIDED
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div className="font-bold text-gray-800 font-mono">{inv.invoiceNo}</div>
@@ -149,13 +155,16 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
             </div>
           )}
           <div className="flex justify-between font-bold text-sm border-t mt-0.5 pt-0.5">
-            <span>Total</span><span className="font-mono">{paiseToCurrency(inv.totalPaise)}</span>
+            <span>Total</span>
+            <span className={`font-mono ${inv.status === 'void' ? 'line-through text-red-500' : ''}`}>
+              {paiseToCurrency(inv.totalPaise)}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      {isAdmin && inv.status === 'active' && (
+      {isAdmin && (
         <div className="flex flex-col gap-2">
           <button onClick={() => window.api.print.receipt({ invoiceId: inv.id })}
             className="px-3 py-1.5 border rounded text-sm cursor-pointer hover:bg-gray-50 transition-colors">
@@ -169,10 +178,12 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
             className="px-3 py-1.5 border border-amber-300 bg-amber-50 text-amber-800 rounded text-sm cursor-pointer hover:bg-amber-100 transition-colors">
             Edit Invoice
           </button>
-          <button onClick={() => { setShowVoidConfirm(true); setShowEdit(false); setActionError('') }}
-            className="px-3 py-1.5 border border-red-300 bg-red-50 text-red-700 rounded text-sm cursor-pointer hover:bg-red-100 transition-colors">
-            Void Invoice
-          </button>
+          {inv.status === 'active' && (
+            <button onClick={() => { setShowVoidConfirm(true); setShowEdit(false); setActionError('') }}
+              className="px-3 py-1.5 border border-red-300 bg-red-50 text-red-700 rounded text-sm cursor-pointer hover:bg-red-100 transition-colors">
+              Void Invoice
+            </button>
+          )}
         </div>
       )}
 
@@ -211,7 +222,7 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
       {/* Void confirm */}
       {showVoidConfirm && isAdmin && (
         <form onSubmit={handleVoid} className="flex flex-col gap-2 border border-red-200 bg-red-50 rounded p-3">
-          <p className="text-xs text-red-800">Void this invoice? This is a status change only — stock is not reversed.</p>
+          <p className="text-xs text-red-800">Void this invoice? Stock and outstanding customer credit will be reversed.</p>
           {actionError && <p className="text-xs text-red-600">{actionError}</p>}
           <div className="flex gap-2">
             <button type="submit" className="bg-red-600 text-white px-3 py-1 rounded text-sm cursor-pointer">Confirm Void</button>
