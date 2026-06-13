@@ -30,8 +30,13 @@ export async function createBackup(type: 'manual' | 'auto' | 'pre-restore'): Pro
   const dbPath = path.join(app.getPath('userData'), 'spice_pos.db')
   const destPath = path.join(primaryFolder, filename)
 
-  // Copy to primary
-  await copyFile(dbPath, destPath)
+  // Copy to primary using SQLite backup API to ensure WAL is properly checkpointed
+  const client = (getDb() as any).session?.client
+  if (client && typeof client.backup === 'function') {
+    await client.backup(destPath)
+  } else {
+    await copyFile(dbPath, destPath)
+  }
 
   // Insert log
   getDb().insert(backupLog).values({ type, filePath: destPath }).run()
@@ -79,6 +84,10 @@ export async function restoreBackup(filePath: string): Promise<boolean> {
   if (client) client.close()
   
   await copyFile(filePath, dbPath)
+  
+  // CRITICAL: Delete WAL and SHM files so SQLite doesn't apply the old WAL to the restored DB
+  await unlink(dbPath + '-wal').catch(() => {})
+  await unlink(dbPath + '-shm').catch(() => {})
   
   // Restart DB and run migrations
   await restartDb()
