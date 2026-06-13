@@ -29,6 +29,13 @@
       "when": 1781268017523,
       "tag": "0003_flowery_overlord",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781356209272,
+      "tag": "0004_spooky_solo",
+      "breakpoints": true
     }
   ]
 }

@@ -28,6 +28,7 @@ export default function ExpensesScreen(): ReactElement {
   // Form
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | 'card'>('cash')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -60,7 +61,7 @@ export default function ExpensesScreen(): ReactElement {
 
     const res = await window.api.expenses.record({
       date, category: selectedCategory, amountPaise: Math.round(parseFloat(amount) * 100),
-      notes: notes.trim() || undefined, userId: user!.id
+      paymentMode, notes: notes.trim() || undefined, userId: user!.id
     })
     if (!res.ok) { setError(res.error); return }
     setAmount(''); setNotes(''); setSuccess('Expense recorded successfully'); load()
@@ -153,6 +154,17 @@ export default function ExpensesScreen(): ReactElement {
                   <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Date</label>
                   <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required
                     style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Payment Mode</label>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    {(['cash', 'upi', 'card'] as const).map(m => (
+                      <label key={m} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--ink-1)', cursor: 'pointer' }}>
+                        <input type="radio" name="paymentMode" value={m} checked={paymentMode === m} onChange={() => setPaymentMode(m)} style={{ accentColor: 'var(--accent)', width: 14, height: 14 }} />
+                        {m.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', gridColumn: '1 / -1' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Notes (optional)</label>

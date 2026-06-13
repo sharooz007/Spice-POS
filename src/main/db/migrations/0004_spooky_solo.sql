@@ -1,0 +1,1 @@
+ALTER TABLE `expenses` ADD `payment_mode` text DEFAULT 'cash' NOT NULL;

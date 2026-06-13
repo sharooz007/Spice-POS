@@ -62,7 +62,7 @@ export function recordExpense(req: RecordExpenseRequest): void {
   if (req.amountPaise < 0) throw new Error('Amount cannot be negative')
   getDb()
     .insert(expenses)
-    .values({ date: req.date, category: req.category.trim(), amountPaise: req.amountPaise, notes: req.notes?.trim() ?? null })
+    .values({ date: req.date, category: req.category.trim(), amountPaise: req.amountPaise, paymentMode: req.paymentMode, notes: req.notes?.trim() ?? null })
     .run()
 }
 
@@ -76,7 +76,7 @@ export function listExpenses(dateFrom?: string, dateTo?: string): ExpenseRow[] {
     : q.all()
   return rows.map((r) => ({
     id: r.id, date: r.date, category: r.category,
-    amountPaise: r.amountPaise, notes: r.notes ?? null,
+    amountPaise: r.amountPaise, paymentMode: r.paymentMode, notes: r.notes ?? null,
     createdAt: r.createdAt instanceof Date ? r.createdAt.getTime() : Number(r.createdAt)
   }))
 }

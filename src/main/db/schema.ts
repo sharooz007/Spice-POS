@@ -227,6 +227,7 @@ export const expenses = sqliteTable('expenses', {
   date: text('date').notNull(),
   category: text('category').notNull(),
   amountPaise: integer('amount_paise').notNull(),
+  paymentMode: text('payment_mode').notNull().default('cash'),
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
 })

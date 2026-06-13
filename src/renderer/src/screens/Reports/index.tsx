@@ -519,6 +519,16 @@ export default function ReportsScreen(): ReactElement {
     ...(col.repaidCard > 0 ? [{ label: 'Card', value: col.repaidCard, count: 0, color: T.purple }] : []),
   ] : []
 
+  const expenseCash = expenses.filter(e => e.paymentMode === 'cash').reduce((s, e) => s + e.amountPaise, 0)
+  const expenseUpi = expenses.filter(e => e.paymentMode === 'upi').reduce((s, e) => s + e.amountPaise, 0)
+  const expenseCard = expenses.filter(e => e.paymentMode === 'card').reduce((s, e) => s + e.amountPaise, 0)
+
+  const expenseMethods = totalExpenses > 0 ? [
+    ...(expenseCash > 0 ? [{ label: 'Cash', value: expenseCash, count: 0, color: T.green }] : []),
+    ...(expenseUpi > 0 ? [{ label: 'UPI', value: expenseUpi, count: 0, color: T.accent }] : []),
+    ...(expenseCard > 0 ? [{ label: 'Card', value: expenseCard, count: 0, color: T.purple }] : []),
+  ] : []
+
   // Tabs config
   const allTabs: Array<{ key: ReportTab; label: string; adminOnly?: boolean }> = [
     { key: 'invoices',   label: 'Invoices' },
@@ -648,6 +658,25 @@ export default function ReportsScreen(): ReactElement {
                   }}
                 />
               </Card>
+              {totalExpenses > 0 && (
+                <Card style={{ padding: '22px 24px' }}>
+                  <SecHead title="Expense Breakdown" action={
+                    <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
+                      Total Expenses: <span style={{ color: T.red, fontWeight: 600 }}>{paiseToCurrency(totalExpenses)}</span>
+                    </span>
+                  } />
+                  <PaymentMethodChart
+                    data={expenseMethods}
+                    palette={{
+                      label: T.ink1,
+                      value: T.ink2,
+                      muted: T.ink3,
+                      track: 'rgba(255,255,255,0.045)',
+                      bar: 'rgba(203,213,225,0.92)'
+                    }}
+                  />
+                </Card>
+              )}
               
               {col.creditRepaid > 0 && (
                 <Card style={{ padding: '22px 24px' }}>

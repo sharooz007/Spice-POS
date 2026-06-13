@@ -435,6 +435,7 @@ export interface ExpenseRow {
   date: string
   category: string
   amountPaise: number
+  paymentMode: string
   notes: string | null
   createdAt: number
 }
@@ -453,6 +454,7 @@ export interface RecordExpenseRequest {
   date: string
   category: string
   amountPaise: number
+  paymentMode: 'cash' | 'upi' | 'card'
   notes?: string
   userId: number
 }
