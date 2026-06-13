@@ -111,13 +111,7 @@ const tabs: TabDef[] = [
   {
     id: 'reports',
     label: 'Reports',
-    children: [
-      { label: 'Reports', screen: 'Reports' },
-      { label: 'Invoice History', screen: 'InvoiceHistory' },
-      { label: 'Customers', screen: 'Customers' },
-      { label: 'Purchase Entry', screen: 'PurchaseEntry' },
-      { label: 'Expenses', screen: 'Expenses' }
-    ],
+    screen: 'Reports',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <line x1="18" y1="20" x2="18" y2="10" />
