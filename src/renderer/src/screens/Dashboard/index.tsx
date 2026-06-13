@@ -55,24 +55,23 @@ export default function DashboardScreen(): ReactElement {
   const [loading, setLoading] = useState(true)
   const [modalInvoiceId, setModalInvoiceId] = useState<number | null>(null)
 
-  useEffect(() => {
-    async function load(): Promise<void> {
-      const [sRes, eRes, invRes, expRes, paymentRes] = await Promise.all([
-        window.api.reports.dailySales({ dateFrom: today, dateTo: today }),
-        window.api.expenses.list({ dateFrom: today, dateTo: today }),
-        window.api.invoiceHistory.search({}),
-        window.api.expenses.list(),
-        window.api.reports.paymentBreakdown({ dateFrom: today, dateTo: today }),
-      ])
-      if (sRes.ok) setSales(sRes.data[0] ?? null)
-      if (eRes.ok) setTodayExpenses(eRes.data)
-      if (invRes.ok) setRecentInvoices(invRes.data.slice(0, 10))
-      if (expRes.ok) setRecentExpenses(expRes.data.slice(0, 5))
-      if (paymentRes.ok) setPaymentBreakdown(paymentRes.data)
-      setLoading(false)
-    }
-    load()
-  }, [today])
+  async function loadData(): Promise<void> {
+    const [sRes, eRes, invRes, expRes, paymentRes] = await Promise.all([
+      window.api.reports.dailySales({ dateFrom: today, dateTo: today }),
+      window.api.expenses.list({ dateFrom: today, dateTo: today }),
+      window.api.invoiceHistory.search({}),
+      window.api.expenses.list(),
+      window.api.reports.paymentBreakdown({ dateFrom: today, dateTo: today }),
+    ])
+    if (sRes.ok) setSales(sRes.data[0] ?? null)
+    if (eRes.ok) setTodayExpenses(eRes.data)
+    if (invRes.ok) setRecentInvoices(invRes.data.slice(0, 10))
+    if (expRes.ok) setRecentExpenses(expRes.data.slice(0, 5))
+    if (paymentRes.ok) setPaymentBreakdown(paymentRes.data)
+    setLoading(false)
+  }
+
+  useEffect(() => { loadData() }, [today])
 
   const expensesTotal = todayExpenses.reduce((s, e) => s + e.amountPaise, 0)
   const paymentMethods = paymentBreakdown ? [
@@ -325,7 +324,10 @@ export default function DashboardScreen(): ReactElement {
                 </svg>
               </button>
             </div>
-            <InvoiceDetailPanel invoiceId={modalInvoiceId} />
+            <InvoiceDetailPanel invoiceId={modalInvoiceId} onUpdated={(deleted) => {
+              if (deleted) setModalInvoiceId(null)
+              loadData()
+            }} />
           </div>
         </div>
       )}

@@ -24,8 +24,13 @@ export default function InvoiceHistoryScreen(): ReactElement {
   }
 
   // After a mutation (void/edit) refresh the row in the list
-  async function handleUpdated(): Promise<void> {
+  async function handleUpdated(deleted?: boolean): Promise<void> {
     if (!selectedId) return
+    if (deleted) {
+      setResults((prev) => prev.filter((r) => r.id !== selectedId))
+      setSelectedId(null)
+      return
+    }
     const res = await window.api.invoiceHistory.getInvoice({ invoiceId: selectedId })
     if (res.ok && res.data) {
       setResults((prev) => prev.map((r) => r.id === selectedId ? res.data! : r))

@@ -6,7 +6,7 @@ import type { InvoiceRow, EditLogRow, CustomerRow } from '@shared/types'
 
 interface Props {
   invoiceId: number
-  onUpdated?: () => void // called after void/edit so parent can refresh its list
+  onUpdated?: (deleted?: boolean) => void // called after void/edit so parent can refresh its list
 }
 
 export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): ReactElement {
@@ -77,7 +77,7 @@ export default function InvoiceDetailPanel({ invoiceId, onUpdated }: Props): Rea
     const res = await window.api.invoiceHistory.delete({ invoiceId: inv.id, userId: user!.id })
     if (!res.ok) { setActionError(res.error); return }
     setShowDeleteConfirm(false); setActionError('')
-    onUpdated?.()
+    onUpdated?.(true)
   }
 
   async function handleEditInvoice(e: FormEvent): Promise<void> {
