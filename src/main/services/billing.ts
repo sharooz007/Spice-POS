@@ -453,9 +453,8 @@ export function createWholesaleSale(req: CreateWholesaleSaleRequest): SavedInvoi
 
     // Record payment if any cash received
     if (req.amountPaidPaise > 0 && resolvedPartyId) {
-      const today = now.toISOString().slice(0, 10)
       tx.insert(payments).values({
-        customerId: resolvedPartyId, invoiceId: inv.id, date: today,
+        customerId: resolvedPartyId, invoiceId: inv.id, date: bd,
         amountPaise: req.amountPaidPaise, mode: req.paymentMode, notes: null
       }).run()
     }
@@ -489,9 +488,9 @@ export function recordPartyPayment(req: RecordPartyPaymentRequest): void {
       )
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    const bDate = req.date ?? businessDate(new Date())
     tx.insert(payments).values({
-      customerId: req.customerId, invoiceId: null, date: today,
+      customerId: req.customerId, invoiceId: null, date: bDate,
       amountPaise: req.amountPaise, mode: req.mode, notes: req.notes ?? null
     }).run()
 

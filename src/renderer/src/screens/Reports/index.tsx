@@ -505,6 +505,7 @@ export default function ReportsScreen(): ReactElement {
     { label: 'UPI',    value: col.upi,    count: col.upiCount,    color: T.accent },
     { label: 'Card',   value: col.card,   count: col.cardCount,   color: T.purple },
     ...(col.credit > 0 || col.creditCount > 0 ? [{ label: 'Credit', value: col.credit, count: col.creditCount, color: T.red }] : []),
+    ...(col.creditRepaid > 0 ? [{ label: 'Repaid', value: col.creditRepaid, count: 0, color: T.amber }] : []),
   ] : []
 
   // Tabs config
@@ -612,9 +613,16 @@ export default function ReportsScreen(): ReactElement {
           {col && (
             <Card style={{ padding: '22px 24px' }}>
               <SecHead title="Payment Breakdown" action={
-                <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
-                  Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                  <span style={{ fontSize: 13, color: T.ink3, fontFamily: T.mono }}>
+                    Collected: <span style={{ color: T.green, fontWeight: 600 }}>{paiseToCurrency(col.total)}</span>
+                  </span>
+                  {col.creditRepaid > 0 && (
+                    <span style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: T.font }}>
+                      (Includes {paiseToCurrency(col.creditRepaid)} from past dues)
+                    </span>
+                  )}
+                </div>
               } />
               <PaymentMethodChart
                 data={colMethods}

@@ -363,6 +363,7 @@ export interface RecordPartyPaymentRequest {
   customerId: number
   amountPaise: number
   mode: string
+  date?: string
   notes?: string
   userId: number
 }
@@ -538,11 +539,12 @@ export interface PaymentBreakdownRow {
   upi: number
   card: number
   credit: number  // total_paise of credit invoices (not yet collected)
+  creditRepaid: number // Cash/UPI/Card collected for PAST dues today
   cashCount: number
   upiCount: number
   cardCount: number
   creditCount: number
-  total: number   // sum of amount_paid_paise (excludes credit)
+  total: number   // sum of amount_paid_paise from today + creditRepaid
 }
 
 // ── Invoice History ───────────────────────────────────────────────────────────

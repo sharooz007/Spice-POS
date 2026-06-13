@@ -236,14 +236,26 @@ export function expensesReport(range: DateRange): ExpensesSummaryRow[] {
 }
 
 export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
-  const rows = getDb().all<{ payment_mode: string; amount_paid_paise: number; total_paise: number; payment_split: string | null }>(sql`
+  const db = getDb()
+  const rows = db.all<{ payment_mode: string; amount_paid_paise: number; total_paise: number; payment_split: string | null }>(sql`
     SELECT payment_mode, amount_paid_paise, total_paise, payment_split
     FROM invoices
     WHERE business_date BETWEEN ${range.dateFrom} AND ${range.dateTo}
       AND status = 'active'
   `)
+  
+  // Also fetch explicit payments (credit repayments) for these business dates
+  // where invoice_id is null (direct settlements) or just fetch all payments within the range
+  // Actually, any payment in the `payments` table falling on this date should be counted
+  const paymentRows = db.all<{ mode: string; amount_paise: number }>(sql`
+    SELECT mode, amount_paise
+    FROM payments
+    WHERE date BETWEEN ${range.dateFrom} AND ${range.dateTo}
+      AND invoice_id IS NULL
+  `)
+
   const result: PaymentBreakdownRow = {
-    cash: 0, upi: 0, card: 0, credit: 0,
+    cash: 0, upi: 0, card: 0, credit: 0, creditRepaid: 0,
     cashCount: 0, upiCount: 0, cardCount: 0, creditCount: 0,
     total: 0
   }
@@ -255,12 +267,13 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
     }
     return null
   }
-  const addPayment = (mode: unknown, amount: number): 'cash' | 'upi' | 'card' | null => {
+  const addPayment = (mode: unknown, amount: number, isRepayment = false): 'cash' | 'upi' | 'card' | null => {
     const normalized = normalizeMode(mode)
     if (!Number.isFinite(amount)) return null
     if (normalized === 'cash' || normalized === 'upi' || normalized === 'card') {
       result[normalized] += amount
       result.total += amount
+      if (isRepayment) result.creditRepaid += amount
       return normalized
     }
     return null
@@ -271,6 +284,8 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
     else if (mode === 'card') result.cardCount += 1
     else result.creditCount += 1
   }
+  
+  // Process invoice payments (today's direct sales)
   for (const r of rows) {
     const mode = normalizeMode(r.payment_mode)
     if (mode === 'credit') {
@@ -303,5 +318,16 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
       }
     }
   }
+
+  // Process explicit credit repayments
+  for (const p of paymentRows) {
+    const mode = normalizeMode(p.mode)
+    if (mode === 'cash' || mode === 'upi' || mode === 'card') {
+      addPayment(mode, p.amount_paise, true)
+      // we do not increment count here so invoice counts stay clean, 
+      // but the cash is properly added to totals
+    }
+  }
+
   return result
 }

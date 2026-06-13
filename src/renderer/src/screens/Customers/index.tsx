@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactElement, type FormEvent } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { paiseToCurrency } from '@shared/money'
 import type { CustomerRow, PaymentRow, InvoiceRow } from '@shared/types'
+import SettleDueModal from '../../components/SettleDueModal'
 
 type Tab = 'retail' | 'wholesale'
 
@@ -16,6 +17,7 @@ export default function CustomersScreen(): ReactElement {
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [showCreate, setShowCreate] = useState(false)
+  const [showSettleModal, setShowSettleModal] = useState(false)
   const [error, setError] = useState('')
   void setError
 
@@ -120,6 +122,26 @@ export default function CustomersScreen(): ReactElement {
 
       {error && <p style={{ fontSize: '0.8125rem', color: 'var(--red)', maxWidth: 1100, width: '100%', margin: '0 auto' }}>{error}</p>}
       {showCreate && <CreateForm />}
+      {showSettleModal && selected && (
+        <SettleDueModal
+          customer={selected}
+          onClose={() => setShowSettleModal(false)}
+          onSuccess={() => {
+            setShowSettleModal(false)
+            load()
+            // reload selected customer data to reflect new balance and payments
+            const updated = customers.find(c => c.id === selected.id)
+            if (updated) {
+              // But 'customers' is stale right now.
+              // Just call selectCustomer with selected, wait, we need fresh customer data.
+              // So re-fetch customer or just reload list and re-select.
+              window.api.customers.get({ id: selected.id }).then(res => {
+                if (res.ok && res.data) selectCustomer(res.data)
+              })
+            }
+          }}
+        />
+      )}
 
       {/* ── Main content: master-detail ── */}
       <div style={{
@@ -205,6 +227,14 @@ export default function CustomersScreen(): ReactElement {
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: selected.creditBalancePaise > 0 ? 'var(--red)' : 'var(--green)', marginTop: '0.125rem' }}>
                       {paiseToCurrency(selected.creditBalancePaise)}
                     </div>
+                    {selected.creditBalancePaise > 0 && (
+                      <button 
+                        onClick={() => setShowSettleModal(true)}
+                        style={{ marginTop: '0.5rem', width: '100%', background: 'var(--ink-1)', color: 'var(--bg-base)', border: 'none', borderRadius: 'var(--r-sm)', padding: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Settle Due
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
