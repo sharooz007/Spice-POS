@@ -7,16 +7,23 @@ export default function PurchaseEntryScreen(): ReactElement {
   const { user } = useAppStore()
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([])
   const [purchases, setPurchases] = useState<PurchaseEntryRow[]>([])
-  const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  // Selected supplier (-1 means General/No Supplier)
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number>(-1)
 
   // Form state
-  const [supplierId, setSupplierId] = useState<number | ''>('')
   const [itemName, setItemName] = useState('')
   const [qty, setQty] = useState('1')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
+
+  // New Supplier Modal
+  const [showNewSupplier, setShowNewSupplier] = useState(false)
+  const [newSuppName, setNewSuppName] = useState('')
+  const [newSuppPhone, setNewSuppPhone] = useState('')
 
   async function loadData(): Promise<void> {
     const [sRes, pRes] = await Promise.all([
@@ -31,8 +38,10 @@ export default function PurchaseEntryScreen(): ReactElement {
 
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
+    setError(''); setSuccess('')
+
     const res = await window.api.purchases.record({
-      supplierId: supplierId ? Number(supplierId) : undefined,
+      supplierId: selectedSupplierId === -1 ? undefined : selectedSupplierId,
       itemName, qty: parseInt(qty) || 1,
       amountPaise: Math.round(parseFloat(amount) * 100),
       date, notes: notes.trim() || undefined,
@@ -41,106 +50,209 @@ export default function PurchaseEntryScreen(): ReactElement {
     if (!res.ok) { setError(res.error); return }
     setError('')
     setItemName(''); setQty('1'); setAmount(''); setNotes('')
+    setSuccess('Purchase recorded successfully')
+    setTimeout(() => setSuccess(''), 3000)
     loadData()
   }
 
-  function NewSupplierForm(): ReactElement {
-    const [name, setName] = useState('')
-    const [phone, setPhone] = useState('')
-    async function submit2(e: FormEvent): Promise<void> {
-      e.preventDefault()
-      const res = await window.api.purchases.createSupplier({ name, phone })
-      if (!res.ok) return
-      setShowNewSupplier(false); loadData()
+  async function handleAddSupplier(e: FormEvent): Promise<void> {
+    e.preventDefault()
+    const res = await window.api.purchases.createSupplier({ name: newSuppName, phone: newSuppPhone })
+    if (!res.ok) {
+      setError(res.error)
+      return
     }
-    return (
-      <form onSubmit={submit2} className="flex gap-2 items-end mt-1">
-        <input placeholder="Supplier name" value={name} onChange={(e) => setName(e.target.value)} required
-          className="border border-gray-300 rounded px-2 py-1 text-sm" />
-        <input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)}
-          className="border border-gray-300 rounded px-2 py-1 text-sm w-28" />
-        <button type="submit" className="bg-gray-700 text-white px-3 py-1 rounded text-sm cursor-pointer">Add</button>
-        <button type="button" onClick={() => setShowNewSupplier(false)} className="btn btn-secondary">Cancel</button>
-      </form>
-    )
+    const newId = res.data
+    await loadData()
+    setSelectedSupplierId(newId)
+    setShowNewSupplier(false)
+    setNewSuppName('')
+    setNewSuppPhone('')
   }
 
-  return (
-    <div className="page">
-      <h1 className="text-xl font-bold text-gray-800 mb-1">Purchase Entry</h1>
-      {/* Explicit note: record-keeping only */}
-      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mb-4">
-        Record-keeping only — does not affect stock or cost.
-      </p>
+  const selectedSupplierName = selectedSupplierId === -1 
+    ? 'General' 
+    : suppliers.find(s => s.id === selectedSupplierId)?.name || 'General'
 
-      <form onSubmit={submit} className="form-panel" style={{marginBottom:"1.5rem"}}>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">Supplier</label>
-              <button type="button" onClick={() => setShowNewSupplier(true)}
-                className="text-xs text-blue-600 hover:underline cursor-pointer">+ New</button>
-            </div>
-            <select value={supplierId} onChange={(e) => setSupplierId(e.target.value ? Number(e.target.value) : '')}
-              className="border border-gray-300 rounded px-2 py-1 text-sm">
-              <option value="">No supplier</option>
-              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            {showNewSupplier && <NewSupplierForm />}
+  const filteredPurchases = purchases.filter(p => 
+    selectedSupplierId === -1 ? p.supplierId === null : p.supplierId === selectedSupplierId
+  )
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem', overflow: 'hidden',
+    }}>
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, maxWidth: 1100, width: '100%', margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em' }}>Purchase Entry</h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Record purchases (does not affect stock or cost)</p>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'clamp(260px, 22%, 320px) 1fr', gap: '1rem',
+        flex: 1, minHeight: 0, maxWidth: 1100, width: '100%', margin: '0 auto'
+      }}>
+        {/* ── Left Sidebar: Suppliers ── */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Suppliers</h2>
+            <button onClick={() => setShowNewSupplier(true)} className="btn btn-ghost" style={{ padding: '0.25rem', color: 'var(--accent)' }} title="New Supplier">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Item name *</label>
-            <input value={itemName} onChange={(e) => setItemName(e.target.value)} required
-              className="border border-gray-300 rounded px-2 py-1 text-sm" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Qty</label>
-            <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" required />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Amount (₹) *</label>
-            <input type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required
-              className="border border-gray-300 rounded px-2 py-1 text-sm" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Notes</label>
-            <input value={notes} onChange={(e) => setNotes(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" />
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+            <button
+              onClick={() => { setSelectedSupplierId(-1); setSuccess(''); setError('') }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '0.625rem 0.75rem',
+                background: selectedSupplierId === -1 ? 'var(--surface)' : 'transparent',
+                border: 'none', borderRadius: 'var(--r)',
+                cursor: 'pointer', textAlign: 'left',
+                color: selectedSupplierId === -1 ? 'var(--accent)' : 'var(--ink-2)',
+                fontWeight: selectedSupplierId === -1 ? 600 : 500,
+                fontSize: '0.8125rem', transition: 'all 150ms',
+                borderLeft: selectedSupplierId === -1 ? '3px solid var(--accent)' : '3px solid transparent'
+              }}
+            >
+              General (No Supplier)
+            </button>
+            {suppliers.map((s) => {
+              const active = selectedSupplierId === s.id
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => { setSelectedSupplierId(s.id); setSuccess(''); setError('') }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', padding: '0.625rem 0.75rem',
+                    background: active ? 'var(--surface)' : 'transparent',
+                    border: 'none', borderRadius: 'var(--r)',
+                    cursor: 'pointer', textAlign: 'left',
+                    color: active ? 'var(--accent)' : 'var(--ink-2)',
+                    fontWeight: active ? 600 : 500,
+                    fontSize: '0.8125rem', transition: 'all 150ms',
+                    borderLeft: active ? '3px solid var(--accent)' : '3px solid transparent'
+                  }}
+                >
+                  {s.name}
+                </button>
+              )
+            })}
           </div>
         </div>
-        {error && <p className="text-xs text-red-600">{error}</p>}
-        <button type="submit" className="bg-gray-700 text-white px-6 py-1.5 rounded text-sm cursor-pointer w-fit">Record Purchase</button>
-      </form>
 
-      <h2 className="font-semibold text-gray-700 mb-2 text-sm">History</h2>
-      {purchases.length === 0
-        ? <p className="text-sm text-gray-400">No purchases recorded.</p>
-        : (
-          <table className="w-full text-xs border rounded-lg overflow-hidden bg-white">
-            <thead><tr className="text-left text-gray-500 border-b bg-gray-50">
-              <th className="px-3 py-2">Date</th><th className="px-3 py-2">Item</th>
-              <th className="px-3 py-2">Qty</th><th className="px-3 py-2 text-right">Amount</th>
-              <th className="px-3 py-2">Notes</th>
-            </tr></thead>
-            <tbody>
-              {purchases.map((p) => (
-                <tr key={p.id} className="border-b last:border-0">
-                  <td className="px-3 py-1.5">{p.date}</td>
-                  <td className="px-3 py-1.5 font-medium">{p.itemName}</td>
-                  <td className="px-3 py-1.5">{p.qty}</td>
-                  <td className="px-3 py-1.5 text-right font-mono">{paiseToCurrency(p.amountPaise)}</td>
-                  <td className="px-3 py-1.5 text-gray-500">{p.notes ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {/* ── Right Detail ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
+          {/* Record Form */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--ink-1)', marginBottom: '1rem' }}>Record {selectedSupplierName} Purchase</h2>
+            <form onSubmit={submit}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Item Name *</label>
+                  <input value={itemName} onChange={(e) => setItemName(e.target.value)} required
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Date</label>
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Qty</label>
+                  <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Amount (₹) *</label>
+                  <input type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Notes (optional)</label>
+                  <input value={notes} onChange={(e) => setNotes(e.target.value)}
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {error && <span style={{ color: 'var(--red)', fontSize: '0.8125rem' }}>{error}</span>}
+                  {success && <span style={{ color: 'var(--green)', fontSize: '0.8125rem' }}>{success}</span>}
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>Record Purchase</button>
+              </div>
+            </form>
+          </div>
+
+          {/* History */}
+          <div className="card" style={{ flex: 1, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>Recent {selectedSupplierName} Purchases</h2>
+            {filteredPurchases.length === 0 ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontSize: '0.8125rem', background: 'var(--surface)', borderRadius: 'var(--r)' }}>
+                No recent purchases found.
+              </div>
+            ) : (
+              <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '0.5rem 0', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
+                    <th style={{ padding: '0.5rem 0', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Item</th>
+                    <th style={{ padding: '0.5rem 0', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Qty</th>
+                    <th style={{ padding: '0.5rem 0', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', textAlign: 'right' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPurchases.slice(0, 50).map(p => (
+                    <tr key={p.id}>
+                      <td style={{ padding: '0.625rem 0', color: 'var(--ink-2)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>{p.date}</td>
+                      <td style={{ padding: '0.625rem 0', color: 'var(--ink-1)', borderBottom: '1px solid var(--border)' }}>
+                        <div style={{ fontWeight: 500 }}>{p.itemName}</div>
+                        {p.notes && <div style={{ fontSize: '0.6875rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>{p.notes}</div>}
+                      </td>
+                      <td style={{ padding: '0.625rem 0', color: 'var(--ink-1)', borderBottom: '1px solid var(--border)' }}>{p.qty}</td>
+                      <td style={{ padding: '0.625rem 0', color: 'var(--ink-1)', borderBottom: '1px solid var(--border)', fontWeight: 600, fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{paiseToCurrency(p.amountPaise)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── New Supplier Modal ── */}
+      {showNewSupplier && (
+        <div className="modal-overlay" onClick={() => setShowNewSupplier(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--ink-1)', marginBottom: '1rem' }}>New Supplier</h3>
+            <form onSubmit={handleAddSupplier} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Supplier Name *</label>
+                <input autoFocus value={newSuppName} onChange={(e) => setNewSuppName(e.target.value)} required
+                  style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-2)' }}>Phone (optional)</label>
+                <input value={newSuppPhone} onChange={(e) => setNewSuppPhone(e.target.value)}
+                  style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--ink-1)', borderRadius: 'var(--r)', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setShowNewSupplier(false)} className="btn btn-secondary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}>Save Supplier</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
