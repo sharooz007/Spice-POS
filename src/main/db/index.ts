@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
 import { seedIfEmpty } from './seed'
+import { seedDemoData } from './seedDemo'
 
 type DB = ReturnType<typeof drizzle<typeof schema>>
 
@@ -21,6 +22,14 @@ export function openDatabase(): DB {
 
   migrate(_db, { migrationsFolder: join(__dirname, 'migrations') })
   seedIfEmpty(_db)
+  
+  // Try to run demo seed; it will return early if demo_seeded is 'true'
+  // using async IIFE so we don't block DB open strictly, or we can await if we make openDB async
+  // Wait, openDatabase is synchronous currently. 
+  // We can just execute it in the background or use better-sqlite3 sync methods. 
+  // Wait! seedDemoData is an async function because drizzle uses Promises for DB calls.
+  // We can just call it and log errors.
+  seedDemoData(_db).catch(console.error)
 
   return _db
 }
