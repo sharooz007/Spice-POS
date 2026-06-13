@@ -59,6 +59,7 @@ import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
   PaymentBreakdownRow,
+  RepaymentReportRow,
   InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest,
   RetailItemRow, WholesaleItemRow, LooseItemRow
@@ -474,6 +475,8 @@ export function registerHandlers(): void {
     wrap(() => reportsSvc.expensesReport(req)))
   ipcMain.handle('reports.paymentBreakdown', (_e, req: DateRange): Result<PaymentBreakdownRow> =>
     wrap(() => reportsSvc.paymentBreakdown(req)))
+  ipcMain.handle('reports.repayments', (_e, req: DateRange): Result<RepaymentReportRow[]> =>
+    wrap(() => reportsSvc.repaymentsReport(req)))
 
   // ── invoiceHistory ──────────────────────────────────────────────────────────
   ipcMain.handle('invoiceHistory.search', (_e, req: SearchInvoicesRequest): Result<InvoiceRow[]> =>

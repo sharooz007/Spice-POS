@@ -15,7 +15,7 @@ import type {
   SupplierRow, PurchaseEntryRow, ExpenseRow, RecordPurchaseRequest, RecordExpenseRequest,
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
-  PaymentBreakdownRow,
+  PaymentBreakdownRow, RepaymentReportRow,
   InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest
 } from '../shared/types'
@@ -107,6 +107,7 @@ declare global {
         dues: () => Promise<Result<DuesRow[]>>
         expenses: (req: DateRange) => Promise<Result<ExpensesSummaryRow[]>>
         paymentBreakdown: (req: DateRange) => Promise<Result<PaymentBreakdownRow>>
+        repayments: (req: DateRange) => Promise<Result<RepaymentReportRow[]>>
       }
       invoiceHistory: {
         search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>

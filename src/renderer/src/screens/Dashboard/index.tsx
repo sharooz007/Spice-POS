@@ -83,6 +83,9 @@ export default function DashboardScreen(): ReactElement {
     ...(paymentBreakdown.credit > 0 || paymentBreakdown.creditCount > 0
       ? [{ label: 'Credit', value: paymentBreakdown.credit, count: paymentBreakdown.creditCount, color: 'var(--red)' }]
       : []),
+    ...(paymentBreakdown.creditRepaid > 0
+      ? [{ label: 'Repaid', value: paymentBreakdown.creditRepaid, count: 0, color: 'var(--amber)' }]
+      : []),
   ] : []
 
   const page: React.CSSProperties = {
@@ -129,9 +132,16 @@ export default function DashboardScreen(): ReactElement {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <SectionHead title="Payment Breakdown" />
-            <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontVariantNumeric: 'tabular-nums' }}>
-              Collected: <strong style={{ color: 'var(--green)' }}>{paiseToCurrency(paymentBreakdown.total)}</strong>
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.125rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontVariantNumeric: 'tabular-nums' }}>
+                Collected: <strong style={{ color: 'var(--green)' }}>{paiseToCurrency(paymentBreakdown.total)}</strong>
+              </span>
+              {paymentBreakdown.creditRepaid > 0 && (
+                <span style={{ fontSize: '0.6875rem', color: 'var(--ink-4)' }}>
+                  (Includes {paiseToCurrency(paymentBreakdown.creditRepaid)} from past dues)
+                </span>
+              )}
+            </div>
           </div>
           <div className="card" style={{ padding: '1rem 1.25rem' }}>
             <PaymentMethodChart data={paymentMethods} height={150} />

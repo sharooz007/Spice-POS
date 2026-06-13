@@ -534,6 +534,16 @@ export interface ExpensesSummaryRow {
   amountPaise: number
 }
 
+export interface RepaymentReportRow {
+  id: number
+  customerId: number
+  customerName: string
+  date: string
+  amountPaise: number
+  mode: string
+  notes: string | null
+}
+
 export interface PaymentBreakdownRow {
   cash: number
   upi: number

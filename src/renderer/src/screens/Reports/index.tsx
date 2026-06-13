@@ -7,12 +7,12 @@ import ExpenseDetailModal from '../../components/ExpenseDetailModal'
 import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   PackingReportRun, ProfitReportRow,
-  PaymentBreakdownRow, ExpenseRow, InvoiceRow, BulkArrivalRow
+  PaymentBreakdownRow, ExpenseRow, InvoiceRow, BulkArrivalRow, RepaymentReportRow
 } from '@shared/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ReportTab = 'invoices' | 'daily' | 'byProduct' | 'byVariant' | 'packing' | 'profit' | 'expenses' | 'factory'
+type ReportTab = 'invoices' | 'daily' | 'byProduct' | 'byVariant' | 'packing' | 'profit' | 'expenses' | 'factory' | 'repayments'
 type DatePreset = 'today' | 'yesterday' | 'week' | 'month' | 'custom'
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -391,10 +391,11 @@ export default function ReportsScreen(): ReactElement {
   const [dailyRows, setDailyRows] = useState<DailySalesRow[]>([])
   const [byProduct, setByProduct] = useState<SalesByProductRow[]>([])
   const [byVariant, setByVariant] = useState<SalesByVariantRow[]>([])
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([])
+  const [repayments, setRepayments] = useState<RepaymentReportRow[]>([])
   const [packingRuns, setPackingRuns] = useState<PackingReportRun[]>([])
   const [profitRows, setProfitRows] = useState<ProfitReportRow[]>([])
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [factoryArrivals, setFactoryArrivals] = useState<Array<BulkArrivalRow & { productName: string }>>([])
   const [collections, setCollections] = useState<PaymentBreakdownRow | null>(null)
   const [kpiDaily, setKpiDaily] = useState<DailySalesRow[]>([])
@@ -449,6 +450,10 @@ export default function ReportsScreen(): ReactElement {
       const r = await window.api.invoiceHistory.search({ dateFrom: range.dateFrom, dateTo: range.dateTo })
       if (id !== loadRef.current) return
       if (r.ok) setInvoices(r.data); else setError(r.error)
+    } else if (tab === 'repayments') {
+      const r = await window.api.reports.repayments(range)
+      if (id !== loadRef.current) return
+      if (r.ok) setRepayments(r.data); else setError(r.error)
     } else if (tab === 'byProduct') {
       const r = await window.api.reports.salesByProduct(range)
       if (id !== loadRef.current) return
@@ -511,6 +516,7 @@ export default function ReportsScreen(): ReactElement {
   // Tabs config
   const allTabs: Array<{ key: ReportTab; label: string; adminOnly?: boolean }> = [
     { key: 'invoices',   label: 'Invoices' },
+    { key: 'repayments', label: 'Repayments' },
     { key: 'expenses',   label: 'Expenses' },
     { key: 'daily',      label: 'Daily Sales' },
     { key: 'byProduct',  label: 'By Product' },
@@ -979,6 +985,55 @@ export default function ReportsScreen(): ReactElement {
                       </td>
                       <td style={{ ...thStyle, textAlign: 'right', borderTop: `1px solid ${T.border}`, borderBottom: 'none', color: T.red }}>
                         {paiseToCurrency(invoices.reduce((s, i) => s + i.balanceDuePaise, 0))}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* ── Repayments ─────────────────────────────────────────────────── */}
+        {tab === 'repayments' && (
+          <Card>
+            <div style={{ padding: '18px 20px', borderBottom: `1px solid ${T.border}` }}>
+              <SecHead title="Credit Repayments" action={
+                <Badge color={T.amber}>{repayments.length} payments</Badge>
+              } />
+            </div>
+            {repayments.length === 0 ? <EmptyState text="No repayments in selected period." /> : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...thStyle, textAlign: 'left' }}>Date</th>
+                      <th style={{ ...thStyle, textAlign: 'left' }}>Party</th>
+                      <th style={{ ...thStyle, textAlign: 'left' }}>Mode</th>
+                      <th style={{ ...thStyle, textAlign: 'left' }}>Notes</th>
+                      <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {repayments.map((rep) => (
+                      <TRow key={rep.id}>
+                        <td style={{ ...tdStyle, fontSize: 12, color: T.ink3 }}>{rep.date}</td>
+                        <td style={{ ...tdStyle, color: T.ink1, fontWeight: 500 }}>{rep.customerName}</td>
+                        <td style={tdStyle}>
+                          <Badge color={T.sky}>{rep.mode}</Badge>
+                        </td>
+                        <td style={{ ...tdStyle, color: T.ink3 }}>{rep.notes ?? '—'}</td>
+                        <td style={{ ...tdMono, textAlign: 'right', color: T.green }}>{paiseToCurrency(rep.amountPaise)}</td>
+                      </TRow>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: T.surface }}>
+                      <td colSpan={4} style={{ ...thStyle, textAlign: 'left', borderTop: `1px solid ${T.border}`, borderBottom: 'none' }}>
+                        Total Collected
+                      </td>
+                      <td style={{ ...thStyle, textAlign: 'right', borderTop: `1px solid ${T.border}`, borderBottom: 'none', color: T.green }}>
+                        {paiseToCurrency(repayments.reduce((s, r) => s + r.amountPaise, 0))}
                       </td>
                     </tr>
                   </tfoot>

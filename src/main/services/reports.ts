@@ -18,7 +18,8 @@ import type {
   ProfitReportRow,
   DuesRow,
   ExpensesSummaryRow,
-  PaymentBreakdownRow
+  PaymentBreakdownRow,
+  RepaymentReportRow
 } from '../../shared/types'
 
 export function dailySalesReport(range: DateRange): DailySalesRow[] {
@@ -330,4 +331,20 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
   }
 
   return result
+}
+
+export function repaymentsReport(range: DateRange): RepaymentReportRow[] {
+  const db = getDb()
+  const rows = db.all<{ id: number; customer_id: number; name: string; date: string; amount_paise: number; mode: string; notes: string | null }>(sql`
+    SELECT p.id, p.customer_id, c.name, p.date, p.amount_paise, p.mode, p.notes
+    FROM payments p
+    JOIN customers c ON p.customer_id = c.id
+    WHERE p.date BETWEEN ${range.dateFrom} AND ${range.dateTo}
+      AND p.invoice_id IS NULL
+    ORDER BY p.date DESC, p.id DESC
+  `)
+  return rows.map((r) => ({
+    id: r.id, customerId: r.customer_id, customerName: r.name,
+    date: r.date, amountPaise: r.amount_paise, mode: r.mode, notes: r.notes
+  }))
 }
