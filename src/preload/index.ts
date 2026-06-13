@@ -16,7 +16,7 @@ import type {
   SupplierRow, PurchaseEntryRow, ExpenseRow, RecordPurchaseRequest, RecordExpenseRequest,
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
-  PaymentBreakdownRow,
+  PaymentBreakdownRow, RepaymentReportRow,
   InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest
 } from '../shared/types'
@@ -105,7 +105,8 @@ const api = {
     profit: (req: DateRange): Promise<Result<ProfitReportRow[]>> => ipcRenderer.invoke('reports.profit', req),
     dues: (): Promise<Result<DuesRow[]>> => ipcRenderer.invoke('reports.dues'),
     expenses: (req: DateRange): Promise<Result<ExpensesSummaryRow[]>> => ipcRenderer.invoke('reports.expenses', req),
-    paymentBreakdown: (req: DateRange): Promise<Result<PaymentBreakdownRow>> => ipcRenderer.invoke('reports.paymentBreakdown', req)
+    paymentBreakdown: (req: DateRange): Promise<Result<PaymentBreakdownRow>> => ipcRenderer.invoke('reports.paymentBreakdown', req),
+    repayments: (req: DateRange): Promise<Result<RepaymentReportRow[]>> => ipcRenderer.invoke('reports.repayments', req)
   },
   invoiceHistory: {
     search: (req: SearchInvoicesRequest): Promise<Result<InvoiceRow[]>> => ipcRenderer.invoke('invoiceHistory.search', req),
