@@ -5,6 +5,9 @@ import type { Product, BulkStockRow, PackingRunRow } from '@shared/types'
 
 type Tab = 'pack' | 'history'
 
+// Shared inline style constants
+const labelStyle: React.CSSProperties = { fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)', marginBottom: 2 }
+
 export default function PackingScreen(): ReactElement {
   const { user } = useAppStore()
   const [tab, setTab] = useState<Tab>('pack')
@@ -107,15 +110,23 @@ export default function PackingScreen(): ReactElement {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="page">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-800">Packing</h1>
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem', overflow: 'hidden',
+    }}>
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, maxWidth: 1100, width: '100%', margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em' }}>Packing</h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Convert bulk stock into retail packets</p>
+        </div>
         <div className="tab-bar">
           {(['pack', 'history'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'active' : ''
-              }`}>
+              className={`tab-item${tab === t ? ' active' : ''}`}>
               {t === 'pack' ? 'Pack' : 'History'}
             </button>
           ))}
@@ -123,88 +134,121 @@ export default function PackingScreen(): ReactElement {
       </div>
 
       {tab === 'pack' && (
-        <div className="flex gap-4">
-          {/* Product selector */}
-          <div className="w-56 flex-shrink-0">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Products with stock
+        <div style={{
+          display: 'grid', gridTemplateColumns: selectedProduct ? 'clamp(260px, 22%, 320px) 1fr' : '1fr',
+          gap: '0.75rem', flex: 1, minHeight: 0, overflow: 'hidden',
+          maxWidth: 1100, width: '100%', margin: '0 auto',
+        }}>
+          {/* Left: Product selector */}
+          <div className="card" style={{
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            borderRadius: 'var(--r-lg)', minHeight: 0,
+            ...(selectedProduct ? {} : { maxWidth: 380, margin: '0 auto', width: '100%' }),
+          }}>
+            <div style={{
+              padding: '0.75rem 0.875rem', borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span className="section-label" style={{ margin: 0, padding: 0 }}>Products with stock</span>
             </div>
-            {products.length === 0 && (
-              <p className="text-sm text-gray-400">No bulk stock available.</p>
-            )}
-            {products.map((p) => {
-              const stock = stockMap[p.id]
-              return (
-                <div key={p.id} onClick={() => selectProduct(p.id)}
-                  className={`px-3 py-2.5 rounded mb-1 cursor-pointer transition-colors ${
-                    selectedProductId === p.id ? 'list-item active' : 'list-item'
-                  }`}>
-                  <div className="font-medium text-sm">{p.name}</div>
-                  <div className={`text-xs mt-0.5 ${selectedProductId === p.id ? 'text-indigo-200' : 'text-gray-500'}`}>
-                    {formatQuantity(stock?.qtyGrams ?? 0, p.unitType)} available
-                  </div>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '0.25rem 0' }}>
+              {products.length === 0 && (
+                <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No bulk stock</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>Record bulk arrival first</div>
                 </div>
-              )
-            })}
+              )}
+              {products.map((p) => {
+                const stock = stockMap[p.id]
+                const isSelected = selectedProductId === p.id
+                return (
+                  <div key={p.id} onClick={() => selectProduct(p.id)}
+                    style={{
+                      padding: '0.5rem 0.875rem', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', gap: '0.125rem',
+                      background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+                      transition: 'background 80ms ease, border-color 80ms ease',
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget.style.background = 'var(--bg-fill)') }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget.style.background = 'transparent') }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: isSelected ? 600 : 500, color: isSelected ? 'var(--accent)' : 'var(--ink-1)' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: isSelected ? 'oklch(0.65 0.12 260)' : 'var(--ink-4)' }}>
+                      {formatQuantity(stock?.qtyGrams ?? 0, p.unitType)} available
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Pack form */}
+          {/* Right: Pack form */}
           {selectedProduct && (
-            <div className="flex-1 flex flex-col gap-4">
-              {/* Live total */}
-              <div className={`border rounded-lg p-4 ${validationError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-gray-500">Bulk to use</div>
-                    <div className={`text-2xl font-bold ${validationError ? 'text-red-600' : 'text-gray-900'}`}>
-                      {validation ? formatQuantity(validation.totalGrams, selectedProduct.unitType) : `0 ${bulkUnit(selectedProduct.unitType)}`}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
+              
+              {/* Live total tiles */}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{
+                  flex: 1, background: 'var(--bg-surface)', border: validationError ? '1px solid var(--red)' : '1px solid var(--border)',
+                  borderRadius: 'var(--r-lg)', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                  boxShadow: 'var(--shadow-sm)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-3)' }}>Bulk to use</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: validationError ? 'var(--red)' : 'var(--ink-1)', fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font-mono)' }}>
+                        {validation ? formatQuantity(validation.totalGrams, selectedProduct.unitType) : `0 ${bulkUnit(selectedProduct.unitType)}`}
+                      </div>
+                      {validationError && <p style={{ fontSize: '0.75rem', color: 'var(--red)', marginTop: '0.25rem' }}>{validationError}</p>}
                     </div>
-                    {validationError && <p className="text-xs text-red-600 mt-1">{validationError}</p>}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-gray-500">Available after</div>
-                    {(() => {
-                      const total = stockMap[selectedProduct.id]?.qtyGrams ?? 0
-                      const used = validation?.totalGrams ?? 0
-                      const remaining = total - used
-                      const negative = remaining < 0
-                      return (
-                        <div className={`text-xl font-semibold ${negative ? 'text-red-600' : 'text-gray-700'}`}>
-                          {formatQuantity(remaining, selectedProduct.unitType)}
-                        </div>
-                      )
-                    })()}
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-3)' }}>Available after</div>
+                      {(() => {
+                        const total = stockMap[selectedProduct.id]?.qtyGrams ?? 0
+                        const used = validation?.totalGrams ?? 0
+                        const remaining = total - used
+                        const negative = remaining < 0
+                        return (
+                          <div style={{ fontSize: '1.25rem', fontWeight: 600, color: negative ? 'var(--red)' : 'var(--ink-2)', fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font-mono)' }}>
+                            {formatQuantity(remaining, selectedProduct.unitType)}
+                          </div>
+                        )
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Variant rows */}
-              <div className="card" style={{overflow:"hidden"}}>
-                <table className="w-full">
+              <div className="card" style={{ flexShrink: 0 }}>
+                <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
                   <thead>
-                    <tr className="text-left text-xs text-gray-500 uppercase tracking-wide border-b bg-gray-50">
-                      <th className="px-4 py-2">Variant</th>
-                      <th className="px-4 py-2">Weight</th>
-                      <th className="px-4 py-2 w-36">Packets to pack</th>
-                      <th className="px-4 py-2 text-right">{selectedProduct.unitType === 'volume' ? 'ml used' : 'Grams used'}</th>
+                    <tr>
+                      <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Variant</th>
+                      <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Weight</th>
+                      <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', width: 150 }}>Packets to pack</th>
+                      <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                        {selectedProduct.unitType === 'volume' ? 'ml used' : 'Grams used'}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {enabledVariants.map((v) => {
                       const count = parseInt(counts[v.id] ?? '0') || 0
                       return (
-                        <tr key={v.id} className="border-b last:border-0">
-                          <td className="px-4 py-2 font-medium text-sm">{v.label}</td>
-                          <td className="px-4 py-2 text-sm text-gray-500">{v.weightGrams}{selectedProduct.unitType === 'volume' ? 'ml' : 'g'}</td>
-                          <td className="px-4 py-2">
+                        <tr key={v.id}>
+                          <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', fontWeight: 500, color: 'var(--ink-1)' }}>{v.label}</td>
+                          <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{v.weightGrams}{selectedProduct.unitType === 'volume' ? 'ml' : 'g'}</td>
+                          <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)' }}>
                             <input
                               type="number" min="0" value={counts[v.id] ?? ''}
-                              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                handleCountChange(v.id, e.target.value)}
-                              className="w-28 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => handleCountChange(v.id, e.target.value)}
+                              style={{ width: '100px', background: 'var(--bg-fill)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '0.25rem 0.5rem', color: 'var(--ink-1)' }}
                             />
                           </td>
-                          <td className="px-4 py-2 text-right text-sm font-mono text-gray-600">
+                          <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>
                             {count > 0 ? formatQuantity(count * v.weightGrams, selectedProduct.unitType) : '—'}
                           </td>
                         </tr>
@@ -215,11 +259,10 @@ export default function PackingScreen(): ReactElement {
               </div>
 
               {/* Notes + submit */}
-              <div className="flex gap-3 items-end">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Notes (optional)</label>
-                  <input value={notes} onChange={(e) => setNotes(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-1.5 text-sm" />
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginTop: '0.25rem' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={labelStyle}>Notes (optional)</label>
+                  <input value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
                 <button
                   onClick={handleCommit}
@@ -229,42 +272,45 @@ export default function PackingScreen(): ReactElement {
                 </button>
               </div>
 
-              {submitError && <p className="text-sm text-red-600">{submitError}</p>}
-              {successMsg && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
-                  {successMsg}
-                </div>
-              )}
+              {submitError && <p style={{ fontSize: '0.8125rem', color: 'var(--red)', marginTop: '0.25rem' }}>{submitError}</p>}
+              
             </div>
           )}
         </div>
       )}
 
       {tab === 'history' && (
-        <div className="flex flex-col gap-3">
-          {runs.length === 0 && <p className="text-sm text-gray-400">No packing runs yet.</p>}
+        <div style={{ flex: 1, overflowY: 'auto', maxWidth: 1100, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '1rem' }}>
+          {runs.length === 0 && (
+            <div style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No history</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>No packing runs recorded yet.</div>
+            </div>
+          )}
           {runs.map((run) => {
             const prod = products.find((p) => p.id === run.productId)
             return (
-              <div key={run.id} className="card" style={{padding:"1.25rem"}}>
-                <div className="flex justify-between items-start">
+              <div key={run.id} className="card" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span className="font-semibold text-gray-800">
+                    <span style={{ fontWeight: 600, color: 'var(--ink-1)', fontSize: '0.9375rem' }}>
                       Run #{run.id} — {prod?.name ?? `Product ${run.productId}`}
                     </span>
-                    <span className="ml-3 text-sm text-gray-500">{run.date}</span>
+                    <span style={{ marginLeft: '0.75rem', fontSize: '0.75rem', color: 'var(--ink-3)' }}>{run.date}</span>
                   </div>
-                  <span className="text-sm font-mono text-gray-700">
+                  <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', fontWeight: 500 }}>
                     {formatQuantity(run.bulkUsedGrams, prod?.unitType ?? 'weight')} packed
                   </span>
                 </div>
-                {run.notes && <p className="text-xs text-gray-500 mt-1">{run.notes}</p>}
-                <div className="flex flex-wrap gap-2 mt-2">
+                {run.notes && <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.25rem' }}>{run.notes}</p>}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
                   {run.lines.map((l) => {
                     const v = prod?.variants.find((vv) => vv.id === l.variantId)
                     return (
-                      <span key={l.id}
-                        className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
+                      <span key={l.id} style={{
+                        fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                        borderRadius: 'var(--r-full)', background: 'var(--accent-soft)', color: 'var(--accent)',
+                      }}>
                         {l.packetsCount}×{v?.label ?? `v${l.variantId}`}
                       </span>
                     )
@@ -273,6 +319,22 @@ export default function PackingScreen(): ReactElement {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Global Success Toast */}
+      {successMsg && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', right: '2rem',
+          background: 'oklch(0.25 0.07 145)', color: 'var(--green)',
+          border: '1px solid oklch(0.45 0.11 145)',
+          padding: '0.75rem 1rem', borderRadius: 'var(--r-md)',
+          fontSize: '0.8125rem', fontWeight: 500, boxShadow: 'var(--shadow-md)',
+          zIndex: 'var(--z-toast)',
+          display: 'flex', alignItems: 'center', gap: '0.5rem'
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          {successMsg}
         </div>
       )}
     </div>

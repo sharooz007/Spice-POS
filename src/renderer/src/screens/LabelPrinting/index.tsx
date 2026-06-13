@@ -6,6 +6,9 @@ import type { Product, PriceMenuEntry, LabelPrintLogRow } from '@shared/types'
 
 type Tab = 'print' | 'log'
 
+// Shared inline style constants
+const labelStyle: React.CSSProperties = { fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)', marginBottom: 2 }
+
 function BarcodePreview({ barcode }: { barcode: string }): ReactElement {
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
@@ -14,7 +17,7 @@ function BarcodePreview({ barcode }: { barcode: string }): ReactElement {
       catch { /* invalid barcode */ }
     }
   }, [barcode])
-  return <svg ref={ref} />
+  return <svg ref={ref} style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }} />
 }
 
 export default function LabelPrintingScreen(): ReactElement {
@@ -83,15 +86,23 @@ export default function LabelPrintingScreen(): ReactElement {
   }
 
   return (
-    <div className="page">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-800">Label Printing</h1>
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem', overflow: 'hidden',
+    }}>
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, maxWidth: 1100, width: '100%', margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em', margin: 0 }}>Label Printing</h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Print physical barcode labels</p>
+        </div>
         <div className="tab-bar">
           {(['print', 'log'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'active' : ''
-              }`}>
+              className={`tab-item${tab === t ? ' active' : ''}`}>
               {t === 'print' ? 'Print Labels' : 'Print Log'}
             </button>
           ))}
@@ -99,152 +110,186 @@ export default function LabelPrintingScreen(): ReactElement {
       </div>
 
       {tab === 'print' && (
-        <div className="flex gap-6">
-          {/* Product sidebar */}
-          <div className="w-56 flex-shrink-0">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Products</div>
-            {products.map((p) => {
-              const enabled = p.variants.filter((v) => v.enabled)
-              if (enabled.length === 0) return null
-              const isSelected = enabled.some((v) => v.id === selectedVariantId)
-              return (
-                <div key={p.id}
-                  onClick={() => { const first = enabled[0]; if (first) { setSelectedVariantId(first.id); setStatus(null) } }}
-                  className={`list-item${isSelected ? " active" : ""}`} style={{marginBottom:4}}>
-                  <div className="text-sm font-medium">{p.name}</div>
-                  <div className={`text-xs ${isSelected ? 'text-purple-200' : 'text-gray-500'}`}>
-                    {enabled.length} variant{enabled.length !== 1 ? 's' : ''}
+        <div style={{
+          display: 'grid', gridTemplateColumns: selectedVariant ? 'clamp(260px, 22%, 320px) 1fr' : '1fr',
+          gap: '0.75rem', flex: 1, minHeight: 0, overflow: 'hidden',
+          maxWidth: 1100, width: '100%', margin: '0 auto',
+        }}>
+          {/* Left: Product sidebar */}
+          <div className="card" style={{
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            borderRadius: 'var(--r-lg)', minHeight: 0,
+            ...(selectedVariant ? {} : { maxWidth: 380, margin: '0 auto', width: '100%' }),
+          }}>
+            <div style={{
+              padding: '0.75rem 0.875rem', borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span className="section-label" style={{ margin: 0, padding: 0 }}>Products</span>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '0.25rem 0' }}>
+              {products.map((p) => {
+                const enabled = p.variants.filter((v) => v.enabled)
+                if (enabled.length === 0) return null
+                const isSelected = enabled.some((v) => v.id === selectedVariantId)
+                return (
+                  <div key={p.id}
+                    onClick={() => { const first = enabled[0]; if (first) { setSelectedVariantId(first.id); setStatus(null) } }}
+                    style={{
+                      padding: '0.5rem 0.875rem', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', gap: '0.125rem',
+                      background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+                      transition: 'background 80ms ease, border-color 80ms ease',
+                      marginBottom: 4,
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget.style.background = 'var(--bg-fill)') }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget.style.background = 'transparent') }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: isSelected ? 600 : 500, color: isSelected ? 'var(--accent)' : 'var(--ink-1)' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: isSelected ? 'oklch(0.65 0.12 260)' : 'var(--ink-4)' }}>
+                      {enabled.length} variant{enabled.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
-          {/* Print form + preview */}
-          <div className="flex-1 flex flex-col gap-4">
-            {!selectedVariant && (
-              <p className="text-sm text-gray-400">Select a product to print labels.</p>
-            )}
-            {selectedVariant && (() => {
-              const product = products.find((p) => p.variants.some((v) => v.id === selectedVariantId))
-              const variants = product?.variants.filter((v) => v.enabled) ?? []
-              return (
-                <>
-                  {/* Variant selector */}
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-medium text-gray-600">Variant</label>
-                    <select
-                      value={selectedVariantId ?? ''}
-                      onChange={(e) => { setSelectedVariantId(Number(e.target.value)); setStatus(null) }}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm">
-                      {variants.map((v) => (
-                        <option key={v.id} value={v.id}>{v.label}</option>
-                      ))}
-                    </select>
-                  </div>
+          {/* Right: Print form + preview */}
+          {selectedVariant && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
+              {(() => {
+                const product = products.find((p) => p.variants.some((v) => v.id === selectedVariantId))
+                const variants = product?.variants.filter((v) => v.enabled) ?? []
+                return (
+                  <>
+                    {/* Variant selector */}
+                    <div className="card" style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+                      <label style={{ ...labelStyle, marginBottom: 0, flexShrink: 0 }}>Select Variant</label>
+                      <select
+                        value={selectedVariantId ?? ''}
+                        onChange={(e) => { setSelectedVariantId(Number(e.target.value)); setStatus(null) }}
+                        style={{ flex: 1 }}>
+                        {variants.map((v) => (
+                          <option key={v.id} value={v.id}>{v.label}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  {/* Label preview */}
-                  <div className="border rounded-lg p-4 bg-white flex items-center gap-6">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="text-xs font-bold text-gray-700">{selectedVariant.productName}</div>
-                      <div className="text-xs text-gray-500">{selectedVariant.label}</div>
-                      <BarcodePreview barcode={selectedVariant.barcode} />
-                      <div className="text-sm font-bold text-gray-900">
-                        {currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}
+                    {/* Label preview */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '2rem', flexShrink: 0 }}>
+                      <div style={{
+                        background: '#ffffff', borderRadius: 'var(--r-md)', padding: '0.75rem',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', flexShrink: 0, minWidth: 200,
+                      }}>
+                        <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#000', textAlign: 'center', lineHeight: 1.2 }}>{selectedVariant.productName}</div>
+                        <div style={{ fontSize: '0.625rem', color: '#444' }}>{selectedVariant.label}</div>
+                        <div style={{ margin: '0.25rem 0' }}>
+                          <BarcodePreview barcode={selectedVariant.barcode} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-mono)' }}>
+                          {currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div><span style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Barcode:</span> <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-1)' }}>{selectedVariant.barcode}</span></div>
+                        <div><span style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Current price:</span> <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-1)' }}>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : 'Not set'}</span></div>
+                        {!currentPrice && (
+                          <p style={{ fontSize: '0.75rem', color: 'var(--red)', marginTop: '0.5rem', background: 'oklch(0.24 0.065 25)', padding: '0.5rem', borderRadius: 'var(--r-sm)', border: '1px solid oklch(0.44 0.13 25)' }}>No price set — set a Price Menu entry first.</p>
+                        )}
                       </div>
                     </div>
-                    <div className="flex-1 text-sm text-gray-500">
-                      <div><span className="font-medium">Barcode:</span> <span className="font-mono">{selectedVariant.barcode}</span></div>
-                      <div><span className="font-medium">Current price:</span> {currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : 'Not set'}</div>
-                      {!currentPrice && (
-                        <p className="mt-2 text-xs text-red-600">No price set — set a Price Menu entry first.</p>
+
+                    {/* Print controls */}
+                    <form onSubmit={handlePrint} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexShrink: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={labelStyle}>Quantity</label>
+                          <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={labelStyle}>Print type</label>
+                          <select value={printType} onChange={(e) => setPrintType(e.target.value as typeof printType)}>
+                            <option value="after_pack">After Pack</option>
+                            <option value="reprice">Reprice (no stock change)</option>
+                            <option value="reprint">Reprint</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {printType === 'reprice' && (
+                        <p style={{ fontSize: '0.75rem', color: 'var(--amber)', background: 'oklch(0.25 0.06 75)', border: '1px solid oklch(0.48 0.11 75)', padding: '0.5rem 0.75rem', borderRadius: 'var(--r-md)' }}>
+                          Reprice prints labels at the current price. No stock or cost changes.
+                        </p>
                       )}
-                    </div>
-                  </div>
 
-                  {/* Print controls */}
-                  <form onSubmit={handlePrint} className="border rounded-lg p-4 bg-white flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Quantity</label>
-                        <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1.5 text-sm" required />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+                        {status ? (
+                          <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: status.ok ? 'var(--green)' : 'var(--red)' }}>{status.msg}</p>
+                        ) : <div></div>}
+
+                        <button type="submit" disabled={loading || !currentPrice} className="btn btn-primary" style={{ padding: '0.5rem 1.5rem' }}>
+                          {loading ? 'Printing…' : 'Print Labels'}
+                        </button>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Print type</label>
-                        <select value={printType} onChange={(e) => setPrintType(e.target.value as typeof printType)}
-                          className="border border-gray-300 rounded px-2 py-1.5 text-sm">
-                          <option value="after_pack">After Pack</option>
-                          <option value="reprice">Reprice (no stock change)</option>
-                          <option value="reprint">Reprint</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {printType === 'reprice' && (
-                      <p className="text-xs text-amber-700 bg-amber-50 rounded px-3 py-2 border border-amber-200">
-                        Reprice prints labels at the current price. No stock or cost changes.
-                      </p>
-                    )}
-
-                    {status && (
-                      <p className={`text-sm ${status.ok ? 'text-green-700' : 'text-red-600'}`}>{status.msg}</p>
-                    )}
-
-                    <button type="submit" disabled={loading || !currentPrice}
-                      className="bg-purple-600 disabled:bg-purple-300 text-white px-6 py-2 rounded font-semibold text-sm cursor-pointer hover:bg-purple-700 disabled:cursor-not-allowed transition-colors">
-                      {loading ? 'Printing…' : 'Print Labels'}
-                    </button>
-                  </form>
-                </>
-              )
-            })()}
-          </div>
+                    </form>
+                  </>
+                )
+              })()}
+            </div>
+          )}
         </div>
       )}
 
       {tab === 'log' && (
-        <div className="card" style={{padding:"1.25rem"}}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-800 text-sm">Recent Label Prints</h2>
+        <div className="card" style={{ flex: 1, overflowY: 'auto', maxWidth: 1100, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', margin: 0 }}>Recent Label Prints</h2>
             <select value={selectedVariantId ?? ''} onChange={(e) => {
               const id = e.target.value ? Number(e.target.value) : null
               setSelectedVariantId(id)
-            }} className="border border-gray-300 rounded px-2 py-1 text-sm">
+            }} style={{ width: '250px' }}>
               <option value="">All variants</option>
               {allVariants.map((v) => (
                 <option key={v.id} value={v.id}>{v.productName} — {v.label}</option>
               ))}
             </select>
           </div>
-          {log.length === 0
-            ? <p className="text-sm text-gray-400">No label prints yet.</p>
-            : (
-              <table className="w-full text-xs">
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {log.length === 0 ? (
+              <div style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No print history</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>No labels have been printed yet.</div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
                 <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="pb-2 pr-3">Date</th>
-                    <th className="pb-2 pr-3">Variant</th>
-                    <th className="pb-2 pr-3">Qty</th>
-                    <th className="pb-2 pr-3">Price printed</th>
-                    <th className="pb-2">Type</th>
+                  <tr>
+                    <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
+                    <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Variant</th>
+                    <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Qty</th>
+                    <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Price printed</th>
+                    <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Type</th>
                   </tr>
                 </thead>
                 <tbody>
                   {log.map((l) => {
                     const v = allVariants.find((v) => v.id === l.variantId)
                     return (
-                      <tr key={l.id} className="border-b last:border-0">
-                        <td className="py-1.5 pr-3">{l.date}</td>
-                        <td className="py-1.5 pr-3">{v ? `${v.productName} — ${v.label}` : `v${l.variantId}`}</td>
-                        <td className="py-1.5 pr-3">{l.qty}</td>
-                        <td className="py-1.5 pr-3 font-mono">{paiseToCurrency(l.pricePrintedPaise)}</td>
-                        <td className="py-1.5">
-                          <span className={`px-1.5 py-0.5 rounded-full font-medium ${
-                            l.type === 'reprice' ? 'bg-amber-100 text-amber-700' :
-                            l.type === 'after_pack' ? 'bg-green-100 text-green-700' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>{l.type}</span>
+                      <tr key={l.id}>
+                        <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{l.date}</td>
+                        <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', fontWeight: 500, color: 'var(--ink-1)' }}>{v ? `${v.productName} — ${v.label}` : `v${l.variantId}`}</td>
+                        <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--ink-1)' }}>{l.qty}</td>
+                        <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>{paiseToCurrency(l.pricePrintedPaise)}</td>
+                        <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+                          <span style={{
+                            fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem', borderRadius: 'var(--r-full)',
+                            background: l.type === 'reprice' ? 'oklch(0.25 0.06 75)' : l.type === 'after_pack' ? 'oklch(0.25 0.07 145)' : 'var(--bg-fill)',
+                            color: l.type === 'reprice' ? 'var(--amber)' : l.type === 'after_pack' ? 'var(--green)' : 'var(--ink-3)'
+                          }}>{l.type}</span>
                         </td>
                       </tr>
                     )
@@ -252,6 +297,7 @@ export default function LabelPrintingScreen(): ReactElement {
                 </tbody>
               </table>
             )}
+          </div>
         </div>
       )}
     </div>

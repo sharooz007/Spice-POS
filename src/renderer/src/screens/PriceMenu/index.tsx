@@ -52,9 +52,17 @@ function PriceCell({
       <span
         onClick={startEdit}
         title={disabled ? '' : 'Click to edit'}
-        className={`font-mono text-sm ${disabled ? 'text-gray-500' : 'cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 rounded px-1 transition-colors'}`}
+        style={{
+          fontFamily: 'var(--font-mono)', fontSize: '0.875rem',
+          color: disabled ? 'var(--ink-3)' : 'var(--ink-1)',
+          cursor: disabled ? 'default' : 'pointer',
+          padding: '0.125rem 0.375rem', borderRadius: 'var(--r-sm)',
+          transition: 'background 80ms ease',
+        }}
+        onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.color = 'var(--accent)'; } }}
+        onMouseLeave={(e) => { if (!disabled) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-1)'; } }}
       >
-        {paise != null ? fmt(paise) : <span className="text-gray-400">—</span>}
+        {paise != null ? fmt(paise) : <span style={{ color: 'var(--ink-4)' }}>—</span>}
       </span>
     )
   }
@@ -70,7 +78,12 @@ function PriceCell({
       onBlur={commit}
       onKeyDown={onKey}
       disabled={saving}
-      className="w-24 border border-indigo-400 rounded px-1.5 py-0.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+      style={{
+        width: '80px', background: 'var(--bg-surface)', border: '1px solid var(--accent)',
+        borderRadius: 'var(--r-sm)', padding: '0.125rem 0.375rem', fontSize: '0.875rem',
+        fontFamily: 'var(--font-mono)', color: 'var(--ink-1)', outline: 'none',
+        boxShadow: '0 0 0 3px oklch(0.58 0.2 260 / 0.1)',
+      }}
     />
   )
 }
@@ -117,36 +130,36 @@ function VariantsModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="font-bold text-gray-800">{product.name} — All Variants</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none">×</button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, padding: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--ink-1)', margin: 0 }}>{product.name} — All Variants</h2>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
         </div>
-        <table className="w-full text-sm">
+        <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
           <thead>
-            <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
-              <th className="px-5 py-2">Variant</th>
-              <th className="px-5 py-2">Weight</th>
-              <th className="px-5 py-2">Retail</th>
-              <th className="px-5 py-2">Wholesale</th>
+            <tr>
+              <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Variant</th>
+              <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Weight</th>
+              <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Retail</th>
+              <th style={{ padding: '0.75rem 1.25rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Wholesale</th>
             </tr>
           </thead>
           <tbody>
             {product.variants.map((v) => {
               const cur = currentEntry(v.id)
               return (
-                <tr key={v.id} className="border-b last:border-0">
-                  <td className="px-5 py-3 font-medium">{v.label}</td>
-                  <td className="px-5 py-3 text-gray-500">{v.weightGrams}g</td>
-                  <td className="px-5 py-3">
+                <tr key={v.id}>
+                  <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', fontWeight: 500, color: 'var(--ink-1)' }}>{v.label}</td>
+                  <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{v.weightGrams}g</td>
+                  <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
                     <PriceCell
                       paise={cur?.retailPricePaise ?? null}
                       onSave={(p) => saveVariantPrice(v.id, 'retail', p)}
                       disabled={!isAdmin}
                     />
                   </td>
-                  <td className="px-5 py-3">
+                  <td style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
                     <PriceCell
                       paise={cur?.wholesalePricePaise ?? null}
                       onSave={(p) => saveVariantPrice(v.id, 'wholesale', p)}
@@ -221,19 +234,32 @@ export default function PriceMenuScreen(): ReactElement {
   }
 
   return (
-    <div className="page">
-      <h1 className="text-xl font-bold text-gray-800 mb-1">Price Menu</h1>
-      {!isAdmin && <p className="text-xs text-gray-500 mb-3">View only — Admin can edit prices inline.</p>}
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem', overflow: 'hidden',
+    }}>
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        flexShrink: 0, maxWidth: 1100, width: '100%', margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em', margin: 0 }}>Price Menu</h1>
+          {!isAdmin && <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.25rem' }}>View only — Admin can edit prices inline.</p>}
+          {isAdmin && <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.25rem' }}>Click any price to edit inline. Press Enter or click away to save.</p>}
+        </div>
+      </div>
 
-      <div className="card" style={{overflow:"hidden"}}>
-        <table className="w-full text-sm">
+      {error && <p style={{ fontSize: '0.8125rem', color: 'var(--red)', maxWidth: 1100, margin: '0 auto', width: '100%' }}>{error}</p>}
+
+      <div className="card" style={{ flex: 1, overflowY: 'auto', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
+        <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
           <thead>
-            <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Retail</th>
-              <th className="px-4 py-3">Wholesale</th>
-              <th className="px-4 py-3"></th>
+            <tr>
+              <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Product</th>
+              <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Retail</th>
+              <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Wholesale</th>
+              <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -244,46 +270,46 @@ export default function PriceMenuScreen(): ReactElement {
               const label = rv ? (is1kg ? '' : ` (${rv.label})`) : ''
 
               return (
-                <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-gray-800">{p.name}</div>
-                    <div className="text-xs text-gray-400">{p.categoryName}</div>
+                <tr key={p.id} style={{ transition: 'background 80ms ease' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-fill)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--ink-1)' }}>{p.name}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', marginTop: '0.125rem' }}>{p.categoryName}</div>
                   </td>
 
                   {/* Retail — inline editable */}
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
                     {rv ? (
-                      <div className="flex flex-col gap-0.5">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', alignItems: 'flex-start' }}>
                         <PriceCell
                           paise={cur?.retailPricePaise ?? null}
                           onSave={(paise) => saveVariantPrice(rv.id, 'retail', paise)}
                           disabled={!isAdmin}
                         />
-                        {label && <span className="text-xs text-gray-400">{label}</span>}
+                        {label && <span style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', paddingLeft: '0.375rem' }}>{label}</span>}
                       </div>
-                    ) : <span className="text-gray-400 text-xs">—</span>}
+                    ) : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                   </td>
 
                   {/* Wholesale — inline editable */}
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
                     {rv ? (
-                      <div className="flex flex-col gap-0.5">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', alignItems: 'flex-start' }}>
                         <PriceCell
                           paise={cur?.wholesalePricePaise ?? null}
                           onSave={(paise) => saveVariantPrice(rv.id, 'wholesale', paise)}
                           disabled={!isAdmin}
                         />
-                        {label && <span className="text-xs text-gray-400">{label}</span>}
+                        {label && <span style={{ fontSize: '0.6875rem', color: 'var(--ink-4)', paddingLeft: '0.375rem' }}>{label}</span>}
                       </div>
-                    ) : <span className="text-gray-400 text-xs">—</span>}
+                    ) : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                   </td>
 
                   {/* All variants button */}
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
                     {p.variants.length > 0 && (
                       <button
                         onClick={() => setModalProduct(p)}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer whitespace-nowrap"
+                        className="btn btn-ghost" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--accent)' }}
                       >
                         All Variants →
                       </button>
@@ -293,15 +319,11 @@ export default function PriceMenuScreen(): ReactElement {
               )
             })}
             {products.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-6 text-gray-400 text-sm text-center">No products found.</td></tr>
+              <tr><td colSpan={4} style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--ink-3)' }}>No products found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
-
-      {isAdmin && (
-        <p className="text-xs text-gray-400 mt-2">Click any price to edit inline. Press Enter or click away to save.</p>
-      )}
 
       {/* All-variants modal */}
       {modalProduct && (

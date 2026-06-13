@@ -5,6 +5,9 @@ import type { Product, RetailStockRow, RetailMovementRow } from '@shared/types'
 
 type Tab = 'stock' | 'movements'
 
+// Shared inline style constants
+const labelStyle: React.CSSProperties = { fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)', marginBottom: 2 }
+
 export default function RetailPacketInventoryScreen(): ReactElement {
   const { user } = useAppStore()
   const isAdmin = user?.role === 'admin'
@@ -69,37 +72,33 @@ export default function RetailPacketInventoryScreen(): ReactElement {
     }
 
     return (
-      <form onSubmit={submit} className="bg-orange-50 border border-orange-200 rounded p-3 flex flex-col gap-2 mt-2">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Change (pcs)</label>
+      <form onSubmit={submit} style={{
+        background: 'var(--bg-fill)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+        padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={labelStyle}>Change (pcs)</label>
             <input type="number" value={qty} onChange={(e) => setQty(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" required autoFocus
-              placeholder="e.g. -5 or 10" />
+              required autoFocus placeholder="e.g. -5 or 10" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Reason</label>
-            <select value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={labelStyle}>Reason</label>
+            <select value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}>
               <option value="manual">Manual correction</option>
               <option value="damage">Damage</option>
               <option value="wastage">Wastage</option>
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Notes</label>
-            <input value={notes} onChange={(e) => setNotes(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={labelStyle}>Notes</label>
+            <input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         </div>
-        {err && <p className="text-xs text-red-600">{err}</p>}
-        <div className="flex gap-2">
-          <button type="submit"
-            className="btn btn-amber">
-            Save
-          </button>
-          <button type="button" onClick={() => onDone()}
-            className="btn btn-secondary">Cancel</button>
+        {err && <p style={{ fontSize: '0.75rem', color: 'var(--red)' }}>{err}</p>}
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <button type="button" onClick={() => onDone()} className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>Cancel</button>
+          <button type="submit" className="btn btn-amber" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>Save</button>
         </div>
       </form>
     )
@@ -113,23 +112,21 @@ export default function RetailPacketInventoryScreen(): ReactElement {
     const variants = product.variants.filter((v) => v.enabled)
 
     return (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-        onClick={() => { setModalProductId(null); setAdjustVariantId(null) }}>
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800">{product.name} — Variants</h3>
+      <div className="modal-overlay" onClick={() => { setModalProductId(null); setAdjustVariantId(null) }}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--ink-1)' }}>{product.name} — Variants</h3>
             <button onClick={() => { setModalProductId(null); setAdjustVariantId(null) }}
-              className="text-gray-400 hover:text-gray-600 cursor-pointer text-xl leading-none">✕</button>
+              style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
           </div>
-          <table className="w-full text-sm">
+          <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
             <thead>
-              <tr className="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
-                <th className="pb-2 pr-4">Variant</th>
-                <th className="pb-2 pr-4">Stock (pcs)</th>
-                {isAdmin && <th className="pb-2 pr-4">Avg cost</th>}
-                <th className="pb-2 pr-4">Status</th>
-                {isAdmin && <th className="pb-2">Actions</th>}
+              <tr>
+                <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Variant</th>
+                <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Stock (pcs)</th>
+                {isAdmin && <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Avg cost</th>}
+                <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Status</th>
+                {isAdmin && <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -138,26 +135,29 @@ export default function RetailPacketInventoryScreen(): ReactElement {
                 const qty = stock?.qtyPcs ?? 0
                 const isLow = qty < v.retailLowStockPcs
                 return (
-                  <tr key={v.id} className="border-b last:border-0">
-                    <td className="py-2 pr-4 font-medium">{v.label}</td>
-                    <td className={`py-2 pr-4 font-semibold ${isLow ? 'text-red-600' : 'text-gray-900'}`}>{qty}</td>
+                  <tr key={v.id}>
+                    <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontWeight: 500, color: 'var(--ink-1)' }}>{v.label}</td>
+                    <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontWeight: 600, color: isLow ? 'var(--red)' : 'var(--ink-1)', fontFamily: 'var(--font-mono)' }}>{qty}</td>
                     {isAdmin && (
-                      <td className="py-2 pr-4 text-gray-500 font-mono text-xs">
+                      <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
                         {stock?.avgCostPerPc != null ? paiseToCurrency(Math.round(stock.avgCostPerPc * 100)) : '—'}
                       </td>
                     )}
-                    <td className="py-2 pr-4">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        isLow ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                      }`}>
+                    <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)' }}>
+                      <span style={{
+                        fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                        borderRadius: 'var(--r-full)',
+                        background: isLow ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.07 145)',
+                        color: isLow ? 'var(--red)' : 'var(--green)',
+                      }}>
                         {isLow ? `Low (< ${v.retailLowStockPcs})` : 'OK'}
                       </span>
                     </td>
                     {isAdmin && (
-                      <td className="py-2">
+                      <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
                         <button
                           onClick={() => setAdjustVariantId(adjustVariantId === v.id ? null : v.id)}
-                          className="text-orange-600 hover:underline text-xs cursor-pointer">
+                          className="btn btn-ghost" style={{ padding: '0.125rem 0.375rem', fontSize: '0.75rem', color: 'var(--amber)' }}>
                           Adjust
                         </button>
                       </td>
@@ -180,143 +180,191 @@ export default function RetailPacketInventoryScreen(): ReactElement {
   const selectedVariant = allVariants.find((v) => v.id === selectedVariantId)
 
   return (
-    <div className="page">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-800">Retail Packet Inventory</h1>
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)',
+      background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem', overflow: 'hidden',
+    }}>
+      {/* ── Page header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, maxWidth: 1100, width: '100%', margin: '0 auto',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink-1)', letterSpacing: '-0.02em' }}>Retail Packets</h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Manage packet inventory and view movements</p>
+        </div>
         <div className="tab-bar">
           {(['stock', 'movements'] as Tab[]).map((t) => (
             <button key={t} onClick={() => { setTab(t); if (t === 'movements' && selectedVariantId) loadMovements(selectedVariantId) }}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
-                tab === t ? 'active' : ''
-              }`}>
+              className={`tab-item${tab === t ? ' active' : ''}`}>
               {t === 'stock' ? 'Stock' : 'Movements'}
             </button>
           ))}
         </div>
       </div>
 
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+      {error && <p style={{ fontSize: '0.8125rem', color: 'var(--red)', maxWidth: 1100, margin: '0 auto', width: '100%' }}>{error}</p>}
 
       {tab === 'stock' && (
-        <table className="w-full text-sm border rounded-lg overflow-hidden bg-white">
-          <thead>
-            <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50 border-b">
-              <th className="px-4 py-2">Product</th>
-              <th className="px-4 py-2">Total stock (pcs)</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => {
-              const enabled = p.variants.filter((v) => v.enabled)
-              if (enabled.length === 0) return null
-              const totalQty = enabled.reduce((sum, v) => sum + (stockMap[v.id]?.qtyPcs ?? 0), 0)
-              const anyLow = enabled.some((v) => (stockMap[v.id]?.qtyPcs ?? 0) < v.retailLowStockPcs)
-              return (
-                <tr key={p.id} className="border-b last:border-0">
-                  <td className="px-4 py-2.5 font-medium text-gray-800">{p.name}</td>
-                  <td className={`px-4 py-2.5 font-semibold ${anyLow ? 'text-red-600' : 'text-gray-900'}`}>
-                    {totalQty}
-                    {anyLow && <span className="ml-2 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">Low</span>}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      anyLow ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                    }`}>
-                      {anyLow ? 'Some low' : 'OK'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <button
-                      onClick={() => { setModalProductId(p.id); setAdjustVariantId(null) }}
-                      className="text-sm text-indigo-600 hover:underline cursor-pointer">
-                      View Variants
-                    </button>
-                  </td>
+        <div className="card" style={{ flex: 1, overflowY: 'auto', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
+          <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Product</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Total stock (pcs)</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Status</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', textAlign: 'right' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((p) => {
+                const enabled = p.variants.filter((v) => v.enabled)
+                if (enabled.length === 0) return null
+                const totalQty = enabled.reduce((sum, v) => sum + (stockMap[v.id]?.qtyPcs ?? 0), 0)
+                const anyLow = enabled.some((v) => (stockMap[v.id]?.qtyPcs ?? 0) < v.retailLowStockPcs)
+                return (
+                  <tr key={p.id}>
+                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--ink-1)' }}>{p.name}</td>
+                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: anyLow ? 'var(--red)' : 'var(--ink-1)', fontFamily: 'var(--font-mono)' }}>
+                      {totalQty}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
+                      <span style={{
+                        fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                        borderRadius: 'var(--r-full)',
+                        background: anyLow ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.07 145)',
+                        color: anyLow ? 'var(--red)' : 'var(--green)',
+                      }}>
+                        {anyLow ? 'Some low' : 'OK'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                      <button
+                        onClick={() => { setModalProductId(p.id); setAdjustVariantId(null) }}
+                        className="btn btn-ghost" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--accent)' }}>
+                        View Variants
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {products.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--ink-3)' }}>No retail products found.</td>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {tab === 'movements' && (
-        <div className="flex gap-4">
-          {/* Product sidebar */}
-          <div className="w-56 flex-shrink-0">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Products</div>
-            {products.map((p) => {
-              const enabled = p.variants.filter((v) => v.enabled)
-              if (enabled.length === 0) return null
-              const isSelected = enabled.some((v) => v.id === selectedVariantId)
-              return (
-                <div key={p.id}
-                  onClick={() => { const first = enabled[0]; if (first) selectVariant(first.id) }}
-                  className={`px-3 py-2 rounded mb-1 cursor-pointer text-sm transition-colors ${
-                    isSelected ? 'list-item active' : 'list-item'
-                  }`}>
-                  <div className="font-medium">{p.name}</div>
-                  <div className={`text-xs ${isSelected ? 'text-indigo-200' : 'text-gray-500'}`}>
-                    {enabled.length} variant{enabled.length !== 1 ? 's' : ''}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'clamp(260px, 22%, 320px) 1fr',
+          gap: '0.75rem', flex: 1, minHeight: 0, overflow: 'hidden',
+          maxWidth: 1100, width: '100%', margin: '0 auto',
+        }}>
+          {/* Left: Product sidebar */}
+          <div className="card" style={{
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            borderRadius: 'var(--r-lg)', minHeight: 0,
+          }}>
+            <div style={{
+              padding: '0.75rem 0.875rem', borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span className="section-label" style={{ margin: 0, padding: 0 }}>Products</span>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '0.25rem 0' }}>
+              {products.map((p) => {
+                const enabled = p.variants.filter((v) => v.enabled)
+                if (enabled.length === 0) return null
+                const isSelected = enabled.some((v) => v.id === selectedVariantId)
+                return (
+                  <div key={p.id}
+                    onClick={() => { const first = enabled[0]; if (first) selectVariant(first.id) }}
+                    style={{
+                      padding: '0.5rem 0.875rem', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', gap: '0.125rem',
+                      background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+                      transition: 'background 80ms ease, border-color 80ms ease',
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget.style.background = 'var(--bg-fill)') }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget.style.background = 'transparent') }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: isSelected ? 600 : 500, color: isSelected ? 'var(--accent)' : 'var(--ink-1)' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: isSelected ? 'oklch(0.65 0.12 260)' : 'var(--ink-4)' }}>
+                      {enabled.length} variant{enabled.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
-          <div className="flex-1 border rounded-lg bg-white p-4">
-            {!selectedVariant && <p className="text-sm text-gray-400">Select a product to see movements.</p>}
+          <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {!selectedVariant && (
+              <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>Select a product</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>Choose a product to view movements</div>
+              </div>
+            )}
             {selectedVariant && (() => {
               const product = products.find((p) => p.variants.some((v) => v.id === selectedVariantId))
               const variants = product?.variants.filter((v) => v.enabled) ?? []
               return (
                 <>
-                  <div className="flex items-center gap-3 mb-3">
-                    <h2 className="font-semibold text-gray-800">{selectedVariant.productName}</h2>
+                  <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--ink-1)', margin: 0 }}>{selectedVariant.productName}</h2>
                     <select
                       value={selectedVariantId ?? ''}
                       onChange={(e) => selectVariant(Number(e.target.value))}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm">
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.8125rem' }}>
                       {variants.map((v) => (
                         <option key={v.id} value={v.id}>{v.label}</option>
                       ))}
                     </select>
                   </div>
-                  {movements.length === 0
-                    ? <p className="text-sm text-gray-400">No movements recorded yet.</p>
-                    : (
-                      <table className="w-full text-xs">
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {movements.length === 0 ? (
+                      <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-2)' }}>No movements</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>No activity recorded for this variant.</div>
+                      </div>
+                    ) : (
+                      <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
                         <thead>
-                          <tr className="text-left text-gray-500 border-b">
-                            <th className="pb-2 pr-3">Date</th>
-                            <th className="pb-2 pr-3">Type</th>
-                            <th className="pb-2 pr-3">Change (pcs)</th>
-                            <th className="pb-2">Reference</th>
+                          <tr>
+                            <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
+                            <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Type</th>
+                            <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Change (pcs)</th>
+                            <th style={{ padding: '0.625rem 1rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Reference</th>
                           </tr>
                         </thead>
                         <tbody>
                           {movements.map((m, i) => (
-                            <tr key={i} className="border-b last:border-0">
-                              <td className="py-1.5 pr-3">{m.date}</td>
-                              <td className="py-1.5 pr-3">
-                                <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                                  m.type === 'packing' ? 'bg-green-100 text-green-700' :
-                                  m.type === 'sale' ? 'bg-red-100 text-red-700' :
-                                  'bg-orange-100 text-orange-700'
-                                }`}>{m.type}</span>
+                            <tr key={i}>
+                              <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{m.date}</td>
+                              <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)' }}>
+                                <span style={{
+                                  fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem',
+                                  borderRadius: 'var(--r-full)',
+                                  background: m.type === 'packing' ? 'oklch(0.25 0.07 145)' : m.type === 'sale' ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.06 75)',
+                                  color: m.type === 'packing' ? 'var(--green)' : m.type === 'sale' ? 'var(--red)' : 'var(--amber)',
+                                }}>{m.type}</span>
                               </td>
-                              <td className={`py-1.5 pr-3 font-mono font-semibold ${
-                                m.qtyChange >= 0 ? 'text-green-700' : 'text-red-600'
-                              }`}>
+                              <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, fontFamily: 'var(--font-mono)', color: m.qtyChange >= 0 ? 'var(--green)' : 'var(--red)' }}>
                                 {m.qtyChange >= 0 ? '+' : ''}{m.qtyChange}
                               </td>
-                              <td className="py-1.5 text-gray-500">{m.reference}</td>
+                              <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{m.reference}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     )}
+                  </div>
                 </>
               )
             })()}
