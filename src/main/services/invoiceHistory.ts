@@ -4,7 +4,7 @@ import { eq, and, gte, lte, like, sql } from 'drizzle-orm'
 import { getDb } from '../db'
 import {
   invoices, invoiceLines, invoiceDatetimeEditLog, users, customers,
-  retailPacketStock, bulkStock
+  retailPacketStock, bulkStock, payments
 } from '../db/schema'
 import { businessDate } from '../../shared/businessDate'
 import type {
@@ -317,6 +317,7 @@ export function deleteInvoice(invoiceId: number, userId: number): void {
     if (!inv) throw new Error('Invoice not found')
     if (inv.status !== 'void') throw new Error('Invoice must be voided before it can be deleted')
 
+    tx.delete(payments).where(eq(payments.invoiceId, invoiceId)).run()
     tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId)).run()
     tx.delete(invoiceDatetimeEditLog).where(eq(invoiceDatetimeEditLog.invoiceId, invoiceId)).run()
     tx.delete(invoices).where(eq(invoices.id, invoiceId)).run()

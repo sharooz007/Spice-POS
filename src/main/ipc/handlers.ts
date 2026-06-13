@@ -580,6 +580,18 @@ export function registerHandlers(): void {
   ipcMain.handle('settings.get', (_e, key: string) => wrap(() => settingsSvc.getSetting(key)))
   ipcMain.handle('settings.getAll', () => wrap(() => settingsSvc.getAllSettings()))
   ipcMain.handle('settings.set', (_e, req: { key: string, value: string }) => wrap(() => settingsSvc.setSetting(req.key, req.value)))
-  ipcMain.handle('settings.setAll', (_e, req: Record<string, string>) => wrap(() => settingsSvc.setAllSettings(req)))
-  ipcMain.handle('settings.resetDemo', (_e, userId: number) => wrap(() => settingsSvc.resetDemoData(userId)))
+  ipcMain.handle('settings.setAll', (_e, req: Record<string, string>): Result<void> =>
+    wrap(() => settingsSvc.setAllSettings(req)))
+
+  ipcMain.handle('settings.resetDemo', (_e, userId: number): Promise<Result<void>> =>
+    Promise.resolve(wrap(() => settingsSvc.resetDemoData(userId))))
+
+  ipcMain.handle('settings.clearAllData', async (_e, userId: number): Promise<Result<void>> => {
+    try {
+      await settingsSvc.clearAllData(userId)
+      return { ok: true, data: undefined }
+    } catch (e: any) {
+      return { ok: false, error: e.message }
+    }
+  })
 }

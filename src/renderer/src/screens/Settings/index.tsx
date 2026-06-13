@@ -93,6 +93,20 @@ export default function SettingsScreen(): ReactElement {
     }
   }
 
+  const handleClearAllData = async () => {
+    if (confirm('DANGER: This will delete ALL data (except users and settings) to start fresh. An emergency backup will be taken first. Proceed?')) {
+      if (confirm('Are you ABSOLUTELY sure? This action cannot be undone.')) {
+        const res = await window.api.settings.clearAllData(user!.id)
+        if (res.ok) {
+          alert('Data cleared successfully. App will restart.')
+          window.location.reload()
+        } else {
+          alert('Failed to clear data: ' + res.error)
+        }
+      }
+    }
+  }
+
   const AddUserModal = () => {
     const [name, setName] = useState('')
     const [role, setRole] = useState('staff')
@@ -432,6 +446,14 @@ export default function SettingsScreen(): ReactElement {
                   {settings['demo_seeded'] === 'true' && <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: '0.125rem', fontWeight: 500 }}>Demo data is currently seeded.</div>}
                 </div>
                 <button className="btn btn-danger" onClick={handleResetDemoData}>Reset Data</button>
+              </div>
+              <hr className="divider" style={{ margin: '1rem 0', borderColor: 'var(--border)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-1)' }}>Clear All Data</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Completely wipes the database to start fresh (an emergency backup is created first).</div>
+                </div>
+                <button className="btn btn-danger" onClick={handleClearAllData}>Clear Data</button>
               </div>
             </div>
           )}

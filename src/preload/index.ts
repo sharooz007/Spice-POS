@@ -132,7 +132,8 @@ const api = {
     getAll: (): Promise<Result<Record<string, string>>> => ipcRenderer.invoke('settings.getAll'),
     set: (req: { key: string, value: string }): Promise<Result<void>> => ipcRenderer.invoke('settings.set', req),
     setAll: (req: Record<string, string>): Promise<Result<void>> => ipcRenderer.invoke('settings.setAll', req),
-    resetDemo: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.resetDemo', userId)
+    resetDemo: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.resetDemo', userId),
+    clearAllData: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.clearAllData', userId)
   },
   users: {
     list: (): Promise<Result<Array<{ id: number; name: string; role: string }>>> => ipcRenderer.invoke('users.list'),

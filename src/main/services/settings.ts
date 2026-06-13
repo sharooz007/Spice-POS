@@ -1,5 +1,5 @@
 import { getDb } from '../db'
-import { settings, pingLog, labelPrintLog, purchaseEntries, expenses, invoices, invoiceLines, invoiceDatetimeEditLog, syncQueue, syncLog, payments, bulkStock, bulkArrivals, bulkAdjustments, packingRuns, packingRunLines, retailPacketStock, retailAdjustments } from '../db/schema'
+import { settings, pingLog, labelPrintLog, purchaseEntries, expenses, invoices, invoiceLines, invoiceDatetimeEditLog, syncQueue, syncLog, payments, bulkStock, bulkArrivals, bulkAdjustments, packingRuns, packingRunLines, retailPacketStock, retailAdjustments, customers, productVariants, products, categories, backupLog, priceMenuEntries, priceHistory, suppliers } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { users } from '../db/schema'
 import { sql } from 'drizzle-orm'
@@ -78,6 +78,53 @@ export function resetDemoData(userId: number): void {
     tx.run(sql`UPDATE customers SET credit_balance_paise = 0`)
 
     // Turn off demo_seeded flag
+    tx.insert(settings).values({ key: 'demo_seeded', value: 'false' })
+      .onConflictDoUpdate({ target: settings.key, set: { value: 'false' } }).run()
+  })
+}
+
+export async function clearAllData(userId: number): Promise<void> {
+  const db = getDb()
+  const user = db.select().from(users).where(eq(users.id, userId)).get()
+  if (user?.role !== 'admin') throw new Error('Admin access required to clear data.')
+
+  // Take emergency backup
+  const { createBackup } = await import('./backup')
+  await createBackup('manual')
+
+  db.transaction((tx) => {
+    // Delete transactions
+    tx.delete(payments).run()
+    tx.delete(invoiceDatetimeEditLog).run()
+    tx.delete(invoiceLines).run()
+    tx.delete(invoices).run()
+    tx.delete(expenses).run()
+    tx.delete(purchaseEntries).run()
+    tx.delete(labelPrintLog).run()
+    tx.delete(pingLog).run()
+    tx.delete(syncQueue).run()
+    tx.delete(syncLog).run()
+    tx.delete(backupLog).run()
+    
+    // Inventory
+    tx.delete(bulkAdjustments).run()
+    tx.delete(bulkArrivals).run()
+    tx.delete(bulkStock).run()
+    tx.delete(packingRunLines).run()
+    tx.delete(packingRuns).run()
+    tx.delete(retailAdjustments).run()
+    tx.delete(retailPacketStock).run()
+    tx.delete(priceMenuEntries).run()
+    tx.delete(priceHistory).run()
+    
+    // Base entities
+    tx.delete(suppliers).run()
+    tx.delete(customers).run()
+    tx.delete(productVariants).run()
+    tx.delete(products).run()
+    tx.delete(categories).run()
+
+    // Reset demo seeded flag if it was true
     tx.insert(settings).values({ key: 'demo_seeded', value: 'false' })
       .onConflictDoUpdate({ target: settings.key, set: { value: 'false' } }).run()
   })

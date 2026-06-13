@@ -134,6 +134,7 @@ declare global {
         set: (req: { key: string, value: string }) => Promise<Result<void>>
         setAll: (req: Record<string, string>) => Promise<Result<void>>
         resetDemo: (userId: number) => Promise<Result<void>>
+        clearAllData: (userId: number) => Promise<Result<void>>
       }
       users: {
         list: () => Promise<Result<Array<{ id: number; name: string; role: string }>>>
