@@ -76,7 +76,10 @@ declare global {
         listRetailItems: () => Promise<Result<RetailItemRow[]>>
         listWholesaleItems: () => Promise<Result<{ packets: WholesaleItemRow[]; loose: LooseItemRow[] }>>
       }
-      print: { receipt: (req: { invoiceId: number }) => Promise<Result<void>> }
+      print: { 
+        receipt: (req: { invoiceId: number }) => Promise<Result<void>>
+        listPrinters: () => Promise<Result<any[]>>
+      }
       customers: {
         list: (req?: { type?: 'retail' | 'wholesale' }) => Promise<Result<CustomerRow[]>>
         get: (req: { id: number }) => Promise<Result<CustomerRow | null>>
@@ -118,6 +121,25 @@ declare global {
         editDateTime: (req: EditInvoiceDateTimeRequest) => Promise<Result<InvoiceRow>>
         getEditLog: (req: { invoiceId: number }) => Promise<Result<EditLogRow[]>>
         updateDetails: (req: UpdateInvoiceDetailsRequest) => Promise<Result<InvoiceRow>>
+      }
+      backup: {
+        create: (type: 'manual'|'auto'|'pre-restore') => Promise<Result<string>>
+        restore: (filePath: string) => Promise<Result<boolean>>
+        list: () => Promise<Result<Array<{ fileName: string, filePath: string, sizeBytes: number, createdAt: number }>>>
+        selectFolder: () => Promise<Result<string>>
+      }
+      settings: {
+        get: (key: string) => Promise<Result<string | null>>
+        getAll: () => Promise<Result<Record<string, string>>>
+        set: (req: { key: string, value: string }) => Promise<Result<void>>
+        setAll: (req: Record<string, string>) => Promise<Result<void>>
+        resetDemo: (userId: number) => Promise<Result<void>>
+      }
+      users: {
+        list: () => Promise<Result<Array<{ id: number; name: string; role: string }>>>
+        create: (req: { name: string; role: string; pin: string }) => Promise<Result<number>>
+        updatePin: (req: { id: number; pin: string }) => Promise<Result<void>>
+        delete: (req: { id: number; userId: number }) => Promise<Result<void>>
       }
     }
   }

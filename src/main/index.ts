@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { openDatabase } from './db'
 import { registerHandlers } from './ipc/handlers'
+import { initAutoBackupScheduler } from './services/backup'
 
 // Set app name early so app.getPath('userData') uses the correct folder.
 app.setName('spice-pos')
@@ -47,6 +48,8 @@ app.whenReady().then(() => {
   // Open DB and run migrations before any window or IPC.
   openDatabase()
   registerHandlers()
+  
+  initAutoBackupScheduler()
 
   createWindow()
 

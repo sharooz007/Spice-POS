@@ -26,6 +26,22 @@ function copyMigrationsPlugin(): Plugin {
           copyFileSync(join(entry.parentPath ?? src, entry.name), destFile)
         }
       }
+      
+      const tplSrc = resolve('src/main/printing/templates')
+      const tplDest = resolve('out/main/printing/templates')
+      mkdirSync(tplDest, { recursive: true })
+      for (const entry of readdirSync(tplSrc, { withFileTypes: true, recursive: true })) {
+        if (entry.isFile()) {
+          const rel = entry.parentPath
+            ? join(entry.parentPath, entry.name).replace(tplSrc + '/', '')
+            : entry.name
+          const destFile = join(tplDest, rel)
+          mkdirSync(join(tplDest, entry.parentPath ? entry.parentPath.replace(tplSrc, '') : ''), {
+            recursive: true
+          })
+          copyFileSync(join(entry.parentPath ?? tplSrc, entry.name), destFile)
+        }
+      }
     }
   }
 }

@@ -75,7 +75,10 @@ const api = {
     listRetailItems: (): Promise<Result<RetailItemRow[]>> => ipcRenderer.invoke('billing.listRetailItems'),
     listWholesaleItems: (): Promise<Result<{ packets: WholesaleItemRow[]; loose: LooseItemRow[] }>> => ipcRenderer.invoke('billing.listWholesaleItems')
   },
-  print: { receipt: (req: { invoiceId: number }): Promise<Result<void>> => ipcRenderer.invoke('print.receipt', req) },
+  print: {
+    receipt: (req: { invoiceId: number }): Promise<Result<void>> => ipcRenderer.invoke('print.receipt', req),
+    listPrinters: (): Promise<Result<any[]>> => ipcRenderer.invoke('print.listPrinters')
+  },
   customers: {
     list: (req?: { type?: 'retail' | 'wholesale' }): Promise<Result<CustomerRow[]>> => ipcRenderer.invoke('customers.list', req),
     get: (req: { id: number }): Promise<Result<CustomerRow | null>> => ipcRenderer.invoke('customers.get', req),
@@ -117,6 +120,25 @@ const api = {
     editDateTime: (req: EditInvoiceDateTimeRequest): Promise<Result<InvoiceRow>> => ipcRenderer.invoke('invoiceHistory.editDateTime', req),
     getEditLog: (req: { invoiceId: number }): Promise<Result<EditLogRow[]>> => ipcRenderer.invoke('invoiceHistory.getEditLog', req),
     updateDetails: (req: UpdateInvoiceDetailsRequest): Promise<Result<InvoiceRow>> => ipcRenderer.invoke('invoiceHistory.updateDetails', req)
+  },
+  backup: {
+    create: (type: 'manual'|'auto'|'pre-restore'): Promise<Result<string>> => ipcRenderer.invoke('backup.create', type),
+    restore: (filePath: string): Promise<Result<boolean>> => ipcRenderer.invoke('backup.restore', filePath),
+    list: (): Promise<Result<Array<{ fileName: string, filePath: string, sizeBytes: number, createdAt: number }>>> => ipcRenderer.invoke('backup.list'),
+    selectFolder: (): Promise<Result<string>> => ipcRenderer.invoke('backup.selectFolder')
+  },
+  settings: {
+    get: (key: string): Promise<Result<string | null>> => ipcRenderer.invoke('settings.get', key),
+    getAll: (): Promise<Result<Record<string, string>>> => ipcRenderer.invoke('settings.getAll'),
+    set: (req: { key: string, value: string }): Promise<Result<void>> => ipcRenderer.invoke('settings.set', req),
+    setAll: (req: Record<string, string>): Promise<Result<void>> => ipcRenderer.invoke('settings.setAll', req),
+    resetDemo: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.resetDemo', userId)
+  },
+  users: {
+    list: (): Promise<Result<Array<{ id: number; name: string; role: string }>>> => ipcRenderer.invoke('users.list'),
+    create: (req: { name: string; role: string; pin: string }): Promise<Result<number>> => ipcRenderer.invoke('users.create', req),
+    updatePin: (req: { id: number; pin: string }): Promise<Result<void>> => ipcRenderer.invoke('users.updatePin', req),
+    delete: (req: { id: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('users.delete', req)
   }
 }
 

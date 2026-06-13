@@ -1,6 +1,6 @@
 // src/main/ipc/handlers.ts — all ipcMain handlers (thin wrappers around services)
-import { ipcMain } from 'electron'
-import { scryptSync, timingSafeEqual } from 'crypto'
+import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { scryptSync, timingSafeEqual, randomBytes } from 'crypto'
 import { eq } from 'drizzle-orm'
 import { desc } from 'drizzle-orm'
 import { getDb } from '../db'
@@ -16,6 +16,8 @@ import * as customersSvc from '../services/customers'
 import * as purchasesSvc from '../services/purchasesExpenses'
 import * as reportsSvc from '../services/reports'
 import * as invoiceHistorySvc from '../services/invoiceHistory'
+import * as backupSvc from '../services/backup'
+import * as settingsSvc from '../services/settings'
 import { printReceipt } from '../printing/print'
 import type {
   PingRequest,
@@ -109,6 +111,38 @@ export function registerHandlers(): void {
     const user = db.select().from(users).where(eq(users.name, req.username)).get()
     if (!user || !verifyPin(req.pin, user.pinHash)) return { ok: false, error: 'Invalid credentials' }
     return { ok: true, user: { id: user.id, name: user.name, role: user.role as 'admin' | 'staff' } }
+  })
+
+  // ── users ───────────────────────────────────────────────────────────────────
+  ipcMain.handle('users.list', (): Result<any[]> => {
+    const db = getDb()
+    return wrap(() => db.select({ id: users.id, name: users.name, role: users.role }).from(users).all())
+  })
+  ipcMain.handle('users.create', (_e, req: { name: string; role: string; pin: string }): Result<number> => {
+    const db = getDb()
+    return wrap(() => {
+      const salt = randomBytes(16).toString('hex')
+      const hash = scryptSync(req.pin, salt, 64).toString('hex')
+      const pinHash = `${salt}:${hash}`
+      const res = db.insert(users).values({ name: req.name, role: req.role, pinHash }).run()
+      return Number(res.lastInsertRowid)
+    })
+  })
+  ipcMain.handle('users.updatePin', (_e, req: { id: number; pin: string }): Result<void> => {
+    const db = getDb()
+    return wrap(() => {
+      const salt = randomBytes(16).toString('hex')
+      const hash = scryptSync(req.pin, salt, 64).toString('hex')
+      const pinHash = `${salt}:${hash}`
+      db.update(users).set({ pinHash }).where(eq(users.id, req.id)).run()
+    })
+  })
+  ipcMain.handle('users.delete', (_e, req: { id: number; userId: number }): Result<void> => {
+    const db = getDb()
+    return wrap(() => {
+      requireAdmin(req.userId)
+      db.delete(users).where(eq(users.id, req.id)).run()
+    })
   })
 
   // ── products.listCategories ─────────────────────────────────────────────────
@@ -410,17 +444,19 @@ export function registerHandlers(): void {
   )
 
   // ── print.receipt ───────────────────────────────────────────────────────────
-  ipcMain.handle(
-    'print.receipt',
-    async (_e, req: { invoiceId: number }): Promise<Result<void>> => {
-      try {
-        await printReceipt(req.invoiceId)
-        return { ok: true, data: undefined }
-      } catch (e) {
-        return { ok: false, error: e instanceof Error ? e.message : String(e) }
-      }
+  ipcMain.handle('print.receipt', (_e, req: { invoiceId: number }): Promise<Result<void>> =>
+    printReceipt(req.invoiceId).then(() => ({ ok: true as const, data: undefined })).catch(e => ({ ok: false, error: e.message })))
+
+  ipcMain.handle('print.listPrinters', async () => {
+    try {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (!win) return { ok: true, data: [] }
+      const printers = await win.webContents.getPrintersAsync()
+      return { ok: true, data: printers }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
-  )
+  })
 
   // ── customers ───────────────────────────────────────────────────────────────
   ipcMain.handle('customers.list', (_e, req?: { type?: 'retail' | 'wholesale' }): Result<CustomerRow[]> =>
@@ -502,4 +538,48 @@ export function registerHandlers(): void {
 
   ipcMain.handle('invoiceHistory.updateDetails', (_e, req: UpdateInvoiceDetailsRequest): Result<InvoiceRow> =>
     wrap(() => invoiceHistorySvc.updateInvoiceDetails(req)))
+
+  // ── backup & settings ───────────────────────────────────────────────────────
+  ipcMain.handle('backup.create', async (_e, type: 'manual'|'auto'|'pre-restore') => {
+    try {
+      const path = await backupSvc.createBackup(type)
+      return { ok: true, data: path }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+  ipcMain.handle('backup.restore', async (_e, filePath: string) => {
+    try {
+      await backupSvc.restoreBackup(filePath)
+      return { ok: true, data: true }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+  ipcMain.handle('backup.list', async () => {
+    try {
+      const list = await backupSvc.listBackups()
+      return { ok: true, data: list }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+  ipcMain.handle('backup.selectFolder', async () => {
+    try {
+      const win = BrowserWindow.getAllWindows()[0]
+      const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+      })
+      if (canceled || filePaths.length === 0) return { ok: false, error: 'Canceled' }
+      return { ok: true, data: filePaths[0] }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('settings.get', (_e, key: string) => wrap(() => settingsSvc.getSetting(key)))
+  ipcMain.handle('settings.getAll', () => wrap(() => settingsSvc.getAllSettings()))
+  ipcMain.handle('settings.set', (_e, req: { key: string, value: string }) => wrap(() => settingsSvc.setSetting(req.key, req.value)))
+  ipcMain.handle('settings.setAll', (_e, req: Record<string, string>) => wrap(() => settingsSvc.setAllSettings(req)))
+  ipcMain.handle('settings.resetDemo', (_e, userId: number) => wrap(() => settingsSvc.resetDemoData(userId)))
 }

@@ -2,6 +2,7 @@
 // CRITICAL: This service NEVER touches RetailPacketStock, BulkStock, or any cost column.
 // Reprice / reprint / after_pack all do the same thing: print + log. No stock changes.
 import { BrowserWindow } from 'electron'
+import { join } from 'path'
 import { eq, desc } from 'drizzle-orm'
 import { getDb } from '../db'
 import { labelPrintLog, settings, productVariants, products } from '../db/schema'
@@ -31,9 +32,10 @@ function buildLabelHtml(
       <div style="font-size:13px;font-weight:bold;margin-top:4px;">${priceStr}</div>
     </div>`
   // Use a CDN-hosted JsBarcode that runs in the hidden BrowserWindow
+  const jsBarcodePath = 'file://' + join(__dirname, '../printing/templates/JsBarcode.all.min.js')
   return `<!DOCTYPE html><html><body style="margin:0">
     ${Array(qty).fill(singleLabel).join('')}
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/barcodes/JsBarcode.CODE128.min.js"></script>
+    <script src="${jsBarcodePath}"></script>
     <script>
       document.querySelectorAll('.bc').forEach(function(el) {
         JsBarcode(el, '${barcode}', {format:'CODE128',height:35,fontSize:9,margin:2});

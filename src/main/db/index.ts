@@ -34,6 +34,15 @@ export function openDatabase(): DB {
   return _db
 }
 
+export async function restartDb(): Promise<void> {
+  if (_db) {
+    const client = (_db as any).session?.client
+    if (client) client.close()
+    _db = null
+  }
+  openDatabase()
+}
+
 export function getDb(): DB {
   if (!_db) throw new Error('DB not initialized — call openDatabase() first')
   return _db
