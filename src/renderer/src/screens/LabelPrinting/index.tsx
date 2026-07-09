@@ -28,6 +28,7 @@ export default function LabelPrintingScreen(): ReactElement {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null)
   const [qty, setQty] = useState('1')
   const [printType, setPrintType] = useState<'after_pack' | 'reprice' | 'reprint'>('reprint')
+  const [printDate, setPrintDate] = useState<string>(new Date().toISOString().slice(0, 10))
   const [tab, setTab] = useState<Tab>('print')
   const [log, setLog] = useState<LabelPrintLogRow[]>([])
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -74,7 +75,8 @@ export default function LabelPrintingScreen(): ReactElement {
       variantId: selectedVariantId,
       qty: qtyNum,
       type: printType,
-      userId: user!.id
+      userId: user!.id,
+      dateStr: printDate
     })
     setLoading(false)
     if (res.ok) {
@@ -205,7 +207,7 @@ export default function LabelPrintingScreen(): ReactElement {
 
                     {/* Print controls */}
                     <form onSubmit={handlePrint} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexShrink: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                           <label style={labelStyle}>Quantity</label>
                           <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required />
@@ -217,6 +219,10 @@ export default function LabelPrintingScreen(): ReactElement {
                             <option value="reprice">Reprice (no stock change)</option>
                             <option value="reprint">Reprint</option>
                           </select>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={labelStyle}>Date on Label</label>
+                          <input type="date" value={printDate} onChange={(e) => setPrintDate(e.target.value)} required />
                         </div>
                       </div>
 

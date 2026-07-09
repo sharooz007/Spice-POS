@@ -258,6 +258,7 @@ export interface PrintLabelsRequest {
   qty: number
   type: 'after_pack' | 'reprice' | 'reprint'
   userId: number
+  dateStr?: string
 }
 
 export interface LabelPrintLogRow {
@@ -282,7 +283,7 @@ export interface BillLine {
 export interface CreateRetailSaleRequest {
   lines: BillLine[]
   discountPaise: number
-  paymentMode: 'cash' | 'upi' | 'card' | 'split'
+  paymentMode: 'cash' | 'upi' | 'card' | 'split' | 'credit'
   amountPaidPaise: number
   customerName?: string
   customerPhone?: string

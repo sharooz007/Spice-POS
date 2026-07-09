@@ -229,6 +229,14 @@ export function createRetailSale(req: CreateRetailSaleRequest): SavedInvoice {
       })
     }
 
+    // Party credit: if customer provided and balance due, update credit_balance
+    if (customerId && balanceDuePaise > 0) {
+      tx.update(customers)
+        .set({ creditBalancePaise: sql`credit_balance_paise + ${balanceDuePaise}` })
+        .where(eq(customers.id, customerId))
+        .run()
+    }
+
     return {
       id: inv.id,
       invoiceNo,

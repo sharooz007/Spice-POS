@@ -14,22 +14,16 @@ function getSetting(key: string, fallback: string): string {
   return row?.value ?? fallback
 }
 
-function buildLabelHtml(
-  barcode: string,
-  variantLabel: string,
-  productName: string,
-  pricePaise: number,
-  qty: number
-): string {
-  const priceStr = '₹' + (pricePaise / 100).toFixed(2)
-  const singleLabel = `
-    <div style="page-break-after:always;display:flex;flex-direction:column;
-                align-items:center;justify-content:center;padding:8px;
-                font-family:sans-serif;text-align:center;">
-      <div style="font-size:11px;font-weight:bold;">${productName}</div>
+function generateHtml(productName: string, variantLabel: string, barcode: string, pricePaise: number, qty: number, dateStr: string): string {
+  const priceStr = `₹${(pricePaise / 100).toFixed(2)}`
+  const singleLabel = `<div style="width:1.5in;height:1in;box-sizing:border-box;padding:4px;text-align:center;page-break-after:always;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:sans-serif;overflow:hidden;">
+      <div style="font-size:11px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">${productName}</div>
       <div style="font-size:10px;">${variantLabel}</div>
       <svg class="bc"></svg>
-      <div style="font-size:13px;font-weight:bold;margin-top:4px;">${priceStr}</div>
+      <div style="font-size:13px;font-weight:bold;margin-top:4px;display:flex;justify-content:space-between;width:80%;align-items:center;">
+        <span>${priceStr}</span>
+        <span style="font-size:8px;font-weight:normal;color:#333;">${dateStr}</span>
+      </div>
     </div>`
   // Use a CDN-hosted JsBarcode that runs in the hidden BrowserWindow
   const jsBarcodePath = 'file://' + join(__dirname, '../printing/templates/JsBarcode.all.min.js')
@@ -58,17 +52,19 @@ export async function printLabels(req: PrintLabelsRequest): Promise<void> {
   const varInfo = db
     .select({
       barcode: productVariants.barcode,
-      variantLabel: productVariants.label,
+      label: productVariants.label,
       productName: products.name
     })
     .from(productVariants)
     .innerJoin(products, eq(productVariants.productId, products.id))
     .where(eq(productVariants.id, req.variantId))
     .get()
-
+  
   if (!varInfo) throw new Error('Variant not found')
 
-  const html = buildLabelHtml(varInfo.barcode, varInfo.variantLabel, varInfo.productName, pricePaise, req.qty)
+  const dateToPrint = req.dateStr || new Date().toISOString().slice(0, 10)
+  
+  const html = generateHtml(varInfo.productName, varInfo.label, varInfo.barcode, pricePaise, req.qty, dateToPrint)
   const deviceName = getSetting('label_printer_device', '')
   const pageSize = getSetting('label_printer_page_size', 'A4')
 

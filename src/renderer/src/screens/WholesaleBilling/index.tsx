@@ -165,6 +165,13 @@ export default function WholesaleBillingScreen(): ReactElement {
 
   async function confirmSale(): Promise<void> {
     setLoading(true); setSaleError('')
+    
+    if (!partyName.trim() || !partyPhone.trim()) {
+      setSaleError('Customer name and phone number are required')
+      setLoading(false)
+      return
+    }
+
     const lines: Parameters<typeof window.api.billing.createWholesaleSale>[0]['lines'] = []
     for (const o of orders) {
       const p = products.find((x) => x.id === o.productId)

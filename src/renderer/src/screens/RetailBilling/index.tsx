@@ -13,7 +13,7 @@ interface BillEntry extends BarcodeResult {
   lineTotal: number
 }
 
-type PayMode = 'cash' | 'upi' | 'card' | 'split'
+type PayMode = 'cash' | 'upi' | 'card' | 'credit' | 'split'
 
 export default function RetailBillingScreen(): ReactElement {
   const { user } = useAppStore()
@@ -166,11 +166,17 @@ export default function RetailBillingScreen(): ReactElement {
     if (!lines.length) return
     setLoading(true); setSaleError('')
 
+    if (payMode === 'credit' && (!customerName.trim() || !customerPhone.trim())) {
+      setSaleError('Customer name and phone number are required for credit bills')
+      setLoading(false)
+      return
+    }
+
     const res = await window.api.billing.createRetailSale({
       lines: lines.map((l) => ({ variantId: l.variantId, qtyPcs: l.qtyPcs, unitPricePaise: l.currentRetailPricePaise })),
       discountPaise,
       paymentMode: payMode,
-      amountPaidPaise: amountPaid,
+      amountPaidPaise: payMode === 'credit' ? 0 : amountPaid,
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
       customerId: selectedCustomerId ?? undefined,
@@ -462,19 +468,18 @@ export default function RetailBillingScreen(): ReactElement {
           {/* Payment mode */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
             <label style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-3)' }}>Payment</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
-              {(['cash', 'upi', 'card', 'split'] as PayMode[]).map((m) => (
-                <button key={m}
-                  onClick={() => { setPayMode(m); setSplitSummary(''); if (m === 'split') setShowSplitModal(true) }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem' }}>
+              {(['cash', 'upi', 'card', 'credit', 'split'] as PayMode[]).map((m) => (
+                <button key={m} onClick={() => { setPayMode(m); setSplitSummary(''); if (m === 'split') setShowSplitModal(true) }}
                   style={{
-                    padding: '0.375rem 0', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
-                    border: '1px solid',
+                    padding: '0.625rem', borderRadius: 'var(--r-md)',
                     background: payMode === m ? 'var(--accent)' : 'var(--bg-fill)',
                     color: payMode === m ? '#fff' : 'var(--ink-2)',
                     borderColor: payMode === m ? 'var(--accent)' : 'var(--border)',
-                    transition: 'background 100ms ease',
+                    borderWidth: '1px', borderStyle: 'solid',
+                    textTransform: 'uppercase', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer'
                   }}>
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                  {m}
                 </button>
               ))}
             </div>
