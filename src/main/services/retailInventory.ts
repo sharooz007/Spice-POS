@@ -18,7 +18,7 @@ import type {
 
 const VALID_REASONS = ['manual', 'damage', 'wastage'] as const
 
-export function getRetailStock(variantId?: number): RetailStockRow[] {
+export function getRetailStock(variantId?: string): RetailStockRow[] {
   const db = getDb()
   const rows = variantId
     ? db.select().from(retailPacketStock).where(eq(retailPacketStock.variantId, variantId)).all()
@@ -78,7 +78,7 @@ export function recordRetailAdjustment(req: RecordRetailAdjustmentRequest): void
   })
 }
 
-export function listRetailMovements(variantId: number): RetailMovementRow[] {
+export function listRetailMovements(variantId: string): RetailMovementRow[] {
   const db = getDb()
   const rows: RetailMovementRow[] = []
 

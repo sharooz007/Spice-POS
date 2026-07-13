@@ -28,31 +28,31 @@ declare global {
       products: {
         listCategories: () => Promise<Result<Category[]>>
         generateBarcode: (req: { productName: string; weightGrams: number }) => Promise<Result<string>>
-        createCategory: (req: CreateCategoryRequest & { userId: number }) => Promise<Result<Category>>
+        createCategory: (req: CreateCategoryRequest & { userId: string }) => Promise<Result<Category>>
         listProducts: () => Promise<Result<Product[]>>
-        createProduct: (req: CreateProductRequest & { userId: number }) => Promise<Result<number>>
-        createVariant: (req: CreateVariantRequest & { userId: number }) => Promise<Result<number>>
-        updateProduct: (req: UpdateProductRequest & { userId: number }) => Promise<Result<void>>
-        updateVariant: (req: UpdateVariantRequest & { userId: number }) => Promise<Result<void>>
-        toggleProductEnabled: (req: { id: number; userId: number }) => Promise<Result<void>>
-        toggleVariantEnabled: (req: { id: number; userId: number }) => Promise<Result<void>>
-        deleteProduct: (req: { productId: number; userId: number }) => Promise<Result<void>>
+        createProduct: (req: CreateProductRequest & { userId: string }) => Promise<Result<number>>
+        createVariant: (req: CreateVariantRequest & { userId: string }) => Promise<Result<number>>
+        updateProduct: (req: UpdateProductRequest & { userId: string }) => Promise<Result<void>>
+        updateVariant: (req: UpdateVariantRequest & { userId: string }) => Promise<Result<void>>
+        toggleProductEnabled: (req: { id: string; userId: string }) => Promise<Result<void>>
+        toggleVariantEnabled: (req: { id: string; userId: string }) => Promise<Result<void>>
+        deleteProduct: (req: { productId: string; userId: string }) => Promise<Result<void>>
       }
       pricing: {
         getCurrentPrice: (req: GetCurrentPriceRequest) => Promise<Result<PriceMenuEntry | null>>
         listAllEntries: () => Promise<Result<PriceMenuEntry[]>>
         setVariantPrice: (req: SetVariantPriceRequest) => Promise<Result<void>>
         setProductLooseRate: (req: SetProductLooseRateRequest) => Promise<Result<void>>
-        listPriceHistory: (req: { variantId: number }) => Promise<Result<PriceHistoryRow[]>>
+        listPriceHistory: (req: { variantId: string }) => Promise<Result<PriceHistoryRow[]>>
       }
       bulkInventory: {
-        getBulkStock: (req: { productId: number }) => Promise<Result<BulkStockRow | null>>
+        getBulkStock: (req: { productId: string }) => Promise<Result<BulkStockRow | null>>
         listAllBulkStock: () => Promise<Result<BulkStockRow[]>>
         recordArrival: (req: RecordBulkArrivalRequest) => Promise<Result<void>>
         recordAdjustment: (req: RecordBulkAdjustmentRequest) => Promise<Result<void>>
-        listArrivals: (req: { productId: number }) => Promise<Result<BulkArrivalRow[]>>
-        listAdjustments: (req: { productId: number }) => Promise<Result<BulkAdjustmentRow[]>>
-        deleteArrival: (req: { arrivalId: number; userId: number }) => Promise<Result<void>>
+        listArrivals: (req: { productId: string }) => Promise<Result<BulkArrivalRow[]>>
+        listAdjustments: (req: { productId: string }) => Promise<Result<BulkAdjustmentRow[]>>
+        deleteArrival: (req: { arrivalId: number; userId: string }) => Promise<Result<void>>
       }
       packing: {
         validate: (req: ValidatePackingRunRequest) => Promise<ValidatePackingRunResult>
@@ -62,7 +62,7 @@ declare global {
       retailInventory: {
         getStock: (req?: { variantId?: number }) => Promise<Result<RetailStockRow[]>>
         recordAdjustment: (req: RecordRetailAdjustmentRequest) => Promise<Result<void>>
-        listMovements: (req: { variantId: number }) => Promise<Result<RetailMovementRow[]>>
+        listMovements: (req: { variantId: string }) => Promise<Result<RetailMovementRow[]>>
       }
       labels: {
         printLabels: (req: PrintLabelsRequest) => Promise<Result<void>>
@@ -77,16 +77,16 @@ declare global {
         listWholesaleItems: () => Promise<Result<{ packets: WholesaleItemRow[]; loose: LooseItemRow[] }>>
       }
       print: { 
-        receipt: (req: { invoiceId: number }) => Promise<Result<void>>
+        receipt: (req: { invoiceId: string }) => Promise<Result<void>>
         listPrinters: () => Promise<Result<any[]>>
       }
       customers: {
         list: (req?: { type?: 'retail' | 'wholesale' }) => Promise<Result<CustomerRow[]>>
-        get: (req: { id: number }) => Promise<Result<CustomerRow | null>>
+        get: (req: { id: string }) => Promise<Result<CustomerRow | null>>
         create: (req: CreateCustomerRequest) => Promise<Result<number>>
         update: (req: UpdateCustomerRequest) => Promise<Result<void>>
-        listPayments: (req: { customerId: number }) => Promise<Result<PaymentRow[]>>
-        updateCustomerPhone: (customerId: number, phone: string) => Promise<Result<void>>
+        listPayments: (req: { customerId: string }) => Promise<Result<PaymentRow[]>>
+        updateCustomerPhone: (customerId: string, phone: string) => Promise<Result<void>>
       }
       purchases: {
         listSuppliers: () => Promise<Result<SupplierRow[]>>
@@ -97,7 +97,7 @@ declare global {
       expenses: {
         record: (req: RecordExpenseRequest) => Promise<Result<void>>
         list: (req?: { dateFrom?: string; dateTo?: string }) => Promise<Result<ExpenseRow[]>>
-        delete: (req: { expenseId: number; userId: number }) => Promise<Result<void>>
+        delete: (req: { expenseId: number; userId: string }) => Promise<Result<void>>
       }
       reports: {
         dailySales: (req: DateRange) => Promise<Result<DailySalesRow[]>>
@@ -114,12 +114,12 @@ declare global {
       }
       invoiceHistory: {
         search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>
-        getInvoice: (req: { invoiceId: number }) => Promise<Result<InvoiceRow | null>>
-        void: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
-        unvoid: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
-        delete: (req: { invoiceId: number; userId: number }) => Promise<Result<void>>
+        getInvoice: (req: { invoiceId: string }) => Promise<Result<InvoiceRow | null>>
+        void: (req: { invoiceId: string; userId: string }) => Promise<Result<void>>
+        unvoid: (req: { invoiceId: string; userId: string }) => Promise<Result<void>>
+        delete: (req: { invoiceId: string; userId: string }) => Promise<Result<void>>
         editDateTime: (req: EditInvoiceDateTimeRequest) => Promise<Result<InvoiceRow>>
-        getEditLog: (req: { invoiceId: number }) => Promise<Result<EditLogRow[]>>
+        getEditLog: (req: { invoiceId: string }) => Promise<Result<EditLogRow[]>>
         updateDetails: (req: UpdateInvoiceDetailsRequest) => Promise<Result<InvoiceRow>>
       }
       backup: {
@@ -133,17 +133,19 @@ declare global {
         getAll: () => Promise<Result<Record<string, string>>>
         set: (req: { key: string, value: string }) => Promise<Result<void>>
         setAll: (req: Record<string, string>) => Promise<Result<void>>
-        resetDemo: (userId: number) => Promise<Result<void>>
-        clearAllData: (userId: number) => Promise<Result<void>>
+        clearAllData: (userId: string) => Promise<Result<void>>
       }
       users: {
-        list: () => Promise<Result<Array<{ id: number; name: string; role: string }>>>
+        list: () => Promise<Result<Array<{ id: string; name: string; role: string }>>>
         create: (req: { name: string; role: string; pin: string }) => Promise<Result<number>>
-        updatePin: (req: { id: number; pin: string }) => Promise<Result<void>>
-        delete: (req: { id: number; userId: number }) => Promise<Result<void>>
+        updatePin: (req: { id: string; pin: string }) => Promise<Result<void>>
+        delete: (req: { id: string; userId: string }) => Promise<Result<void>>
       }
       sync: {
         run: () => Promise<{ ok: boolean; message: string }>
+        forcePush: () => Promise<{ ok: boolean; message: string }>
+        checkRemoteState: () => Promise<{ ok: boolean, data?: { outOfSync: boolean, lastRemoteSync?: number, lastLocalSync?: number }, message?: string }>
+        getLastSyncTime: () => Promise<{ ok: boolean, data: number | null }>
       }
     }
   }

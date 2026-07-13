@@ -16,6 +16,7 @@ import ExpensesScreen from './screens/Expenses'
 import ReportsScreen from './screens/Reports'
 import InvoiceHistoryScreen from './screens/InvoiceHistory'
 import SettingsScreen from './screens/Settings'
+import FactoryScreen from './screens/Factory'
 
 const screens = {
   Login: LoginScreen,
@@ -33,12 +34,13 @@ const screens = {
   Expenses: ExpensesScreen,
   Reports: ReportsScreen,
   InvoiceHistory: InvoiceHistoryScreen,
-  Settings: SettingsScreen
+  Settings: SettingsScreen,
+  Factory: FactoryScreen
 } as const
 
 // ── Navigation structure ──────────────────────────────────────────────────────
 
-type TabId = 'dashboard' | 'retail' | 'wholesale' | 'inventory' | 'reports' | 'settings'
+type TabId = 'dashboard' | 'retail' | 'wholesale' | 'inventory' | 'reports' | 'factory' | 'settings'
 
 interface TabDef {
   id: TabId
@@ -117,6 +119,19 @@ const tabs: TabDef[] = [
         <line x1="18" y1="20" x2="18" y2="10" />
         <line x1="12" y1="20" x2="12" y2="4" />
         <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    )
+  },
+  {
+    id: 'factory',
+    label: 'Factory',
+    screen: 'Factory',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+        <path d="M17 18h1" />
+        <path d="M12 18h1" />
+        <path d="M7 18h1" />
       </svg>
     )
   },
@@ -308,33 +323,6 @@ function BottomNav({ currentScreen, navigate, user, logout }: {
               </button>
             )
           })}
-        </div>
-
-        {/* Sync Button */}
-        <div style={{ display: 'flex', alignItems: 'center', paddingRight: 16, paddingLeft: 16, borderLeft: '1px solid var(--border)', flexShrink: 0 }}>
-          <button
-            onClick={async () => {
-              if (window.confirm('Are you sure you want to run a Full Two-Way Sync with Supabase?')) {
-                try {
-                  const res = await window.api.sync.run()
-                  alert(res.message)
-                } catch (err: any) {
-                  alert('Sync Error: ' + err.message)
-                }
-              }
-            }}
-            title="Sync Database"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.375rem 0.75rem', borderRadius: 'var(--r-sm)', background: 'transparent', border: 'none', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--accent)', cursor: 'pointer', transition: 'background 120ms ease' }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--accent-soft)' }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent' }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            Sync
-          </button>
         </div>
 
         {/* Sign out */}

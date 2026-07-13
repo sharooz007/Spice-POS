@@ -65,7 +65,7 @@ export function dailySalesReport(range: DateRange): DailySalesRow[] {
 export function salesByProduct(range: DateRange): SalesByProductRow[] {
   const db = getDb()
   const result = db.all<{
-    product_id: number; product_name: string
+    product_id: string; product_name: string
     qty_grams: number; qty_pcs: number; revenue: number
   }>(sql`
     SELECT p.id as product_id, p.name as product_name,
@@ -93,7 +93,7 @@ export function salesByProduct(range: DateRange): SalesByProductRow[] {
 export function salesByVariant(range: DateRange): SalesByVariantRow[] {
   const db = getDb()
   const result = db.all<{
-    variant_id: number; label: string; product_name: string; qty_pcs: number; revenue: number
+    variant_id: string; label: string; product_name: string; qty_pcs: number; revenue: number
   }>(sql`
     SELECT il.variant_id, pv.label, p.name as product_name,
       SUM(il.qty) as qty_pcs,
@@ -215,15 +215,17 @@ export function duesReport(): DuesRow[] {
   return getDb()
     .select({
       customerId: customers.id, name: customers.name,
-      businessName: customers.businessName, creditBalancePaise: customers.creditBalancePaise
+      businessName: customers.businessName, creditBalancePaise: customers.creditBalancePaise,
+      type: customers.type
     })
     .from(customers)
-    .where(and(eq(customers.type, 'wholesale'), gt(customers.creditBalancePaise, 0)))
+    .where(gt(customers.creditBalancePaise, 0))
     .orderBy(sql`credit_balance_paise DESC`)
     .all()
     .map((r) => ({
       customerId: r.customerId, name: r.name,
-      businessName: r.businessName ?? null, creditBalancePaise: r.creditBalancePaise
+      businessName: r.businessName ?? null, creditBalancePaise: r.creditBalancePaise,
+      type: r.type
     }))
 }
 
@@ -341,7 +343,7 @@ export function paymentBreakdown(range: DateRange): PaymentBreakdownRow {
 
 export function repaymentsReport(range: DateRange): RepaymentReportRow[] {
   const db = getDb()
-  const rows = db.all<{ id: number; customer_id: number; name: string; date: string; amount_paise: number; mode: string; notes: string | null }>(sql`
+  const rows = db.all<{ id: string; customer_id: string; name: string; date: string; amount_paise: number; mode: string; notes: string | null }>(sql`
     SELECT p.id, p.customer_id, c.name, p.date, p.amount_paise, p.mode, p.notes
     FROM payments p
     JOIN customers c ON p.customer_id = c.id

@@ -27,31 +27,31 @@ const api = {
   products: {
     listCategories: (): Promise<Result<Category[]>> => ipcRenderer.invoke('products.listCategories'),
     generateBarcode: (req: { productName: string; weightGrams: number }): Promise<Result<string>> => ipcRenderer.invoke('products.generateBarcode', req),
-    createCategory: (req: CreateCategoryRequest & { userId: number }): Promise<Result<Category>> => ipcRenderer.invoke('products.createCategory', req),
+    createCategory: (req: CreateCategoryRequest & { userId: string }): Promise<Result<Category>> => ipcRenderer.invoke('products.createCategory', req),
     listProducts: (): Promise<Result<Product[]>> => ipcRenderer.invoke('products.listProducts'),
-    createProduct: (req: CreateProductRequest & { userId: number }): Promise<Result<number>> => ipcRenderer.invoke('products.createProduct', req),
-    createVariant: (req: CreateVariantRequest & { userId: number }): Promise<Result<number>> => ipcRenderer.invoke('products.createVariant', req),
-    updateProduct: (req: UpdateProductRequest & { userId: number }): Promise<Result<void>> => ipcRenderer.invoke('products.updateProduct', req),
-    updateVariant: (req: UpdateVariantRequest & { userId: number }): Promise<Result<void>> => ipcRenderer.invoke('products.updateVariant', req),
-    toggleProductEnabled: (req: { id: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('products.toggleProductEnabled', req),
-    toggleVariantEnabled: (req: { id: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('products.toggleVariantEnabled', req),
-    deleteProduct: (req: { productId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('products.deleteProduct', req)
+    createProduct: (req: CreateProductRequest & { userId: string }): Promise<Result<number>> => ipcRenderer.invoke('products.createProduct', req),
+    createVariant: (req: CreateVariantRequest & { userId: string }): Promise<Result<number>> => ipcRenderer.invoke('products.createVariant', req),
+    updateProduct: (req: UpdateProductRequest & { userId: string }): Promise<Result<void>> => ipcRenderer.invoke('products.updateProduct', req),
+    updateVariant: (req: UpdateVariantRequest & { userId: string }): Promise<Result<void>> => ipcRenderer.invoke('products.updateVariant', req),
+    toggleProductEnabled: (req: { id: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('products.toggleProductEnabled', req),
+    toggleVariantEnabled: (req: { id: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('products.toggleVariantEnabled', req),
+    deleteProduct: (req: { productId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('products.deleteProduct', req)
   },
   pricing: {
     getCurrentPrice: (req: GetCurrentPriceRequest): Promise<Result<PriceMenuEntry | null>> => ipcRenderer.invoke('pricing.getCurrentPrice', req),
     listAllEntries: (): Promise<Result<PriceMenuEntry[]>> => ipcRenderer.invoke('pricing.listAllEntries'),
     setVariantPrice: (req: SetVariantPriceRequest): Promise<Result<void>> => ipcRenderer.invoke('pricing.setVariantPrice', req),
     setProductLooseRate: (req: SetProductLooseRateRequest): Promise<Result<void>> => ipcRenderer.invoke('pricing.setProductLooseRate', req),
-    listPriceHistory: (req: { variantId: number }): Promise<Result<PriceHistoryRow[]>> => ipcRenderer.invoke('pricing.listPriceHistory', req)
+    listPriceHistory: (req: { variantId: string }): Promise<Result<PriceHistoryRow[]>> => ipcRenderer.invoke('pricing.listPriceHistory', req)
   },
   bulkInventory: {
-    getBulkStock: (req: { productId: number }): Promise<Result<BulkStockRow | null>> => ipcRenderer.invoke('bulkInventory.getBulkStock', req),
+    getBulkStock: (req: { productId: string }): Promise<Result<BulkStockRow | null>> => ipcRenderer.invoke('bulkInventory.getBulkStock', req),
     listAllBulkStock: (): Promise<Result<BulkStockRow[]>> => ipcRenderer.invoke('bulkInventory.listAllBulkStock'),
     recordArrival: (req: RecordBulkArrivalRequest): Promise<Result<void>> => ipcRenderer.invoke('bulkInventory.recordArrival', req),
     recordAdjustment: (req: RecordBulkAdjustmentRequest): Promise<Result<void>> => ipcRenderer.invoke('bulkInventory.recordAdjustment', req),
-    listArrivals: (req: { productId: number }): Promise<Result<BulkArrivalRow[]>> => ipcRenderer.invoke('bulkInventory.listArrivals', req),
-    listAdjustments: (req: { productId: number }): Promise<Result<BulkAdjustmentRow[]>> => ipcRenderer.invoke('bulkInventory.listAdjustments', req),
-    deleteArrival: (req: { arrivalId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('bulkInventory.deleteArrival', req)
+    listArrivals: (req: { productId: string }): Promise<Result<BulkArrivalRow[]>> => ipcRenderer.invoke('bulkInventory.listArrivals', req),
+    listAdjustments: (req: { productId: string }): Promise<Result<BulkAdjustmentRow[]>> => ipcRenderer.invoke('bulkInventory.listAdjustments', req),
+    deleteArrival: (req: { arrivalId: number; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('bulkInventory.deleteArrival', req)
   },
   packing: {
     validate: (req: ValidatePackingRunRequest): Promise<ValidatePackingRunResult> => ipcRenderer.invoke('packing.validate', req),
@@ -61,7 +61,7 @@ const api = {
   retailInventory: {
     getStock: (req?: { variantId?: number }): Promise<Result<RetailStockRow[]>> => ipcRenderer.invoke('retailInventory.getStock', req),
     recordAdjustment: (req: RecordRetailAdjustmentRequest): Promise<Result<void>> => ipcRenderer.invoke('retailInventory.recordAdjustment', req),
-    listMovements: (req: { variantId: number }): Promise<Result<RetailMovementRow[]>> => ipcRenderer.invoke('retailInventory.listMovements', req)
+    listMovements: (req: { variantId: string }): Promise<Result<RetailMovementRow[]>> => ipcRenderer.invoke('retailInventory.listMovements', req)
   },
   labels: {
     printLabels: (req: PrintLabelsRequest): Promise<Result<void>> => ipcRenderer.invoke('labels.printLabels', req),
@@ -76,16 +76,16 @@ const api = {
     listWholesaleItems: (): Promise<Result<{ packets: WholesaleItemRow[]; loose: LooseItemRow[] }>> => ipcRenderer.invoke('billing.listWholesaleItems')
   },
   print: {
-    receipt: (req: { invoiceId: number }): Promise<Result<void>> => ipcRenderer.invoke('print.receipt', req),
+    receipt: (req: { invoiceId: string }): Promise<Result<void>> => ipcRenderer.invoke('print.receipt', req),
     listPrinters: (): Promise<Result<any[]>> => ipcRenderer.invoke('print.listPrinters')
   },
   customers: {
     list: (req?: { type?: 'retail' | 'wholesale' }): Promise<Result<CustomerRow[]>> => ipcRenderer.invoke('customers.list', req),
-    get: (req: { id: number }): Promise<Result<CustomerRow | null>> => ipcRenderer.invoke('customers.get', req),
+    get: (req: { id: string }): Promise<Result<CustomerRow | null>> => ipcRenderer.invoke('customers.get', req),
     create: (req: CreateCustomerRequest): Promise<Result<number>> => ipcRenderer.invoke('customers.create', req),
     update: (req: UpdateCustomerRequest): Promise<Result<void>> => ipcRenderer.invoke('customers.update', req),
-    listPayments: (req: { customerId: number }): Promise<Result<PaymentRow[]>> => ipcRenderer.invoke('customers.listPayments', req),
-    updateCustomerPhone: (customerId: number, phone: string): Promise<Result<void>> => ipcRenderer.invoke('customers.updatePhone', { customerId, phone })
+    listPayments: (req: { customerId: string }): Promise<Result<PaymentRow[]>> => ipcRenderer.invoke('customers.listPayments', req),
+    updateCustomerPhone: (customerId: string, phone: string): Promise<Result<void>> => ipcRenderer.invoke('customers.updatePhone', { customerId, phone })
   },
   purchases: {
     listSuppliers: (): Promise<Result<SupplierRow[]>> => ipcRenderer.invoke('purchases.listSuppliers'),
@@ -96,7 +96,7 @@ const api = {
   expenses: {
     record: (req: RecordExpenseRequest): Promise<Result<void>> => ipcRenderer.invoke('expenses.record', req),
     list: (req?: { dateFrom?: string; dateTo?: string }): Promise<Result<ExpenseRow[]>> => ipcRenderer.invoke('expenses.list', req),
-    delete: (req: { expenseId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('expenses.delete', req)
+    delete: (req: { expenseId: number; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('expenses.delete', req)
   },
   reports: {
     dailySales: (req: DateRange): Promise<Result<DailySalesRow[]>> => ipcRenderer.invoke('reports.dailySales', req),
@@ -113,12 +113,12 @@ const api = {
   },
   invoiceHistory: {
     search: (req: SearchInvoicesRequest): Promise<Result<InvoiceRow[]>> => ipcRenderer.invoke('invoiceHistory.search', req),
-    getInvoice: (req: { invoiceId: number }): Promise<Result<InvoiceRow | null>> => ipcRenderer.invoke('invoiceHistory.getInvoice', req),
-    void: (req: { invoiceId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.void', req),
-    unvoid: (req: { invoiceId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.unvoid', req),
-    delete: (req: { invoiceId: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.delete', req),
+    getInvoice: (req: { invoiceId: string }): Promise<Result<InvoiceRow | null>> => ipcRenderer.invoke('invoiceHistory.getInvoice', req),
+    void: (req: { invoiceId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.void', req),
+    unvoid: (req: { invoiceId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.unvoid', req),
+    delete: (req: { invoiceId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.delete', req),
     editDateTime: (req: EditInvoiceDateTimeRequest): Promise<Result<InvoiceRow>> => ipcRenderer.invoke('invoiceHistory.editDateTime', req),
-    getEditLog: (req: { invoiceId: number }): Promise<Result<EditLogRow[]>> => ipcRenderer.invoke('invoiceHistory.getEditLog', req),
+    getEditLog: (req: { invoiceId: string }): Promise<Result<EditLogRow[]>> => ipcRenderer.invoke('invoiceHistory.getEditLog', req),
     updateDetails: (req: UpdateInvoiceDetailsRequest): Promise<Result<InvoiceRow>> => ipcRenderer.invoke('invoiceHistory.updateDetails', req)
   },
   backup: {
@@ -132,17 +132,27 @@ const api = {
     getAll: (): Promise<Result<Record<string, string>>> => ipcRenderer.invoke('settings.getAll'),
     set: (req: { key: string, value: string }): Promise<Result<void>> => ipcRenderer.invoke('settings.set', req),
     setAll: (req: Record<string, string>): Promise<Result<void>> => ipcRenderer.invoke('settings.setAll', req),
-    resetDemo: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.resetDemo', userId),
-    clearAllData: (userId: number): Promise<Result<void>> => ipcRenderer.invoke('settings.clearAllData', userId)
+
+    clearAllData: (userId: string): Promise<Result<void>> => ipcRenderer.invoke('settings.clearAllData', userId)
   },
   users: {
-    list: (): Promise<Result<Array<{ id: number; name: string; role: string }>>> => ipcRenderer.invoke('users.list'),
+    list: (): Promise<Result<Array<{ id: string; name: string; role: string }>>> => ipcRenderer.invoke('users.list'),
     create: (req: { name: string; role: string; pin: string }): Promise<Result<number>> => ipcRenderer.invoke('users.create', req),
-    updatePin: (req: { id: number; pin: string }): Promise<Result<void>> => ipcRenderer.invoke('users.updatePin', req),
-    delete: (req: { id: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('users.delete', req)
+    updatePin: (req: { id: string; pin: string }): Promise<Result<void>> => ipcRenderer.invoke('users.updatePin', req),
+    delete: (req: { id: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('users.delete', req)
   },
   sync: {
-    run: (): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('sync.run')
+    run: (): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('sync.run'),
+    forcePush: (): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('sync.forcePush'),
+    forcePull: (): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('sync.forcePull'),
+    checkRemoteState: (): Promise<{ ok: boolean, data?: { outOfSync: boolean, lastRemoteSync?: number, lastLocalSync?: number }, message?: string }> => ipcRenderer.invoke('sync.checkRemoteState'),
+    getLastSyncTime: (): Promise<{ ok: boolean, data: number | null }> => ipcRenderer.invoke('sync.getLastSyncTime')
+  },
+  factory: {
+    listItems: (): Promise<Result<any[]>> => ipcRenderer.invoke('factory.listItems'),
+    createItem: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createItem', req),
+    listTransactions: (itemId?: string): Promise<Result<any[]>> => ipcRenderer.invoke('factory.listTransactions', itemId),
+    createTransaction: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createTransaction', req)
   }
 }
 

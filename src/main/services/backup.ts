@@ -132,9 +132,8 @@ export function initAutoBackupScheduler(): void {
     if (!isAutoBackupEnabled) return
 
     const now = new Date()
-    // Trigger at 05:00
-    if (now.getHours() === 5 && now.getMinutes() === 0) {
-      // Check if we already backed up today
+    // Trigger any time after 05:00 AM if we haven't backed up today
+    if (now.getHours() >= 5) {
       const db = getDb()
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime()
       

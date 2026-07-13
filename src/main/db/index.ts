@@ -4,7 +4,6 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
-import { seedIfEmpty } from './seed'
 
 type DB = ReturnType<typeof drizzle<typeof schema>>
 
@@ -20,7 +19,6 @@ export function openDatabase(): DB {
   _db = drizzle(sqlite, { schema })
 
   migrate(_db, { migrationsFolder: join(__dirname, 'migrations') })
-  seedIfEmpty(_db)
 
   return _db
 }

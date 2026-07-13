@@ -81,7 +81,7 @@ export function validatePackingRun(req: ValidatePackingRunRequest): ValidatePack
   return { ok: true, totalGrams, bulkAvailableGrams }
 }
 
-export function commitPackingRun(req: CommitPackingRunRequest): number {
+export function commitPackingRun(req: CommitPackingRunRequest): string {
   if (!req.lines.length) throw new Error('No lines provided')
 
   const db = getDb()
@@ -175,7 +175,7 @@ export function commitPackingRun(req: CommitPackingRunRequest): number {
   })
 }
 
-export function listPackingRuns(productId?: number): PackingRunRow[] {
+export function listPackingRuns(productId?: string): PackingRunRow[] {
   const db = getDb()
   const runs = db.select().from(packingRuns)
     .orderBy(desc(packingRuns.createdAt))

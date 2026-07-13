@@ -111,7 +111,7 @@ export function setProductLooseRate(req: SetProductLooseRateRequest): void {
   })
 }
 
-export function listPriceHistory(variantId: number): PriceHistoryRow[] {
+export function listPriceHistory(variantId: string): PriceHistoryRow[] {
   return getDb()
     .select()
     .from(priceHistory)

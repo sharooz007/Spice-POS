@@ -19,6 +19,7 @@ export default function CustomersScreen(): ReactElement {
   const [showCreate, setShowCreate] = useState(false)
   const [showSettleModal, setShowSettleModal] = useState(false)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   void setError
 
   async function load(): Promise<void> {
@@ -29,16 +30,15 @@ export default function CustomersScreen(): ReactElement {
   async function selectCustomer(c: CustomerRow): Promise<void> {
     setSelected(c)
     setInvoices([]); setPayments([])
-    if (tab === 'retail') {
-      const res = await window.api.invoiceHistory.search({ customerId: c.id })
-      if (res.ok) setInvoices(res.data)
-    } else {
-      const res = await window.api.customers.listPayments({ customerId: c.id })
-      if (res.ok) setPayments(res.data)
-    }
+    const [invRes, payRes] = await Promise.all([
+      window.api.invoiceHistory.search({ customerId: c.id }),
+      window.api.customers.listPayments({ customerId: c.id })
+    ])
+    if (invRes.ok) setInvoices(invRes.data)
+    if (payRes.ok) setPayments(payRes.data)
   }
 
-  useEffect(() => { load(); setSelected(null); setInvoices([]); setPayments([]) }, [tab])
+  useEffect(() => { load(); setSelected(null); setInvoices([]); setPayments([]); setSearchQuery('') }, [tab])
 
   function CreateForm(): ReactElement {
     const [name, setName] = useState('')
@@ -161,6 +161,15 @@ export default function CustomersScreen(): ReactElement {
           }}>
             <span className="section-label" style={{ margin: 0, padding: 0 }}>{tab === 'retail' ? 'Customers' : 'Parties'}</span>
           </div>
+          <div style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid var(--border)' }}>
+            <input 
+              type="text" 
+              placeholder={`Search ${tab === 'retail' ? 'customers' : 'parties'}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%', fontSize: '0.8125rem' }}
+            />
+          </div>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '0.25rem 0' }}>
             {customers.length === 0 && (
               <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
@@ -168,7 +177,11 @@ export default function CustomersScreen(): ReactElement {
                 <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: 2 }}>Click Add to create one</div>
               </div>
             )}
-            {customers.map((c) => {
+            {customers.filter(c => 
+              c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              (c.phone && c.phone.includes(searchQuery)) ||
+              (c.businessName && c.businessName.toLowerCase().includes(searchQuery.toLowerCase()))
+            ).sort((a, b) => a.name.localeCompare(b.name)).map((c) => {
               const isSelected = selected?.id === c.id
               return (
                 <div key={c.id} onClick={() => selectCustomer(c)}
@@ -185,7 +198,7 @@ export default function CustomersScreen(): ReactElement {
                     {c.name}
                   </div>
                   {c.businessName && <div style={{ fontSize: '0.6875rem', color: isSelected ? 'oklch(0.65 0.12 260)' : 'var(--ink-4)' }}>{c.businessName}</div>}
-                  {tab === 'wholesale' && c.creditBalancePaise > 0 && (
+                  {c.creditBalancePaise > 0 && (
                     <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: isSelected ? 'var(--red)' : 'var(--red)', marginTop: '0.125rem', fontFamily: 'var(--font-mono)' }}>
                       Due: {paiseToCurrency(c.creditBalancePaise)}
                     </div>
@@ -221,7 +234,13 @@ export default function CustomersScreen(): ReactElement {
                   </div>
                 </div>
                 
-                {tab === 'wholesale' && (
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ textAlign: 'right', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-3)' }}>Total Purchases</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink-1)', marginTop: '0.125rem' }}>
+                      {paiseToCurrency(invoices.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.totalPaise : 0), 0))}
+                    </div>
+                  </div>
                   <div style={{ textAlign: 'right', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-3)' }}>Outstanding Balance</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: selected.creditBalancePaise > 0 ? 'var(--red)' : 'var(--green)', marginTop: '0.125rem' }}>
@@ -236,79 +255,77 @@ export default function CustomersScreen(): ReactElement {
                       </button>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Purchase History (retail) or Payment History (wholesale) */}
-            <div className="card" style={{ padding: '1.25rem', flexShrink: 0 }}>
-              {tab === 'retail' ? (
-                <div>
-                  <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.75rem' }}>Purchase History</h3>
-                  {invoices.length === 0 ? (
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--ink-4)' }}>No purchases recorded yet.</p>
-                  ) : (
-                    <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Invoice No.</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Total</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Mode</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Status</th>
+            {/* Purchase and Payment History */}
+            <div className="card" style={{ padding: '1.25rem', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.75rem' }}>Purchase History</h3>
+                {invoices.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--ink-4)' }}>No purchases recorded yet.</p>
+                ) : (
+                  <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Invoice No.</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Total</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Mode</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map((inv) => (
+                        <tr key={inv.id}>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>{inv.invoiceNo}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{new Date(inv.invoiceDatetime).toLocaleDateString()}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--ink-1)' }}>{paiseToCurrency(inv.totalPaise)}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{inv.paymentMode}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)' }}>
+                            <span style={{
+                              fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem', borderRadius: 'var(--r-full)',
+                              background: inv.status === 'void' ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.07 145)',
+                              color: inv.status === 'void' ? 'var(--red)' : 'var(--green)'
+                            }}>
+                              {inv.status}
+                            </span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {invoices.map((inv) => (
-                          <tr key={inv.id}>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>{inv.invoiceNo}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{new Date(inv.invoiceDatetime).toLocaleDateString()}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--ink-1)' }}>{paiseToCurrency(inv.totalPaise)}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{inv.paymentMode}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)' }}>
-                              <span style={{
-                                fontSize: '0.6875rem', fontWeight: 500, padding: '0.125rem 0.5rem', borderRadius: 'var(--r-full)',
-                                background: inv.status === 'void' ? 'oklch(0.24 0.065 25)' : 'oklch(0.25 0.07 145)',
-                                color: inv.status === 'void' ? 'var(--red)' : 'var(--green)'
-                              }}>
-                                {inv.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.75rem' }}>Payment History</h3>
-                  {payments.length === 0 ? (
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--ink-4)' }}>No payments recorded.</p>
-                  ) : (
-                    <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Amount</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Mode</th>
-                          <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Notes</th>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 650, color: 'var(--ink-1)', marginBottom: '0.75rem' }}>Payment History</h3>
+                {payments.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--ink-4)' }}>No payments recorded.</p>
+                ) : (
+                  <table style={{ width: '100%', fontSize: '0.8125rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Date</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Amount</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Mode</th>
+                        <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.map((p) => (
+                        <tr key={p.id}>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{p.date}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--green)' }}>{paiseToCurrency(p.amountPaise)}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{p.mode}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-4)' }}>{p.notes ?? '—'}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {payments.map((p) => (
-                          <tr key={p.id}>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-2)' }}>{p.date}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--green)' }}>{paiseToCurrency(p.amountPaise)}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{p.mode}</td>
-                            <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-4)' }}>{p.notes ?? '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -36,6 +36,20 @@
       "when": 1781356209272,
       "tag": "0004_spooky_solo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783912588774,
+      "tag": "0005_big_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783960234148,
+      "tag": "0006_early_randall_flagg",
+      "breakpoints": true
     }
   ]
 }

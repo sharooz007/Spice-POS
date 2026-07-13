@@ -29,7 +29,7 @@ export function createCategory(req: CreateCategoryRequest): Category {
   return { id: row.id, name: row.name }
 }
 
-export function createProduct(req: CreateProductRequest): number {
+export function createProduct(req: CreateProductRequest): string {
   if (!req.name.trim()) throw new Error('Product name is required')
   if (req.wholesaleRatePerKgPaise < 0) throw new Error('Wholesale rate cannot be negative')
   const db = getDb()
@@ -52,7 +52,7 @@ export function createProduct(req: CreateProductRequest): number {
   })
 }
 
-export function createVariant(req: CreateVariantRequest): number {
+export function createVariant(req: CreateVariantRequest): string {
   if (!req.label.trim()) throw new Error('Variant label is required')
   if (!req.barcode.trim()) throw new Error('Barcode is required')
   if (req.weightGrams <= 0) throw new Error('Weight must be positive')
@@ -111,7 +111,7 @@ export function listProducts(): Product[] {
   }))
 }
 
-export function updateProduct(req: UpdateProductRequest, userId: number): void {
+export function updateProduct(req: UpdateProductRequest, userId: string): void {
   if (Object.keys(req).length <= 1) return // only id provided
   const db = getDb()
   const update: Partial<typeof products.$inferInsert> = {}
@@ -127,7 +127,7 @@ export function updateProduct(req: UpdateProductRequest, userId: number): void {
   db.update(products).set(update).where(eq(products.id, req.id)).run()
 }
 
-export function updateVariant(req: UpdateVariantRequest, userId: number): void {
+export function updateVariant(req: UpdateVariantRequest, userId: string): void {
   if (Object.keys(req).length <= 1) return
   void userId
   const db = getDb()
@@ -139,7 +139,7 @@ export function updateVariant(req: UpdateVariantRequest, userId: number): void {
   db.update(productVariants).set(update).where(eq(productVariants.id, req.id)).run()
 }
 
-export function toggleProductEnabled(id: number, userId: number): void {
+export function toggleProductEnabled(id: string, userId: string): void {
   void userId
   const db = getDb()
   const p = db.select({ enabled: products.enabled }).from(products).where(eq(products.id, id)).get()
@@ -147,7 +147,7 @@ export function toggleProductEnabled(id: number, userId: number): void {
   db.update(products).set({ enabled: !p.enabled }).where(eq(products.id, id)).run()
 }
 
-export function toggleVariantEnabled(id: number, userId: number): void {
+export function toggleVariantEnabled(id: string, userId: string): void {
   void userId
   const db = getDb()
   const v = db
@@ -159,7 +159,7 @@ export function toggleVariantEnabled(id: number, userId: number): void {
   db.update(productVariants).set({ enabled: !v.enabled }).where(eq(productVariants.id, id)).run()
 }
 
-export function deleteProduct(productId: number, _userId: number): void {
+export function deleteProduct(productId: string, _userId: string): void {
   const db = getDb()
   db.transaction((tx) => {
     // Safety check: refuse if any history exists

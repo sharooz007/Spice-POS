@@ -21,7 +21,7 @@ export interface LoginRequest {
 
 /** Safe user object — no pin_hash, no raw PIN */
 export interface AuthUser {
-  id: number
+  id: string
   name: string
   role: 'admin' | 'staff'
 }
@@ -37,13 +37,13 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export interface Category {
-  id: number
+  id: string
   name: string
 }
 
 export interface ProductVariant {
-  id: number
-  productId: number
+  id: string
+  productId: string
   label: string
   weightGrams: number
   barcode: string
@@ -52,9 +52,9 @@ export interface ProductVariant {
 }
 
 export interface Product {
-  id: number
+  id: string
   name: string
-  categoryId: number
+  categoryId: string
   categoryName: string
   enabled: boolean
   bulkLowStockGrams: number
@@ -69,7 +69,7 @@ export interface CreateCategoryRequest {
 
 export interface CreateProductRequest {
   name: string
-  categoryId: number
+  categoryId: string
   bulkLowStockGrams: number
   wholesaleRatePerKgPaise: number
   enabled: boolean
@@ -77,7 +77,7 @@ export interface CreateProductRequest {
 }
 
 export interface CreateVariantRequest {
-  productId: number
+  productId: string
   label: string
   weightGrams: number
   barcode: string
@@ -86,16 +86,16 @@ export interface CreateVariantRequest {
 }
 
 export interface UpdateProductRequest {
-  id: number
+  id: string
   name?: string
-  categoryId?: number
+  categoryId?: string
   bulkLowStockGrams?: number
   wholesaleRatePerKgPaise?: number
   unitType?: 'weight' | 'volume'
 }
 
 export interface UpdateVariantRequest {
-  id: number
+  id: string
   label?: string
   weightGrams?: number
   barcode?: string
@@ -105,53 +105,53 @@ export interface UpdateVariantRequest {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 export interface PriceMenuEntry {
-  id: number
-  variantId: number
+  id: string
+  variantId: string
   retailPricePaise: number
   wholesalePricePaise: number
   effectiveDate: string
 }
 
 export interface PriceHistoryRow {
-  id: number
+  id: string
   targetType: string
-  targetId: number
+  targetId: string
   oldPricePaise: number
   newPricePaise: number
   changedAt: number // unix ms
-  userId: number
+  userId: string
 }
 
 export interface SetVariantPriceRequest {
-  variantId: number
+  variantId: string
   retailPricePaise: number
   wholesalePricePaise: number
   effectiveDate: string
-  userId: number
+  userId: string
 }
 
 export interface SetProductLooseRateRequest {
-  productId: number
+  productId: string
   wholesaleRatePerKgPaise: number
-  userId: number
+  userId: string
 }
 
 export interface GetCurrentPriceRequest {
-  variantId: number
+  variantId: string
   date?: string // 'YYYY-MM-DD', defaults to today
 }
 
 // ── Bulk Inventory ────────────────────────────────────────────────────────────
 
 export interface BulkStockRow {
-  productId: number
+  productId: string
   qtyGrams: number
   avgCostPerKg: number | null // REAL rupees, nullable — never shown to staff
 }
 
 export interface BulkArrivalRow {
-  id: number
-  productId: number
+  id: string
+  productId: string
   date: string
   qtyGrams: number
   costPerKgPaise: number | null // nullable
@@ -160,42 +160,42 @@ export interface BulkArrivalRow {
 }
 
 export interface BulkAdjustmentRow {
-  id: number
-  productId: number
+  id: string
+  productId: string
   date: string
   qtyChangeGrams: number // signed
   reason: string
   notes: string | null
-  userId: number
+  userId: string
   createdAt: number
 }
 
 export interface RecordBulkArrivalRequest {
-  productId: number
+  productId: string
   qtyGrams: number
   date: string
   costPerKgPaise?: number | null // Admin only — handler enforces this
   notes?: string
-  userId: number
+  userId: string
 }
 
 export interface RecordBulkAdjustmentRequest {
-  productId: number
+  productId: string
   qtyChangeGrams: number // signed
   reason: string
   notes?: string
-  userId: number
+  userId: string
 }
 
 // ── Packing ───────────────────────────────────────────────────────────────────
 
 export interface PackingLine {
-  variantId: number
+  variantId: string
   packetsCount: number
 }
 
 export interface ValidatePackingRunRequest {
-  productId: number
+  productId: string
   lines: PackingLine[]
 }
 
@@ -204,25 +204,25 @@ export type ValidatePackingRunResult =
   | { ok: false; error: string }
 
 export interface CommitPackingRunRequest {
-  productId: number
+  productId: string
   lines: PackingLine[]
   notes?: string
-  userId: number
+  userId: string
 }
 
 export interface PackingRunLineRow {
-  id: number
-  variantId: number
+  id: string
+  variantId: string
   packetsCount: number
   unitCostAtPack: number | null // REAL rupees
 }
 
 export interface PackingRunRow {
-  id: number
+  id: string
   date: string
-  productId: number
+  productId: string
   bulkUsedGrams: number
-  userId: number
+  userId: string
   notes: string | null
   createdAt: number
   lines: PackingRunLineRow[]
@@ -231,7 +231,7 @@ export interface PackingRunRow {
 // ── Retail Packet Inventory ───────────────────────────────────────────────────
 
 export interface RetailStockRow {
-  variantId: number
+  variantId: string
   qtyPcs: number
   avgCostPerPc: number | null // REAL rupees, nullable — Admin only
 }
@@ -244,38 +244,38 @@ export interface RetailMovementRow {
 }
 
 export interface RecordRetailAdjustmentRequest {
-  variantId: number
+  variantId: string
   qtyChangePcs: number // signed
   reason: 'manual' | 'damage' | 'wastage'
   notes?: string
-  userId: number
+  userId: string
 }
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
 export interface PrintLabelsRequest {
-  variantId: number
+  variantId: string
   qty: number
   type: 'after_pack' | 'reprice' | 'reprint'
-  userId: number
+  userId: string
   dateStr?: string
 }
 
 export interface LabelPrintLogRow {
-  id: number
+  id: string
   date: string
-  variantId: number
+  variantId: string
   qty: number
   pricePrintedPaise: number
   type: string
-  userId: number
+  userId: string
   createdAt: number
 }
 
 // ── Billing ───────────────────────────────────────────────────────────────────
 
 export interface BillLine {
-  variantId: number
+  variantId: string
   qtyPcs: number
   unitPricePaise: number // from Price Menu, re-verified server-side
 }
@@ -287,14 +287,14 @@ export interface CreateRetailSaleRequest {
   amountPaidPaise: number
   customerName?: string
   customerPhone?: string
-  customerId?: number
-  userId: number
+  customerId?: string
+  userId: string
   paymentSplit?: Array<{ mode: string; amount: number }>
 }
 
 export interface SavedInvoiceLine {
-  id: number
-  variantId: number
+  id: string
+  variantId: string
   label: string
   productName: string
   qtyPcs: number
@@ -304,7 +304,7 @@ export interface SavedInvoiceLine {
 }
 
 export interface SavedInvoice {
-  id: number
+  id: string
   invoiceNo: string
   businessDate: string
   invoiceDatetime: number // unix ms
@@ -314,13 +314,13 @@ export interface SavedInvoice {
   paymentMode: string
   amountPaidPaise: number
   balanceDuePaise: number
-  customerId: number | null
+  customerId: string | null
   lines: SavedInvoiceLine[]
 }
 
 export interface BarcodeResult {
-  variantId: number
-  productId: number
+  variantId: string
+  productId: string
   label: string
   productName: string
   weightGrams: number
@@ -331,8 +331,8 @@ export interface BarcodeResult {
 
 export interface WholesaleLine {
   itemType: 'packet' | 'loose_bulk'
-  variantId?: number   // required for packet
-  productId?: number   // required for loose_bulk
+  variantId?: string   // required for packet
+  productId?: string   // required for loose_bulk
   qty: number          // pcs for packet, grams for loose_bulk
   unit: 'pcs' | 'grams'
   unitPricePaise: number // wholesale price; editable for loose
@@ -343,36 +343,36 @@ export interface CreateWholesaleSaleRequest {
   discountPaise: number
   paymentMode: 'cash' | 'upi' | 'card' | 'split' | 'credit' | 'partial'
   amountPaidPaise: number
-  partyId?: number
+  partyId?: string
   partyName?: string
   partyPhone?: string
-  userId: number
+  userId: string
   paymentSplit?: Array<{ mode: string; amount: number }>
 }
 
 export interface UpdateInvoiceDetailsRequest {
-  invoiceId: number
-  userId: number
+  invoiceId: string
+  userId: string
   newDatetime?: number       // unix ms — triggers edit log
   amountPaidPaise?: number
-  customerId?: number | null  // null = unlink
+  customerId?: string | null  // null = unlink
   customerName?: string
   customerPhone?: string
 }
 
 export interface RecordPartyPaymentRequest {
-  customerId: number
+  customerId: string
   amountPaise: number
   mode: string
   date?: string
   notes?: string
-  userId: number
+  userId: string
 }
 
 // ── Customers & Parties ───────────────────────────────────────────────────────
 
 export interface CustomerRow {
-  id: number
+  id: string
   type: 'retail' | 'wholesale'
   name: string
   businessName: string | null
@@ -383,9 +383,9 @@ export interface CustomerRow {
 }
 
 export interface PaymentRow {
-  id: number
-  customerId: number
-  invoiceId: number | null
+  id: string
+  customerId: string
+  invoiceId: string | null
   date: string
   amountPaise: number
   mode: string
@@ -400,29 +400,29 @@ export interface CreateCustomerRequest {
   phone?: string
   address?: string
   gstNo?: string
-  userId: number
+  userId: string
 }
 
 export interface UpdateCustomerRequest {
-  id: number
+  id: string
   name?: string
   phone?: string
   address?: string
   gstNo?: string
-  userId: number
+  userId: string
 }
 
 // ── Purchases & Expenses ──────────────────────────────────────────────────────
 
 export interface SupplierRow {
-  id: number
+  id: string
   name: string
   phone: string | null
 }
 
 export interface PurchaseEntryRow {
-  id: number
-  supplierId: number | null
+  id: string
+  supplierId: string | null
   date: string
   itemName: string
   qty: number
@@ -432,7 +432,7 @@ export interface PurchaseEntryRow {
 }
 
 export interface ExpenseRow {
-  id: number
+  id: string
   date: string
   category: string
   amountPaise: number
@@ -442,13 +442,13 @@ export interface ExpenseRow {
 }
 
 export interface RecordPurchaseRequest {
-  supplierId?: number
+  supplierId?: string
   itemName: string
   qty: number
   amountPaise: number
   date: string
   notes?: string
-  userId: number
+  userId: string
 }
 
 export interface RecordExpenseRequest {
@@ -457,7 +457,7 @@ export interface RecordExpenseRequest {
   amountPaise: number
   paymentMode: 'cash' | 'upi' | 'card'
   notes?: string
-  userId: number
+  userId: string
 }
 
 // ── Reports ───────────────────────────────────────────────────────────────────
@@ -476,7 +476,7 @@ export interface DailySalesRow {
 }
 
 export interface SalesByProductRow {
-  productId: number
+  productId: string
   productName: string
   qtyGrams: number    // loose sales
   qtyPcs: number      // packet sales
@@ -484,7 +484,7 @@ export interface SalesByProductRow {
 }
 
 export interface SalesByVariantRow {
-  variantId: number
+  variantId: string
   label: string
   productName: string
   qtyPcs: number
@@ -493,8 +493,8 @@ export interface SalesByVariantRow {
 
 export interface InventoryReportRow {
   type: 'bulk' | 'packet'
-  productId?: number
-  variantId?: number
+  productId?: string
+  variantId?: string
   name: string
   qty: number       // grams or pcs
   avgCost: number | null // REAL rupees — Admin only
@@ -510,7 +510,7 @@ export interface LowStockRow {
 }
 
 export interface PackingReportRun {
-  id: number
+  id: string
   date: string
   productName: string
   bulkUsedGrams: number
@@ -525,10 +525,11 @@ export interface ProfitReportRow {
 }
 
 export interface DuesRow {
-  customerId: number
+  customerId: string
   name: string
   businessName: string | null
   creditBalancePaise: number
+  type: string
 }
 
 export interface ExpensesSummaryRow {
@@ -538,8 +539,8 @@ export interface ExpensesSummaryRow {
 }
 
 export interface RepaymentReportRow {
-  id: number
-  customerId: number
+  id: string
+  customerId: string
   customerName: string
   date: string
   amountPaise: number
@@ -566,10 +567,10 @@ export interface PaymentBreakdownRow {
 // ── Invoice History ───────────────────────────────────────────────────────────
 
 export interface InvoiceLineRow {
-  id: number
+  id: string
   itemType: string
-  variantId: number | null
-  productId: number | null
+  variantId: string | null
+  productId: string | null
   qty: number
   unit: string
   unitPricePaise: number
@@ -580,13 +581,13 @@ export interface InvoiceLineRow {
 }
 
 export interface InvoiceRow {
-  id: number
+  id: string
   invoiceNo: string
   createdAt: number
   invoiceDatetime: number
   businessDate: string
   type: string
-  customerId: number | null
+  customerId: string | null
   customerName: string | null
   subtotalPaise: number
   discountPaise: number
@@ -601,31 +602,31 @@ export interface InvoiceRow {
 
 export interface SearchInvoicesRequest {
   invoiceNo?: string
-  customerId?: number
+  customerId?: string
   dateFrom?: string   // filters by business_date
   dateTo?: string
   type?: 'retail' | 'wholesale'
 }
 
 export interface EditInvoiceDateTimeRequest {
-  invoiceId: number
+  invoiceId: string
   newDatetime: number // unix ms
-  userId: number
+  userId: string
 }
 
 export interface EditLogRow {
-  id: number
-  invoiceId: number
+  id: string
+  invoiceId: string
   oldDatetime: number
   newDatetime: number
-  editedBy: number
+  editedBy: string
   editedAt: number
 }
 
 // ── Billing item lists (tile grid convenience) ────────────────────────────────
 
 export interface RetailItemRow {
-  variantId: number
+  variantId: string
   productName: string
   label: string
   weightGrams: number
@@ -635,7 +636,7 @@ export interface RetailItemRow {
 }
 
 export interface WholesaleItemRow {
-  variantId: number
+  variantId: string
   productName: string
   label: string
   weightGrams: number
@@ -645,8 +646,42 @@ export interface WholesaleItemRow {
 }
 
 export interface LooseItemRow {
-  productId: number
+  productId: string
   productName: string
   wholesaleRatePerKgPaise: number
   qtyGrams: number
+}
+
+// ── Factory ───────────────────────────────────────────────────────────────────
+
+export interface FactoryItem {
+  id: string
+  name: string
+  type: 'raw_material' | 'final_product' | 'expense'
+  createdAt: Date
+}
+
+export interface FactoryTransaction {
+  id: string
+  itemId: string
+  type: 'purchase' | 'sale'
+  date: string
+  qtyKg: number
+  amountPaise: number
+  notes: string | null
+  createdAt: Date
+}
+
+export interface CreateFactoryItemRequest {
+  name: string
+  type: 'raw_material' | 'final_product' | 'expense'
+}
+
+export interface CreateFactoryTransactionRequest {
+  itemId: string
+  type: 'purchase' | 'sale'
+  date: string
+  qtyKg: number
+  amountPaise: number
+  notes?: string
 }

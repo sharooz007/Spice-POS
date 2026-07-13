@@ -40,15 +40,15 @@ describe('retail billing — pure computation', () => {
   it('assertPackedOnly: throws if a non-packet item type is passed', () => {
     expect(() =>
       assertPackedOnly([
-        { variantId: 1, qtyPcs: 2, unitPricePaise: 3500 },
-        { variantId: 0, qtyPcs: 1, unitPricePaise: 0 } // variantId 0 = invalid loose marker
+        { variantId: "1", qtyPcs: 2, unitPricePaise: 3500 },
+        { variantId: "0", qtyPcs: 1, unitPricePaise: 0 } // variantId 0 = invalid loose marker
       ])
     ).toThrow()
   })
 
   it('assertPackedOnly: passes for all valid packed lines', () => {
     expect(() =>
-      assertPackedOnly([{ variantId: 1, qtyPcs: 2, unitPricePaise: 3500 }])
+      assertPackedOnly([{ variantId: "1", qtyPcs: 2, unitPricePaise: 3500 }])
     ).not.toThrow()
   })
 })

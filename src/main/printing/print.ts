@@ -15,7 +15,7 @@ function fmt(paise: number): string {
   return '₹' + (paise / 100).toFixed(2)
 }
 
-export async function printReceipt(invoiceId: number): Promise<void> {
+export async function printReceipt(invoiceId: string): Promise<void> {
   const db = getDb()
 
   const inv = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get()

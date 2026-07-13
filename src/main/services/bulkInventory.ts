@@ -121,7 +121,7 @@ export function recordBulkAdjustment(req: RecordBulkAdjustmentRequest): void {
   })
 }
 
-export function getBulkStock(productId: number): BulkStockRow | null {
+export function getBulkStock(productId: string): BulkStockRow | null {
   const row = getDb()
     .select()
     .from(bulkStock)
@@ -131,7 +131,7 @@ export function getBulkStock(productId: number): BulkStockRow | null {
   return { productId: row.productId, qtyGrams: row.qtyGrams, avgCostPerKg: row.avgCostPerKg ?? null }
 }
 
-export function listBulkArrivals(productId: number): BulkArrivalRow[] {
+export function listBulkArrivals(productId: string): BulkArrivalRow[] {
   return getDb()
     .select()
     .from(bulkArrivals)
@@ -149,7 +149,7 @@ export function listBulkArrivals(productId: number): BulkArrivalRow[] {
     }))
 }
 
-export function listBulkAdjustments(productId: number): BulkAdjustmentRow[] {
+export function listBulkAdjustments(productId: string): BulkAdjustmentRow[] {
   return getDb()
     .select()
     .from(bulkAdjustments)
@@ -168,7 +168,7 @@ export function listBulkAdjustments(productId: number): BulkAdjustmentRow[] {
     }))
 }
 
-export function deleteArrival(arrivalId: number, _userId: number): void {
+export function deleteArrival(arrivalId: string, _userId: string): void {
   const db = getDb()
   db.transaction((tx) => {
     // Fetch the arrival to delete
@@ -227,7 +227,7 @@ export function deleteArrival(arrivalId: number, _userId: number): void {
 }
 
 /** All bulk stock with low-stock flag per product */
-export function listAllBulkStock(): Array<BulkStockRow & { productId: number }> {
+export function listAllBulkStock(): Array<BulkStockRow & { productId: string }> {
   return getDb()
     .select()
     .from(bulkStock)

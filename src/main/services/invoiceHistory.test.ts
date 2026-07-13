@@ -52,18 +52,18 @@ describe('C13 — cost change never affects prices', () => {
 describe('void invoice reversal', () => {
   it('restores packet and loose stock and reverses party credit due', () => {
     const reversal = buildVoidReversal({
-      customerId: 42,
+      customerId: "42",
       balanceDuePaise: 93500,
       lines: [
-        { itemType: 'packet', variantId: 7, productId: 1, qty: 2 },
-        { itemType: 'packet', variantId: 7, productId: 1, qty: 3 },
-        { itemType: 'loose_bulk', variantId: null, productId: 11, qty: 1250 },
-        { itemType: 'loose_bulk', variantId: null, productId: 11, qty: 750 },
+        { itemType: 'packet', variantId: "7", productId: "1", qty: 2 },
+        { itemType: 'packet', variantId: "7", productId: "1", qty: 3 },
+        { itemType: 'loose_bulk', variantId: null, productId: "11", qty: 1250 },
+        { itemType: 'loose_bulk', variantId: null, productId: "11", qty: 750 },
       ]
     })
 
-    expect(reversal.packetRestocks).toEqual([{ variantId: 7, qtyPcs: 5 }])
-    expect(reversal.bulkRestocks).toEqual([{ productId: 11, qtyGrams: 2000 }])
-    expect(reversal.creditReversal).toEqual({ customerId: 42, amountPaise: 93500 })
+    expect(reversal.packetRestocks).toEqual([{ variantId: "7", qtyPcs: 5 }])
+    expect(reversal.bulkRestocks).toEqual([{ productId: "11", qtyGrams: 2000 }])
+    expect(reversal.creditReversal).toEqual({ customerId: "42", amountPaise: 93500 })
   })
 })

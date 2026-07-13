@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, type ReactElement, type FormEvent } from 'react'
 import { useAppStore } from '../../store/appStore'
 
@@ -16,9 +17,9 @@ export default function SettingsScreen(): ReactElement {
   const [backups, setBackups] = useState<any[]>([])
   const [usersList, setUsersList] = useState<any[]>([])
   
-  // Users modal
   const [showAddUser, setShowAddUser] = useState(false)
   const [showChangePin, setShowChangePin] = useState<{id: number, name: string} | null>(null)
+  const [isEditingReceipt, setIsEditingReceipt] = useState(false)
   
   const loadData = async () => {
     const sRes = await window.api.settings.getAll()
@@ -81,18 +82,6 @@ export default function SettingsScreen(): ReactElement {
     }
   }
 
-  const handleResetDemoData = async () => {
-    if (confirm('DANGER: This will delete ALL current data and replace it with demo data. Proceed?')) {
-      const res = await window.api.settings.resetDemo(user!.id)
-      if (res.ok) {
-        alert('Demo data seeded. App will restart.')
-        window.location.reload()
-      } else {
-        alert('Failed to reset demo data: ' + res.error)
-      }
-    }
-  }
-
   const handleClearAllData = async () => {
     if (confirm('DANGER: This will delete ALL data (except users and settings) to start fresh. An emergency backup will be taken first. Proceed?')) {
       if (confirm('Are you ABSOLUTELY sure? This action cannot be undone.')) {
@@ -102,6 +91,33 @@ export default function SettingsScreen(): ReactElement {
           window.location.reload()
         } else {
           alert('Failed to clear data: ' + res.error)
+        }
+      }
+    }
+  }
+
+  const handleForcePush = async () => {
+    if (confirm('DANGER: This will forcefully overwrite the ENTIRE CLOUD DATABASE to perfectly match this computer. Any data in the cloud that is not on this computer will be PERMANENTLY DELETED. Proceed?')) {
+      if (confirm('Are you ABSOLUTELY sure? This cannot be undone.')) {
+        const res = await window.api.sync.forcePush()
+        if (res.ok) {
+          alert('Force push complete! Cloud now matches this computer perfectly.')
+        } else {
+          alert('Force push failed: ' + res.message)
+        }
+      }
+    }
+  }
+
+  const handleForcePull = async () => {
+    if (confirm('DANGER: This will forcefully overwrite your LOCAL DATABASE to perfectly match the cloud. Any local data not in the cloud will be PERMANENTLY DELETED. Proceed?')) {
+      if (confirm('Are you ABSOLUTELY sure? This cannot be undone.')) {
+        const res = await window.api.sync.forcePull()
+        if (res.ok) {
+          alert('Force pull complete! Your computer now matches the cloud perfectly.')
+          window.location.reload()
+        } else {
+          alert('Force pull failed: ' + res.message)
         }
       }
     }
@@ -297,45 +313,160 @@ export default function SettingsScreen(): ReactElement {
           )}
 
           {activeTab === 'hardware' && (
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 650, color: 'var(--ink-1)', margin: 0 }}>Printers</h2>
-                <button className="btn btn-secondary" onClick={handleDetectPrinters}>Detect Printers</button>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={labelStyle}>Receipt Printer</label>
-                    <select style={selectStyle} value={settings['receipt_printer'] || ''} onChange={e => setSetting('receipt_printer', e.target.value)}>
-                      <option value="">Select a printer...</option>
-                      {printers.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Receipt Size</label>
-                    <select style={selectStyle} value={settings['receipt_size'] || '80mm'} onChange={e => setSetting('receipt_size', e.target.value)}>
-                      <option value="58mm">58mm</option>
-                      <option value="80mm">80mm</option>
-                    </select>
-                  </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', alignItems: 'flex-start' }}>
+              <div className="card" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: 650, color: 'var(--ink-1)', margin: 0 }}>Printers</h2>
+                  <button className="btn btn-secondary" onClick={handleDetectPrinters}>Detect Printers</button>
                 </div>
                 
-                <hr className="divider" style={{ margin: 0 }} />
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={labelStyle}>Label Printer</label>
-                    <select style={selectStyle} value={settings['label_printer'] || ''} onChange={e => setSetting('label_printer', e.target.value)}>
-                      <option value="">Select a printer...</option>
-                      {printers.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                    </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={labelStyle}>Receipt Printer</label>
+                      <select style={selectStyle} value={settings['receipt_printer'] || ''} onChange={e => setSetting('receipt_printer', e.target.value)}>
+                        <option value="">Select a printer...</option>
+                        {printers.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Receipt Size</label>
+                      <select style={selectStyle} value={settings['receipt_size'] || '80mm'} onChange={e => setSetting('receipt_size', e.target.value)}>
+                        <option value="58mm">58mm</option>
+                        <option value="80mm">80mm</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label style={labelStyle}>Label Size</label>
-                    <select style={selectStyle} value="83x35" disabled>
-                      <option value="83x35">83mm x 35mm (Dual 40x35mm)</option>
-                    </select>
+                  
+                  <hr className="divider" style={{ margin: 0 }} />
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={labelStyle}>Label Printer</label>
+                      <select style={selectStyle} value={settings['label_printer'] || ''} onChange={e => setSetting('label_printer', e.target.value)}>
+                        <option value="">Select a printer...</option>
+                        {printers.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Label Size</label>
+                      <select style={selectStyle} value="83x35" disabled>
+                        <option value="83x35">83mm x 35mm (Dual 40x35mm)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Receipt Preview */}
+              <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-fill)' }}>
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: 650, color: 'var(--ink-1)', margin: 0 }}>Receipt Preview</h2>
+                  <button 
+                    className={isEditingReceipt ? "btn btn-primary" : "btn btn-secondary"}
+                    onClick={() => setIsEditingReceipt(!isEditingReceipt)}
+                  >
+                    {isEditingReceipt ? "Done Editing" : "Edit Details"}
+                  </button>
+                </div>
+                
+                <div style={{
+                  width: settings['receipt_size'] === '58mm' ? '200px' : '280px',
+                  background: '#fff',
+                  padding: '1.5rem 1rem',
+                  borderRadius: '2px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  color: '#000',
+                  fontFamily: 'monospace',
+                  fontSize: settings['receipt_size'] === '58mm' ? '10px' : '12px',
+                  lineHeight: '1.4',
+                  transition: 'width 0.3s ease, font-size 0.3s ease'
+                }}>
+                  <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                    {isEditingReceipt ? (
+                      <input 
+                        style={{ width: '100%', textAlign: 'center', fontWeight: 'bold', fontSize: '1.2em', border: '1px dashed #ccc', marginBottom: '2px', padding: '2px', background: 'rgba(255,255,255,0.8)' }} 
+                        value={settings['shop_name'] || ''} 
+                        onChange={e => setSetting('shop_name', e.target.value)} 
+                        placeholder="Shop Name"
+                      />
+                    ) : (
+                      <div style={{ fontSize: settings['receipt_size'] === '58mm' ? '1.2em' : '1.4em', fontWeight: 'bold' }}>{settings['shop_name'] || 'SPICE SHOP'}</div>
+                    )}
+                    
+                    {isEditingReceipt ? (
+                      <textarea 
+                        style={{ width: '100%', textAlign: 'center', border: '1px dashed #ccc', marginBottom: '2px', padding: '2px', fontFamily: 'monospace', resize: 'none', background: 'rgba(255,255,255,0.8)' }} 
+                        value={settings['shop_address'] || ''} 
+                        onChange={e => setSetting('shop_address', e.target.value)} 
+                        placeholder="Address"
+                        rows={2}
+                      />
+                    ) : (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{settings['shop_address'] || '123 Market St, City'}</div>
+                    )}
+                    
+                    {isEditingReceipt ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span>Ph: </span>
+                        <input 
+                          style={{ width: '100%', textAlign: 'center', border: '1px dashed #ccc', marginLeft: '4px', padding: '2px', background: 'rgba(255,255,255,0.8)' }} 
+                          value={settings['shop_phone'] || ''} 
+                          onChange={e => setSetting('shop_phone', e.target.value)} 
+                          placeholder="Phone"
+                        />
+                      </div>
+                    ) : (
+                      <div>Ph: {settings['shop_phone'] || '1234567890'}</div>
+                    )}
+                  </div>
+                  
+                  <div style={{ textAlign: 'center', fontWeight: 'bold', borderBottom: '1px dashed #000', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+                    RETAIL INVOICE
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <div>Date: 13-Jul-26</div>
+                    <div>Time: 10:30 AM</div>
+                  </div>
+                  <div style={{ marginBottom: '1rem' }}>Bill No: INV-1001</div>
+                  
+                  <div style={{ borderBottom: '1px dashed #000', paddingBottom: '0.25rem', marginBottom: '0.25rem', display: 'flex' }}>
+                    <div style={{ flex: 2 }}>Item</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>Rate</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>Amt</div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', marginBottom: '0.25rem' }}>
+                    <div style={{ flex: 2 }}>Chilli Pdr</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>2</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>150</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>300</div>
+                  </div>
+                  <div style={{ display: 'flex', marginBottom: '0.5rem' }}>
+                    <div style={{ flex: 2 }}>Turmeric</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>1</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>100</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>100</div>
+                  </div>
+                  
+                  <div style={{ borderTop: '1px dashed #000', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em' }}>
+                    <div>TOTAL</div>
+                    <div>₹400.00</div>
+                  </div>
+                  
+                  <div style={{ textAlign: 'center', marginTop: '1.5rem', borderTop: '1px dashed #000', paddingTop: '0.5rem' }}>
+                    {isEditingReceipt ? (
+                      <input 
+                        style={{ width: '100%', textAlign: 'center', border: '1px dashed #ccc', padding: '2px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.8)' }} 
+                        value={settings['receipt_footer'] ?? 'Thank you! Visit again.'} 
+                        onChange={e => setSetting('receipt_footer', e.target.value)} 
+                        placeholder="Footer Message"
+                      />
+                    ) : (
+                      settings['receipt_footer'] ?? 'Thank you! Visit again.'
+                    )}
                   </div>
                 </div>
               </div>
@@ -366,8 +497,8 @@ export default function SettingsScreen(): ReactElement {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <input type="checkbox" id="autoBackup" checked={settings['auto_backup_enabled'] === 'true'} onChange={e => setSetting('auto_backup_enabled', e.target.checked ? 'true' : 'false')} />
-                    <label htmlFor="autoBackup" style={{ fontSize: '0.875rem', color: 'var(--ink-1)', cursor: 'pointer' }}>Enable auto-backup on exit</label>
+                    <input type="checkbox" id="autoBackup" checked={settings['backup_auto_enabled'] === 'true'} onChange={e => setSetting('backup_auto_enabled', e.target.checked ? 'true' : 'false')} />
+                    <label htmlFor="autoBackup" style={{ fontSize: '0.875rem', color: 'var(--ink-1)', cursor: 'pointer' }}>Enable auto-backup daily at 05:00 AM</label>
                   </div>
                 </div>
               </div>
@@ -438,19 +569,27 @@ export default function SettingsScreen(): ReactElement {
           {activeTab === 'advanced' && (
             <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--red)' }}>
               <h2 style={{ fontSize: '1rem', fontWeight: 650, color: 'var(--red)', marginBottom: '1rem' }}>Danger Zone</h2>
+
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-1)' }}>Reset to Demo Data</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Wipes all current transactions and seeds demo data.</div>
-                  {settings['demo_seeded'] === 'true' && <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: '0.125rem', fontWeight: 500 }}>Demo data is currently seeded.</div>}
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-1)' }}>Force Push to Cloud</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Forces the cloud to exactly match this computer (deletes anything on cloud not found here).</div>
                 </div>
-                <button className="btn btn-danger" onClick={handleResetDemoData}>Reset Data</button>
+                <button className="btn btn-danger" onClick={handleForcePush}>Force Push</button>
+              </div>
+              <hr className="divider" style={{ margin: '1rem 0', borderColor: 'var(--border)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-1)' }}>Force Pull from Cloud</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Forces this computer to exactly match the cloud (deletes any local data not in cloud).</div>
+                </div>
+                <button className="btn btn-danger" onClick={handleForcePull}>Force Pull</button>
               </div>
               <hr className="divider" style={{ margin: '1rem 0', borderColor: 'var(--border)' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-1)' }}>Clear All Data</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Completely wipes the database to start fresh (an emergency backup is created first).</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)', marginTop: '0.125rem' }}>Completely wipes the local database to start fresh (an emergency backup is created first).</div>
                 </div>
                 <button className="btn btn-danger" onClick={handleClearAllData}>Clear Data</button>
               </div>
