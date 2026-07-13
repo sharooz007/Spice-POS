@@ -4,3 +4,22 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Local Databases
+database.sqlite
+database.sqlite-journal
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Build outputs
+release/
+build/
