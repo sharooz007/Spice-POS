@@ -15,9 +15,11 @@ import * as billingSvc from '../services/billing'
 import * as customersSvc from '../services/customers'
 import * as purchasesSvc from '../services/purchasesExpenses'
 import * as reportsSvc from '../services/reports'
+import * as usersSvc from '../services/users'
 import * as invoiceHistorySvc from '../services/invoiceHistory'
 import * as backupSvc from '../services/backup'
 import * as settingsSvc from '../services/settings'
+import { syncWithSupabase } from '../services/sync'
 import { printReceipt } from '../printing/print'
 import type {
   PingRequest,
@@ -593,5 +595,10 @@ export function registerHandlers(): void {
     } catch (e: any) {
       return { ok: false, error: e.message }
     }
+  })
+
+  // ── Sync ────────────────────────────────────────────────────────────────────
+  ipcMain.handle('sync.run', async () => {
+    return await syncWithSupabase()
   })
 }

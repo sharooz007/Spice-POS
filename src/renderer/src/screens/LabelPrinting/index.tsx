@@ -13,7 +13,7 @@ function BarcodePreview({ barcode }: { barcode: string }): ReactElement {
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
     if (ref.current && barcode) {
-      try { JsBarcode(ref.current, barcode, { format: 'CODE128', height: 40, fontSize: 10, margin: 4 }) }
+      try { JsBarcode(ref.current, barcode, { format: 'CODE128', height: 30, width: 1.2, fontSize: 9, margin: 0 }) }
       catch { /* invalid barcode */ }
     }
   }, [barcode])
@@ -182,18 +182,51 @@ export default function LabelPrintingScreen(): ReactElement {
 
                     {/* Label preview */}
                     <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '2rem', flexShrink: 0 }}>
+                      {/* Actual sticker format preview: 83x35mm dual column */}
                       <div style={{
-                        background: '#ffffff', borderRadius: 'var(--r-md)', padding: '0.75rem',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', flexShrink: 0, minWidth: 200,
+                        background: '#e0e0e0', padding: '1rem', borderRadius: 'var(--r-md)', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                       }}>
-                        <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#000', textAlign: 'center', lineHeight: 1.2 }}>{selectedVariant.productName}</div>
-                        <div style={{ fontSize: '0.625rem', color: '#444' }}>{selectedVariant.label}</div>
-                        <div style={{ margin: '0.25rem 0' }}>
-                          <BarcodePreview barcode={selectedVariant.barcode} />
-                        </div>
-                        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-mono)' }}>
-                          {currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}
+                        <div style={{
+                          display: 'flex', flexDirection: 'row', width: '313px', height: '132px', background: 'transparent'
+                        }}>
+                          {/* Left Label (40x35mm approx 151x132px) */}
+                          <div style={{
+                            width: '151px', height: '132px', background: '#fff', borderRadius: '4px',
+                            boxSizing: 'border-box', padding: '8px', display: 'flex', flexDirection: 'column',
+                            justifyContent: 'center', alignItems: 'center', overflow: 'hidden', flexShrink: 0,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                          }}>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
+                              {selectedVariant.productName}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
+                            <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px', display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', color: '#000' }}>
+                              <span>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}</span>
+                              <span style={{ fontSize: '8px', fontWeight: 'normal' }}>{new Date(printDate).toLocaleDateString('en-GB')}</span>
+                            </div>
+                          </div>
+
+                          {/* Gap (3mm approx 11px) */}
+                          <div style={{ width: '11px', height: '132px', flexShrink: 0 }}></div>
+
+                          {/* Right Label */}
+                          <div style={{
+                            width: '151px', height: '132px', background: '#fff', borderRadius: '4px',
+                            boxSizing: 'border-box', padding: '8px', display: 'flex', flexDirection: 'column',
+                            justifyContent: 'center', alignItems: 'center', overflow: 'hidden', flexShrink: 0,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                          }}>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
+                              {selectedVariant.productName}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
+                            <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px', display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', color: '#000' }}>
+                              <span>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}</span>
+                              <span style={{ fontSize: '8px', fontWeight: 'normal' }}>{new Date(printDate).toLocaleDateString('en-GB')}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

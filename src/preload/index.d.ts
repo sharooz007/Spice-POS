@@ -142,6 +142,9 @@ declare global {
         updatePin: (req: { id: number; pin: string }) => Promise<Result<void>>
         delete: (req: { id: number; userId: number }) => Promise<Result<void>>
       }
+      sync: {
+        run: () => Promise<{ ok: boolean; message: string }>
+      }
     }
   }
 }

@@ -333,9 +333,8 @@ export default function SettingsScreen(): ReactElement {
                   </div>
                   <div>
                     <label style={labelStyle}>Label Size</label>
-                    <select style={selectStyle} value={settings['label_size'] || '50x25'} onChange={e => setSetting('label_size', e.target.value)}>
-                      <option value="50x25">50mm x 25mm</option>
-                      <option value="40x20">40mm x 20mm</option>
+                    <select style={selectStyle} value="83x35" disabled>
+                      <option value="83x35">83mm x 35mm (Dual 40x35mm)</option>
                     </select>
                   </div>
                 </div>

@@ -140,6 +140,9 @@ const api = {
     create: (req: { name: string; role: string; pin: string }): Promise<Result<number>> => ipcRenderer.invoke('users.create', req),
     updatePin: (req: { id: number; pin: string }): Promise<Result<void>> => ipcRenderer.invoke('users.updatePin', req),
     delete: (req: { id: number; userId: number }): Promise<Result<void>> => ipcRenderer.invoke('users.delete', req)
+  },
+  sync: {
+    run: (): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('sync.run')
   }
 }
 

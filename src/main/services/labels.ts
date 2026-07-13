@@ -3,6 +3,7 @@
 // Reprice / reprint / after_pack all do the same thing: print + log. No stock changes.
 import { BrowserWindow } from 'electron'
 import { join } from 'path'
+import { readFileSync } from 'fs'
 import { eq, desc } from 'drizzle-orm'
 import { getDb } from '../db'
 import { labelPrintLog, settings, productVariants, products } from '../db/schema'
@@ -16,23 +17,50 @@ function getSetting(key: string, fallback: string): string {
 
 function generateHtml(productName: string, variantLabel: string, barcode: string, pricePaise: number, qty: number, dateStr: string): string {
   const priceStr = `₹${(pricePaise / 100).toFixed(2)}`
-  const singleLabel = `<div style="width:1.5in;height:1in;box-sizing:border-box;padding:4px;text-align:center;page-break-after:always;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:sans-serif;overflow:hidden;">
-      <div style="font-size:11px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">${productName}</div>
+  
+  const singleLabel = `
+    <div style="width:40mm; height:35mm; box-sizing:border-box; padding:2mm; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; flex-shrink:0;">
+      <div style="font-size:11px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${productName}</div>
       <div style="font-size:10px;">${variantLabel}</div>
       <svg class="bc"></svg>
-      <div style="font-size:13px;font-weight:bold;margin-top:4px;display:flex;justify-content:space-between;width:80%;align-items:center;">
+      <div style="font-size:11px; font-weight:bold; margin-top:2px; display:flex; justify-content:space-between; width:100%; align-items:center;">
         <span>${priceStr}</span>
-        <span style="font-size:8px;font-weight:normal;color:#333;">${dateStr}</span>
+        <span style="font-size:8px; font-weight:normal; color:#000;">${dateStr}</span>
       </div>
     </div>`
-  // Use a CDN-hosted JsBarcode that runs in the hidden BrowserWindow
-  const jsBarcodePath = 'file://' + join(__dirname, '../printing/templates/JsBarcode.all.min.js')
-  return `<!DOCTYPE html><html><body style="margin:0">
-    ${Array(qty).fill(singleLabel).join('')}
-    <script src="${jsBarcodePath}"></script>
+
+  const emptyLabel = `<div style="width:40mm; height:35mm; flex-shrink:0;"></div>`
+  const gap = `<div style="width:3mm; height:35mm; flex-shrink:0;"></div>`
+
+  let rowsHtml = ''
+  for (let i = 0; i < qty; i += 2) {
+    const hasRight = (i + 1 < qty)
+    rowsHtml += `
+      <div style="width:83mm; height:35mm; display:flex; flex-direction:row; box-sizing:border-box; overflow:hidden; page-break-after:always;">
+        ${singleLabel}
+        ${gap}
+        ${hasRight ? singleLabel : emptyLabel}
+      </div>
+    `
+  }
+
+  // Inject JsBarcode directly to avoid local file:// origin restrictions in data: URIs
+  // Note: electron-vite bundles into out/main/index.js, so __dirname is out/main.
+  const jsBarcodeCode = readFileSync(join(__dirname, 'printing/templates/JsBarcode.all.min.js'), 'utf-8')
+  
+  return `<!DOCTYPE html><html>
+  <head>
+    <style>
+      @page { size: 83mm 35mm; margin: 0; }
+      body { margin: 0; padding: 0; font-family: sans-serif; width: 83mm; background: #fff; color: #000; }
+    </style>
+  </head>
+  <body>
+    ${rowsHtml}
+    <script>${jsBarcodeCode}</script>
     <script>
       document.querySelectorAll('.bc').forEach(function(el) {
-        JsBarcode(el, '${barcode}', {format:'CODE128',height:35,fontSize:9,margin:2});
+        JsBarcode(el, '${barcode}', {format:'CODE128',height:30,width:1.2,fontSize:9,margin:0});
       });
     </script>
   </body></html>`
@@ -76,7 +104,8 @@ export async function printLabels(req: PrintLabelsRequest): Promise<void> {
       setTimeout(() => {
         win.webContents.print(
           { silent: true, deviceName: deviceName || undefined,
-            pageSize: pageSize as 'A0'|'A1'|'A2'|'A3'|'A4'|'A5'|'A6'|'Legal'|'Letter'|'Tabloid' },
+            pageSize: { width: 83000, height: 35000 },
+            margins: { marginType: 'none' } },
           (success, errorType) => {
             win.destroy()
             if (success) resolve()
