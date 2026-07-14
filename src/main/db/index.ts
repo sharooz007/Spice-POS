@@ -3,6 +3,7 @@ import { app } from 'electron'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { sql } from 'drizzle-orm'
 import * as schema from './schema'
 
 type DB = ReturnType<typeof drizzle<typeof schema>>
@@ -19,6 +20,17 @@ export function openDatabase(): DB {
   _db = drizzle(sqlite, { schema })
 
   migrate(_db, { migrationsFolder: join(__dirname, 'migrations') })
+
+  // Seed default admin if no users exist
+  const { users } = schema
+  const userCount = _db.select({ count: sql`count(*)` }).from(users).get() as { count: number }
+  if (userCount.count === 0) {
+    const crypto = require('crypto')
+    const salt = crypto.randomBytes(16).toString('hex')
+    const hash = crypto.scryptSync('0000', salt, 64).toString('hex')
+    const pinHash = `${salt}:${hash}`
+    _db.insert(users).values({ name: 'admin', role: 'admin', pinHash }).run()
+  }
 
   return _db
 }
