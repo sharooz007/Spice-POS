@@ -4,26 +4,34 @@
 <meta charset="utf-8">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: monospace; font-size: 12px; width: 100%; padding: 8px; }
+  body { font-family: monospace; font-size: 12px; width: 100%; padding: 4px; color: #000; line-height: 1.4; }
   .center { text-align: center; }
   .bold { font-weight: bold; }
+  .shop-name { font-weight: bold; margin-bottom: 2px; }
+  .shop-address { white-space: pre-wrap; margin-bottom: 2px; }
   .divider { border-top: 1px dashed #000; margin: 4px 0; }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 1px 2px; vertical-align: top; }
   .right { text-align: right; }
   .row-total { font-weight: bold; }
+  .summary { border-top: 1px dashed #000; margin-top: 4px; padding-top: 4px; }
   .summary td { padding: 2px; }
 </style>
 </head>
 <body>
-  <div class="center bold" id="shop-name"></div>
-  <div class="center" id="shop-address"></div>
+  <div class="center bold shop-name" id="shop-name"></div>
+  <div class="center shop-address" id="shop-address"></div>
   <div class="center" id="shop-phone"></div>
-  <div class="divider"></div>
-  <div class="center bold">RECEIPT</div>
-  <div>Invoice: <span id="invoice-no"></span></div>
-  <div>Date: <span id="invoice-date"></span></div>
-  <div class="divider"></div>
+  
+  <div style="text-align: center; font-weight: bold; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-top: 12px; margin-bottom: 8px;">
+    RETAIL INVOICE
+  </div>
+  
+  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+    <div>Date: <span id="invoice-date"></span></div>
+    <div>Time: <span id="invoice-time"></span></div>
+  </div>
+  <div style="margin-bottom: 16px;">Bill No: <span id="invoice-no"></span></div>
   <table>
     <thead>
       <tr>

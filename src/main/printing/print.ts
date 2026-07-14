@@ -38,8 +38,8 @@ export async function printReceipt(invoiceId: string): Promise<void> {
   const shopName = getSetting('shop_name', 'Spice Shop')
   const shopAddress = getSetting('shop_address', '')
   const shopPhone = getSetting('shop_phone', '')
-  const deviceName = getSetting('receipt_printer_device', '')
-  const pageSize = getSetting('receipt_printer_page_size', 'A4')
+  const deviceName = getSetting('receipt_printer', '')
+  const receiptSize = getSetting('receipt_size', '80mm')
 
   // Read template and fill placeholders via inline script
   const templatePath = join(__dirname, 'templates', 'receipt.html')
@@ -54,9 +54,12 @@ export async function printReceipt(invoiceId: string): Promise<void> {
     )
   }
 
-  const invDate = inv.invoiceDatetime instanceof Date
-    ? inv.invoiceDatetime.toLocaleString()
-    : new Date(Number(inv.invoiceDatetime)).toLocaleString()
+  const dateObj = inv.invoiceDatetime instanceof Date
+    ? inv.invoiceDatetime
+    : new Date(Number(inv.invoiceDatetime))
+  
+  const invDate = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')
+  const invTime = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
 
   const linesHtml = lines
     .map(
@@ -71,9 +74,10 @@ export async function printReceipt(invoiceId: string): Promise<void> {
   const fillScript = `<script>
     document.getElementById('shop-name').textContent = ${JSON.stringify(shopName)};
     document.getElementById('shop-address').textContent = ${JSON.stringify(shopAddress)};
-    document.getElementById('shop-phone').textContent = ${JSON.stringify(shopPhone)};
+    document.getElementById('shop-phone').textContent = ${shopPhone ? JSON.stringify('Ph: ' + shopPhone) : '""'};
     document.getElementById('invoice-no').textContent = ${JSON.stringify(inv.invoiceNo)};
     document.getElementById('invoice-date').textContent = ${JSON.stringify(invDate)};
+    document.getElementById('invoice-time').textContent = ${JSON.stringify(invTime)};
     document.getElementById('lines').innerHTML = ${JSON.stringify(linesHtml)};
     document.getElementById('subtotal').textContent = ${JSON.stringify(fmt(inv.subtotalPaise))};
     document.getElementById('total').textContent = ${JSON.stringify(fmt(inv.totalPaise))};
@@ -83,6 +87,10 @@ export async function printReceipt(invoiceId: string): Promise<void> {
       document.getElementById('discount-row').style.display = '';
       document.getElementById('discount').textContent = ${JSON.stringify(fmt(inv.discountPaise))};
     }
+    const rSize = ${JSON.stringify(receiptSize)};
+    document.body.style.width = rSize === '58mm' ? '58mm' : '80mm';
+    document.body.style.fontSize = rSize === '58mm' ? '10px' : '12px';
+    document.getElementById('shop-name').style.fontSize = rSize === '58mm' ? '1.2em' : '1.4em';
   </script>`
 
   const fullHtml = html.replace('</body>', fillScript + '</body>')
@@ -93,8 +101,7 @@ export async function printReceipt(invoiceId: string): Promise<void> {
     win.webContents.on('did-finish-load', () => {
       setTimeout(() => {
         win.webContents.print(
-          { silent: true, deviceName: deviceName || undefined,
-            pageSize: pageSize as 'A4'|'A5'|'Letter' },
+          { silent: true, deviceName: deviceName || undefined },
           (success, errType) => {
             win.destroy()
             if (success) resolve()
