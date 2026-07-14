@@ -16,11 +16,24 @@ function getSetting(key: string, fallback: string): string {
   return row?.value ?? fallback
 }
 
-function generateHtml(productName: string, variantLabel: string, barcode: string, pricePaise: number, qty: number, dateStr: string): string {
+function generateHtml(productName: string, variantLabel: string, barcode: string, pricePaise: number, qty: number, dateStr: string, settingsMap: Record<string, string>): string {
   const priceStr = `₹${(pricePaise / 100).toFixed(2)}`
   
+  const layout = settingsMap['label_layout'] || '2-col'
+  const widthMm = Number(settingsMap['label_width_mm']) || 40
+  const heightMm = Number(settingsMap['label_height_mm']) || 35
+  const gapMm = Number(settingsMap['label_gap_mm']) || 3
+  const leftMarginMm = Number(settingsMap['label_margin_left_mm']) || 0
+  const rightMarginMm = Number(settingsMap['label_margin_right_mm']) || 0
+  
+  const isTwoCol = layout === '2-col'
+  const pageWidthMm = isTwoCol 
+    ? leftMarginMm + (widthMm * 2) + gapMm + rightMarginMm
+    : leftMarginMm + widthMm + rightMarginMm
+  const pageHeightMm = heightMm
+
   const singleLabel = `
-    <div style="width:40mm; height:35mm; box-sizing:border-box; padding:2mm; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; flex-shrink:0;">
+    <div style="width:${widthMm}mm; height:${heightMm}mm; box-sizing:border-box; padding:2mm; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; flex-shrink:0;">
       <div style="font-size:11px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${productName}</div>
       <div style="font-size:10px;">${variantLabel}</div>
       <svg class="bc"></svg>
@@ -30,19 +43,35 @@ function generateHtml(productName: string, variantLabel: string, barcode: string
       </div>
     </div>`
 
-  const emptyLabel = `<div style="width:40mm; height:35mm; flex-shrink:0;"></div>`
-  const gap = `<div style="width:3mm; height:35mm; flex-shrink:0;"></div>`
+  const emptyLabel = `<div style="width:${widthMm}mm; height:${heightMm}mm; flex-shrink:0;"></div>`
+  const gap = `<div style="width:${gapMm}mm; height:${heightMm}mm; flex-shrink:0;"></div>`
+  const leftMargin = `<div style="width:${leftMarginMm}mm; height:${heightMm}mm; flex-shrink:0;"></div>`
+  const rightMargin = `<div style="width:${rightMarginMm}mm; height:${heightMm}mm; flex-shrink:0;"></div>`
 
   let rowsHtml = ''
-  for (let i = 0; i < qty; i += 2) {
-    const hasRight = (i + 1 < qty)
-    rowsHtml += `
-      <div style="width:83mm; height:35mm; display:flex; flex-direction:row; box-sizing:border-box; overflow:hidden; page-break-after:always;">
-        ${singleLabel}
-        ${gap}
-        ${hasRight ? singleLabel : emptyLabel}
-      </div>
-    `
+  if (isTwoCol) {
+    for (let i = 0; i < qty; i += 2) {
+      const hasRight = (i + 1 < qty)
+      rowsHtml += `
+        <div style="width:${pageWidthMm}mm; height:${pageHeightMm}mm; display:flex; flex-direction:row; box-sizing:border-box; overflow:hidden; page-break-after:always;">
+          ${leftMargin}
+          ${singleLabel}
+          ${gap}
+          ${hasRight ? singleLabel : emptyLabel}
+          ${rightMargin}
+        </div>
+      `
+    }
+  } else {
+    for (let i = 0; i < qty; i++) {
+      rowsHtml += `
+        <div style="width:${pageWidthMm}mm; height:${pageHeightMm}mm; display:flex; flex-direction:row; box-sizing:border-box; overflow:hidden; page-break-after:always;">
+          ${leftMargin}
+          ${singleLabel}
+          ${rightMargin}
+        </div>
+      `
+    }
   }
 
   // Inject JsBarcode directly to avoid local file:// origin restrictions in data: URIs
@@ -52,8 +81,8 @@ function generateHtml(productName: string, variantLabel: string, barcode: string
   return `<!DOCTYPE html><html>
   <head>
     <style>
-      @page { size: 83mm 35mm; margin: 0; }
-      body { margin: 0; padding: 0; font-family: sans-serif; width: 83mm; background: #fff; color: #000; }
+      @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
+      body { margin: 0; padding: 0; font-family: sans-serif; width: ${pageWidthMm}mm; background: #fff; color: #000; }
     </style>
   </head>
   <body>
@@ -93,9 +122,29 @@ export async function printLabels(req: PrintLabelsRequest): Promise<void> {
 
   const dateToPrint = req.dateStr || new Date().toISOString().slice(0, 10)
   
-  const html = generateHtml(varInfo.productName, varInfo.label, varInfo.barcode, pricePaise, req.qty, dateToPrint)
-  const deviceName = getSetting('label_printer_device', '')
-  const pageSize = getSetting('label_printer_page_size', 'A4')
+  // Fetch settings dynamically
+  const settingsRows = db.select().from(settings).all()
+  const settingsMap = settingsRows.reduce((acc, row) => {
+    acc[row.key] = row.value
+    return acc
+  }, {} as Record<string, string>)
+  
+  const html = generateHtml(varInfo.productName, varInfo.label, varInfo.barcode, pricePaise, req.qty, dateToPrint, settingsMap)
+  
+  // Printer config
+  const deviceName = settingsMap['label_printer'] || ''
+  const layout = settingsMap['label_layout'] || '2-col'
+  const widthMm = Number(settingsMap['label_width_mm']) || 40
+  const heightMm = Number(settingsMap['label_height_mm']) || 35
+  const gapMm = Number(settingsMap['label_gap_mm']) || 3
+  const leftMarginMm = Number(settingsMap['label_margin_left_mm']) || 0
+  const rightMarginMm = Number(settingsMap['label_margin_right_mm']) || 0
+  
+  const isTwoCol = layout === '2-col'
+  const pageWidthMm = isTwoCol 
+    ? leftMarginMm + (widthMm * 2) + gapMm + rightMarginMm
+    : leftMarginMm + widthMm + rightMarginMm
+  const pageHeightMm = heightMm
 
   // Print via a hidden BrowserWindow (architecture.md — printing pattern)
   await new Promise<void>((resolve, reject) => {
@@ -105,7 +154,7 @@ export async function printLabels(req: PrintLabelsRequest): Promise<void> {
       setTimeout(() => {
         win.webContents.print(
           { silent: true, deviceName: deviceName || undefined,
-            pageSize: { width: 83000, height: 35000 },
+            pageSize: { width: pageWidthMm * 1000, height: pageHeightMm * 1000 },
             margins: { marginType: 'none' } },
           (success, errorType) => {
             win.destroy()

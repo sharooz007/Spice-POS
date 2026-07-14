@@ -24,6 +24,7 @@ function BarcodePreview({ barcode }: { barcode: string }): ReactElement {
 export default function LabelPrintingScreen(): ReactElement {
   const { user } = useAppStore()
 
+  const [settings, setSettings] = useState<Record<string, string>>({})
   const [products, setProducts] = useState<Product[]>([])
   const [allEntries, setAllEntries] = useState<PriceMenuEntry[]>([])
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -37,12 +38,14 @@ export default function LabelPrintingScreen(): ReactElement {
   const [searchQuery, setSearchQuery] = useState('')
 
   async function loadBase(): Promise<void> {
-    const [pRes, eRes] = await Promise.all([
+    const [pRes, eRes, sRes] = await Promise.all([
       window.api.products.listProducts(),
-      window.api.pricing.listAllEntries()
+      window.api.pricing.listAllEntries(),
+      window.api.settings.getAll()
     ])
     if (pRes.ok) setProducts(pRes.data)
     if (eRes.ok) setAllEntries(eRes.data)
+    if (sRes.ok) setSettings(sRes.data)
   }
 
   async function loadLog(variantId?: string): Promise<void> {
@@ -194,52 +197,53 @@ export default function LabelPrintingScreen(): ReactElement {
 
                     {/* Label preview */}
                     <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '2rem', flexShrink: 0 }}>
-                      {/* Actual sticker format preview: 83x35mm dual column */}
+                      {/* Actual sticker format preview */}
                       <div style={{
                         background: '#e0e0e0', padding: '1rem', borderRadius: 'var(--r-md)', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                       }}>
-                        <div style={{
-                          display: 'flex', flexDirection: 'row', width: '313px', height: '132px', background: 'transparent'
-                        }}>
-                          {/* Left Label (40x35mm approx 151x132px) */}
-                          <div style={{
-                            width: '151px', height: '132px', background: '#fff', borderRadius: '4px',
-                            boxSizing: 'border-box', padding: '8px', display: 'flex', flexDirection: 'column',
-                            justifyContent: 'center', alignItems: 'center', overflow: 'hidden', flexShrink: 0,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          }}>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
-                              {selectedVariant.productName}
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
-                            <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px', display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', color: '#000' }}>
-                              <span>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}</span>
-                              <span style={{ fontSize: '8px', fontWeight: 'normal' }}>{new Date(printDate).toLocaleDateString('en-GB')}</span>
-                            </div>
-                          </div>
+                        {(() => {
+                          // Default to 40x35mm
+                          const layout = settings['label_layout'] || '2-col'
+                          const widthMm = Number(settings['label_width_mm']) || 40
+                          const heightMm = Number(settings['label_height_mm']) || 35
+                          const gapMm = Number(settings['label_gap_mm']) || 3
+                          const pxPerMm = 3.8
+                          
+                          const widthPx = widthMm * pxPerMm
+                          const heightPx = heightMm * pxPerMm
+                          const gapPx = gapMm * pxPerMm
 
-                          {/* Gap (3mm approx 11px) */}
-                          <div style={{ width: '11px', height: '132px', flexShrink: 0 }}></div>
+                          const isTwoCol = layout === '2-col'
 
-                          {/* Right Label */}
-                          <div style={{
-                            width: '151px', height: '132px', background: '#fff', borderRadius: '4px',
-                            boxSizing: 'border-box', padding: '8px', display: 'flex', flexDirection: 'column',
-                            justifyContent: 'center', alignItems: 'center', overflow: 'hidden', flexShrink: 0,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          }}>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
-                              {selectedVariant.productName}
+                          const LabelDiv = () => (
+                            <div style={{
+                              width: widthPx, height: heightPx, background: '#fff', borderRadius: '4px',
+                              boxSizing: 'border-box', padding: '8px', display: 'flex', flexDirection: 'column',
+                              justifyContent: 'center', alignItems: 'center', overflow: 'hidden', flexShrink: 0,
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                            }}>
+                              <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
+                                {selectedVariant.productName}
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
+                              <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
+                              <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px', display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', color: '#000' }}>
+                                <span>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}</span>
+                                <span style={{ fontSize: '8px', fontWeight: 'normal' }}>{new Date(printDate).toLocaleDateString('en-GB')}</span>
+                              </div>
                             </div>
-                            <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
-                            <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px', display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', color: '#000' }}>
-                              <span>{currentPrice ? paiseToCurrency(currentPrice.retailPricePaise) : '—'}</span>
-                              <span style={{ fontSize: '8px', fontWeight: 'normal' }}>{new Date(printDate).toLocaleDateString('en-GB')}</span>
+                          )
+
+                          return (
+                            <div style={{
+                              display: 'flex', flexDirection: 'row', background: 'transparent'
+                            }}>
+                              <LabelDiv />
+                              {isTwoCol && <div style={{ width: gapPx, height: heightPx, flexShrink: 0 }}></div>}
+                              {isTwoCol && <LabelDiv />}
                             </div>
-                          </div>
-                        </div>
+                          )
+                        })()}
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <div><span style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Barcode:</span> <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-1)' }}>{selectedVariant.barcode}</span></div>

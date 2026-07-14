@@ -349,10 +349,37 @@ export default function SettingsScreen(): ReactElement {
                       </select>
                     </div>
                     <div>
-                      <label style={labelStyle}>Label Size</label>
-                      <select style={selectStyle} value="83x35" disabled>
-                        <option value="83x35">83mm x 35mm (Dual 40x35mm)</option>
+                      <label style={labelStyle}>Layout Type</label>
+                      <select style={selectStyle} value={settings['label_layout'] || '2-col'} onChange={e => setSetting('label_layout', e.target.value)}>
+                        <option value="1-col">1-Column (Single Sticker)</option>
+                        <option value="2-col">2-Column (Dual Sticker)</option>
                       </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={labelStyle}>Sticker Width (mm)</label>
+                        <input type="number" style={inputStyle} value={settings['label_width_mm'] || '40'} onChange={e => setSetting('label_width_mm', e.target.value)} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={labelStyle}>Sticker Height (mm)</label>
+                        <input type="number" style={inputStyle} value={settings['label_height_mm'] || '35'} onChange={e => setSetting('label_height_mm', e.target.value)} />
+                      </div>
+                    </div>
+                    {(!settings['label_layout'] || settings['label_layout'] === '2-col') && (
+                      <div>
+                        <label style={labelStyle}>Middle Gap (mm)</label>
+                        <input type="number" style={inputStyle} value={settings['label_gap_mm'] || '3'} onChange={e => setSetting('label_gap_mm', e.target.value)} />
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={labelStyle}>Left Margin (mm)</label>
+                        <input type="number" style={inputStyle} value={settings['label_margin_left_mm'] || '0'} onChange={e => setSetting('label_margin_left_mm', e.target.value)} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={labelStyle}>Right Margin (mm)</label>
+                        <input type="number" style={inputStyle} value={settings['label_margin_right_mm'] || '0'} onChange={e => setSetting('label_margin_right_mm', e.target.value)} />
+                      </div>
                     </div>
                   </div>
                 </div>
