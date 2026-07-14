@@ -3,7 +3,6 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
-import { join } from 'path'
 import type { Plugin } from 'vite'
 
 // Rollup plugin: copies src/main/db/migrations → out/main/migrations after build.

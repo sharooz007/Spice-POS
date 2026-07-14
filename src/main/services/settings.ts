@@ -2,7 +2,6 @@ import { getDb } from '../db'
 import { settings, pingLog, labelPrintLog, purchaseEntries, expenses, invoices, invoiceLines, invoiceDatetimeEditLog, syncQueue, syncLog, payments, bulkStock, bulkArrivals, bulkAdjustments, packingRuns, packingRunLines, retailPacketStock, retailAdjustments, customers, productVariants, products, categories, backupLog, priceMenuEntries, priceHistory, suppliers } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { users } from '../db/schema'
-import { sql } from 'drizzle-orm'
 
 export function getSetting(key: string): string | null {
   const db = getDb()
