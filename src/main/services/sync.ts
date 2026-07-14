@@ -36,7 +36,8 @@ function parseDateStringsToEpoch(row: any): any {
       if (!dateStr.endsWith('Z') && !dateStr.match(/[+-]\d{2}:?\d{2}$/)) {
         dateStr += 'Z'
       }
-      converted[key] = new Date(dateStr).getTime()
+      // Drizzle SQLite mode: 'timestamp' expects SECONDS, not milliseconds!
+      converted[key] = Math.floor(new Date(dateStr).getTime() / 1000)
     } else if (typeof value === 'boolean') {
       // SQLite only supports integers for booleans (1/0)
       converted[key] = value ? 1 : 0
