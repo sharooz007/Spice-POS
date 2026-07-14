@@ -64,3 +64,26 @@ export async function createTransaction(req: CreateFactoryTransactionRequest): P
     return { ok: false, error: err.message }
   }
 }
+
+export async function deleteItem(id: string): Promise<Result<void>> {
+  try {
+    const db = getDb()
+    db.transaction((tx) => {
+      tx.delete(factoryTransactions).where(eq(factoryTransactions.itemId, id)).run()
+      tx.delete(factoryItems).where(eq(factoryItems.id, id)).run()
+    })
+    return { ok: true, data: undefined }
+  } catch (err: any) {
+    return { ok: false, error: err.message }
+  }
+}
+
+export async function deleteTransaction(id: string): Promise<Result<void>> {
+  try {
+    const db = getDb()
+    db.delete(factoryTransactions).where(eq(factoryTransactions.id, id)).run()
+    return { ok: true, data: undefined }
+  } catch (err: any) {
+    return { ok: false, error: err.message }
+  }
+}

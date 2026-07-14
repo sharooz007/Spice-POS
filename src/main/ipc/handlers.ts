@@ -473,6 +473,8 @@ export function registerHandlers(): void {
     wrap(() => customersSvc.updateCustomer(req)))
   ipcMain.handle('customers.listPayments', (_e, req: { customerId: string }): Result<PaymentRow[]> =>
     wrap(() => customersSvc.listPayments(req.customerId)))
+  ipcMain.handle('customers.deletePayment', (_e, id: string): Result<void> =>
+    wrap(() => customersSvc.deletePayment(id)))
   ipcMain.handle('customers.updatePhone', (_e, req: { customerId: string; phone: string }): Result<void> =>
     wrap(() => customersSvc.updateCustomerPhone(req.customerId, req.phone)))
 
@@ -600,8 +602,10 @@ export function registerHandlers(): void {
   // ── Factory ─────────────────────────────────────────────────────────────────
   ipcMain.handle('factory.listItems', () => factorySvc.listItems())
   ipcMain.handle('factory.createItem', (_e, req: any) => factorySvc.createItem(req))
+  ipcMain.handle('factory.deleteItem', (_e, id: string) => factorySvc.deleteItem(id))
   ipcMain.handle('factory.listTransactions', (_e, itemId?: string) => factorySvc.listTransactions(itemId))
   ipcMain.handle('factory.createTransaction', (_e, req: any) => factorySvc.createTransaction(req))
+  ipcMain.handle('factory.deleteTransaction', (_e, id: string) => factorySvc.deleteTransaction(id))
 
   // ── Sync ────────────────────────────────────────────────────────────────────
   ipcMain.handle('sync.run', (): Promise<{ ok: boolean; message: string }> => syncSvc.syncWithSupabase())

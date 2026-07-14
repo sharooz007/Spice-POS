@@ -359,7 +359,7 @@ export async function forcePull(): Promise<{ ok: boolean; message: string }> {
         UNION ALL
         SELECT product_id, -bulk_used_grams as qty FROM packing_runs
         UNION ALL
-        SELECT item_id as product_id, -qty as qty FROM invoice_lines WHERE item_type = 'loose_bulk'
+        SELECT product_id, -qty as qty FROM invoice_lines WHERE item_type = 'loose_bulk'
       )
       GROUP BY product_id;
     `)
@@ -376,7 +376,7 @@ export async function forcePull(): Promise<{ ok: boolean; message: string }> {
         UNION ALL
         SELECT variant_id, qty_change_pcs as qty FROM retail_adjustments
         UNION ALL
-        SELECT item_id as variant_id, -qty as qty FROM invoice_lines WHERE item_type = 'packet'
+        SELECT variant_id, -qty as qty FROM invoice_lines WHERE item_type = 'packet'
       )
       GROUP BY variant_id;
     `)

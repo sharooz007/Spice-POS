@@ -1,7 +1,7 @@
 // @ts-nocheck
 // src/main/services/customers.ts — Customers & Parties (main process only)
 // rules.md #10: gstNo is stored/printed as text only — no tax math anywhere
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '../db'
 import { customers, payments } from '../db/schema'
 import type {
@@ -55,6 +55,27 @@ export function updateCustomerPhone(customerId: string, phone: string): void {
   const trimmed = phone.trim()
   if (!trimmed) return
   getDb().update(customers).set({ phone: trimmed }).where(eq(customers.id, customerId)).run()
+}
+
+export function deletePayment(id: string): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    const payment = tx.select().from(payments).where(eq(payments.id, id)).get()
+    if (!payment) throw new Error('Payment not found')
+    
+    if (payment.invoiceId) {
+      throw new Error('Cannot delete a payment that is linked to an invoice. Please void and delete the invoice instead.')
+    }
+
+    // Revert the credit balance change
+    tx.update(customers)
+      .set({ creditBalancePaise: sql`credit_balance_paise + ${payment.amountPaise}` })
+      .where(eq(customers.id, payment.customerId!))
+      .run()
+      
+    // Delete the payment
+    tx.delete(payments).where(eq(payments.id, id)).run()
+  })
 }
 
 export function listPayments(customerId: string): PaymentRow[] {

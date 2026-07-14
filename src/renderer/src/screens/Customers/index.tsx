@@ -40,6 +40,21 @@ export default function CustomersScreen(): ReactElement {
 
   useEffect(() => { load(); setSelected(null); setInvoices([]); setPayments([]); setSearchQuery('') }, [tab])
 
+  async function handleDeletePayment(id: string) {
+    if (!confirm('Are you sure you want to delete this payment record? Its amount will be added back to the outstanding balance.')) return
+    const res = await window.api.customers.deletePayment(id)
+    if (res.ok) {
+      load()
+      if (selected) {
+        window.api.customers.get({ id: selected.id }).then(cRes => {
+          if (cRes.ok && cRes.data) selectCustomer(cRes.data)
+        })
+      }
+    } else {
+      alert('Failed to delete payment: ' + res.error)
+    }
+  }
+
   function CreateForm(): ReactElement {
     const [name, setName] = useState('')
     const [phone, setPhone] = useState('')
@@ -311,6 +326,7 @@ export default function CustomersScreen(): ReactElement {
                         <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Amount</th>
                         <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Mode</th>
                         <th style={{ paddingBottom: '0.5rem', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>Notes</th>
+                        <th style={{ paddingBottom: '0.5rem', width: '40px', borderBottom: '1px solid var(--border)' }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -320,6 +336,17 @@ export default function CustomersScreen(): ReactElement {
                           <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--green)' }}>{paiseToCurrency(p.amountPaise)}</td>
                           <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-3)' }}>{p.mode}</td>
                           <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', color: 'var(--ink-4)' }}>{p.notes ?? '—'}</td>
+                          <td style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                            {!p.invoiceId && (
+                              <button 
+                                onClick={() => handleDeletePayment(p.id)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: '0.25rem' }}
+                                title="Delete payment record"
+                              >
+                                <svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm3.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd"/></svg>
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

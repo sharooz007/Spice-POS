@@ -122,6 +122,31 @@ export default function FactoryScreen() {
     }
   }
 
+  async function handleDeleteItem(id: string, name: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (confirm(`Are you sure you want to delete "${name}" and all its history?`)) {
+      const res = await (window as any).api.factory.deleteItem(id)
+      if (res.ok) {
+        if (selectedItemId === id) setSelectedItemId('all')
+        loadItems()
+        loadTransactions()
+      } else {
+        alert('Failed to delete item: ' + res.error)
+      }
+    }
+  }
+
+  async function handleDeleteTransaction(id: string) {
+    if (confirm('Are you sure you want to delete this record?')) {
+      const res = await (window as any).api.factory.deleteTransaction(id)
+      if (res.ok) {
+        loadTransactions()
+      } else {
+        alert('Failed to delete record: ' + res.error)
+      }
+    }
+  }
+
   function handleExportExcel() {
     if (itemTransactions.length === 0) {
       alert("No data available to export.")
@@ -270,10 +295,20 @@ export default function FactoryScreen() {
                   cursor: 'pointer',
                   marginBottom: '0.25rem',
                   background: selectedItemId === item.id ? 'var(--accent-soft)' : 'transparent',
-                  borderLeft: selectedItemId === item.id ? '3px solid var(--accent)' : '3px solid transparent'
+                  borderLeft: selectedItemId === item.id ? '3px solid var(--accent)' : '3px solid transparent',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
-                {item.name}
+                <span>{item.name}</span>
+                <button 
+                  onClick={(e) => handleDeleteItem(item.id, item.name, e)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: '0.25rem' }}
+                  title="Delete item and history"
+                >
+                  <svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm3.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd"/></svg>
+                </button>
               </div>
             ))}
             
@@ -355,6 +390,7 @@ export default function FactoryScreen() {
                     )}
                     <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 500, color: 'var(--ink-2)' }}>Amount</th>
                     <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 500, color: 'var(--ink-2)' }}>Notes</th>
+                    <th style={{ padding: '0.75rem 1rem', width: '40px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -373,10 +409,19 @@ export default function FactoryScreen() {
                         {paiseToCurrency(t.amountPaise)}
                       </td>
                       <td style={{ padding: '0.75rem 1rem', color: 'var(--ink-3)' }}>{t.notes || '-'}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => handleDeleteTransaction(t.id)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: '0.25rem' }}
+                          title="Delete record"
+                        >
+                          <svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm3.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd"/></svg>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {itemTransactions.length === 0 && (
-                    <tr><td colSpan={selectedItemId === 'all' ? 5 : 4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-3)' }}>No records found.</td></tr>
+                    <tr><td colSpan={selectedItemId === 'all' ? 6 : 5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-3)' }}>No records found.</td></tr>
                   )}
                 </tbody>
               </table>

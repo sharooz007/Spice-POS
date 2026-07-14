@@ -86,6 +86,7 @@ declare global {
         create: (req: CreateCustomerRequest) => Promise<Result<number>>
         update: (req: UpdateCustomerRequest) => Promise<Result<void>>
         listPayments: (req: { customerId: string }) => Promise<Result<PaymentRow[]>>
+        deletePayment: (id: string) => Promise<Result<void>>
         updateCustomerPhone: (customerId: string, phone: string) => Promise<Result<void>>
       }
       purchases: {
@@ -144,8 +145,17 @@ declare global {
       sync: {
         run: () => Promise<{ ok: boolean; message: string }>
         forcePush: () => Promise<{ ok: boolean; message: string }>
+        forcePull: () => Promise<{ ok: boolean; message: string }>
         checkRemoteState: () => Promise<{ ok: boolean, data?: { outOfSync: boolean, lastRemoteSync?: number, lastLocalSync?: number }, message?: string }>
         getLastSyncTime: () => Promise<{ ok: boolean, data: number | null }>
+      }
+      factory: {
+        listItems: () => Promise<Result<import('../../shared/types').FactoryItem[]>>
+        createItem: (req: import('../../shared/types').CreateFactoryItemRequest) => Promise<Result<void>>
+        deleteItem: (id: string) => Promise<Result<void>>
+        listTransactions: (itemId?: string) => Promise<Result<import('../../shared/types').FactoryTransaction[]>>
+        createTransaction: (req: import('../../shared/types').CreateFactoryTransactionRequest) => Promise<Result<void>>
+        deleteTransaction: (id: string) => Promise<Result<void>>
       }
     }
   }

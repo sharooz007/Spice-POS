@@ -85,6 +85,7 @@ const api = {
     create: (req: CreateCustomerRequest): Promise<Result<number>> => ipcRenderer.invoke('customers.create', req),
     update: (req: UpdateCustomerRequest): Promise<Result<void>> => ipcRenderer.invoke('customers.update', req),
     listPayments: (req: { customerId: string }): Promise<Result<PaymentRow[]>> => ipcRenderer.invoke('customers.listPayments', req),
+    deletePayment: (id: string): Promise<Result<void>> => ipcRenderer.invoke('customers.deletePayment', id),
     updateCustomerPhone: (customerId: string, phone: string): Promise<Result<void>> => ipcRenderer.invoke('customers.updatePhone', { customerId, phone })
   },
   purchases: {
