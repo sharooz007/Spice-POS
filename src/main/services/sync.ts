@@ -30,8 +30,13 @@ function parseDateStringsToEpoch(row: any): any {
   const converted = { ...row }
   for (const [key, value] of Object.entries(converted)) {
     if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-      // It's a timestamp string
-      converted[key] = new Date(value).getTime()
+      // It's a timestamp string. Supabase often returns timestamps without the 'Z' (UTC marker),
+      // which causes JS to parse it as Local Time, shifting it incorrectly.
+      let dateStr = value
+      if (!dateStr.endsWith('Z') && !dateStr.match(/[+-]\d{2}:?\d{2}$/)) {
+        dateStr += 'Z'
+      }
+      converted[key] = new Date(dateStr).getTime()
     } else if (typeof value === 'boolean') {
       // SQLite only supports integers for booleans (1/0)
       converted[key] = value ? 1 : 0
