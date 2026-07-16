@@ -307,29 +307,29 @@ export default function FactoryScreen() {
       <div style={{ display: 'flex', gap: '1rem', flex: 1, overflow: 'hidden' }}>
         
         {/* Left pane: Item list */}
-        <div className="card" style={{ width: '280px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="card" style={{ width: '360px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={() => setTab('raw_material')}
-              style={{ flex: 1, padding: '0.75rem', borderBottom: tab === 'raw_material' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'raw_material' ? 'var(--accent)' : 'var(--ink-3)' }}
+              style={{ flex: 1, padding: '0.75rem 0.25rem', borderBottom: tab === 'raw_material' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'raw_material' ? 'var(--accent)' : 'var(--ink-3)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
             >
               Raw Materials
             </button>
             <button
               onClick={() => setTab('final_product')}
-              style={{ flex: 1, padding: '0.75rem', borderBottom: tab === 'final_product' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'final_product' ? 'var(--accent)' : 'var(--ink-3)' }}
+              style={{ flex: 1, padding: '0.75rem 0.25rem', borderBottom: tab === 'final_product' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'final_product' ? 'var(--accent)' : 'var(--ink-3)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
             >
               Final Products
             </button>
             <button
               onClick={() => setTab('expense')}
-              style={{ flex: 1, padding: '0.75rem', borderBottom: tab === 'expense' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'expense' ? 'var(--accent)' : 'var(--ink-3)' }}
+              style={{ flex: 1, padding: '0.75rem 0.25rem', borderBottom: tab === 'expense' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'expense' ? 'var(--accent)' : 'var(--ink-3)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
             >
               Expenses
             </button>
             <button
               onClick={() => setTab('production_run')}
-              style={{ flex: 1, padding: '0.75rem', borderBottom: tab === 'production_run' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'production_run' ? 'var(--accent)' : 'var(--ink-3)', whiteSpace: 'nowrap' }}
+              style={{ flex: 1, padding: '0.75rem 0.25rem', borderBottom: tab === 'production_run' ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontWeight: 600, color: tab === 'production_run' ? 'var(--accent)' : 'var(--ink-3)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
             >
               Production Runs
             </button>
@@ -370,7 +370,19 @@ export default function FactoryScreen() {
                   alignItems: 'center'
                 }}
               >
-                <span>{item.name}</span>
+                <div>
+                  <div style={{ fontWeight: 500, color: 'var(--ink-1)' }}>{item.name}</div>
+                  {tab === 'raw_material' && (
+                    <div style={{ fontSize: '0.75rem', color: rawMaterialStock.find(s => s.itemId === item.id)?.currentStockKg > 0 ? 'var(--green)' : 'var(--ink-3)', marginTop: '0.25rem' }}>
+                      Stock: {(rawMaterialStock.find(s => s.itemId === item.id)?.currentStockKg || 0).toFixed(2)} kg
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>
+                      {tab === 'raw_material' ? 'Purchases' : tab === 'final_product' ? 'Sales' : 'Records'}: {filteredTransactions.filter(t => t.itemId === item.id).length}
+                    </span>
+                  </div>
+                </div>
                 <button 
                   onClick={(e) => handleDeleteItem(item.id, item.name, e)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: '0.25rem' }}
@@ -395,9 +407,11 @@ export default function FactoryScreen() {
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAdd(false)}>X</button>
               </form>
             ) : (
-              <button onClick={() => setShowAdd(true)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1rem' }}>
-                + Add {tab === 'raw_material' ? 'Raw Material' : tab === 'final_product' ? 'Final Product' : 'Expense'}
-              </button>
+              tab !== 'production_run' && (
+                <button onClick={() => setShowAdd(true)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1rem' }}>
+                  + Add {tab === 'raw_material' ? 'Raw Material' : tab === 'final_product' ? 'Final Product' : 'Expense'}
+                </button>
+              )
             )}
           </div>
         </div>
@@ -512,7 +526,7 @@ export default function FactoryScreen() {
           <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 600 }}>
-                History {selectedItem ? `— ${selectedItem.name}` : `— All ${tab === 'raw_material' ? 'Raw Materials' : tab === 'final_product' ? 'Final Products' : 'Expenses'}`}
+                {tab === 'production_run' ? 'History — All Production Runs' : `History ${selectedItem ? \`— \${selectedItem.name}\` : \`— All \${tab === 'raw_material' ? 'Raw Materials' : tab === 'final_product' ? 'Final Products' : 'Expenses'}\`}`}
               </div>
               <button 
                 onClick={handleExportExcel}
