@@ -526,7 +526,7 @@ export default function FactoryScreen() {
           <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 600 }}>
-                {tab === 'production_run' ? 'History — All Production Runs' : `History ${selectedItem ? \`— \${selectedItem.name}\` : \`— All \${tab === 'raw_material' ? 'Raw Materials' : tab === 'final_product' ? 'Final Products' : 'Expenses'}\`}`}
+                {tab === 'production_run' ? 'History — All Production Runs' : `History ${selectedItem ? `— ${selectedItem.name}` : `— All ${tab === 'raw_material' ? 'Raw Materials' : tab === 'final_product' ? 'Final Products' : 'Expenses'}`}`}
               </div>
               <button 
                 onClick={handleExportExcel}
