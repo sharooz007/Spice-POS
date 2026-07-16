@@ -318,3 +318,19 @@ export const factoryTransactions = sqliteTable('factory_transactions', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
 })
+
+export const factoryProductionRuns = sqliteTable('factory_production_runs', {
+  id: text('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  finalProductId: text('final_product_id').notNull().references(() => factoryItems.id),
+  date: text('date').notNull(),
+  qtyProducedKg: real('qty_produced_kg').notNull(),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
+})
+
+export const factoryProductionRunIngredients = sqliteTable('factory_production_run_ingredients', {
+  id: text('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  runId: text('run_id').notNull().references(() => factoryProductionRuns.id),
+  rawMaterialId: text('raw_material_id').notNull().references(() => factoryItems.id),
+  qtyUsedKg: real('qty_used_kg').notNull()
+})

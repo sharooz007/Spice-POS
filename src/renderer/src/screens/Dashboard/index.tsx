@@ -86,7 +86,7 @@ export default function DashboardScreen(): ReactElement {
     ])
     if (sRes.ok) setSales(sRes.data[0] ?? null)
     if (eRes.ok) setTodayExpenses(eRes.data)
-    if (invRes.ok) setRecentInvoices(invRes.data.slice(0, 10))
+    if (invRes.ok) console.log("INVOICES FROM BACKEND:", invRes.data); setRecentInvoices(invRes.data.slice(0, 10))
     if (expRes.ok) setRecentExpenses(expRes.data.slice(0, 5))
     if (paymentRes.ok) setPaymentBreakdown(paymentRes.data)
     setLoading(false)

@@ -685,3 +685,37 @@ export interface CreateFactoryTransactionRequest {
   amountPaise: number
   notes?: string
 }
+
+export interface FactoryProductionRunIngredient {
+  id: string
+  rawMaterialId: string
+  rawMaterialName?: string
+  qtyUsedKg: number
+}
+
+export interface FactoryProductionRun {
+  id: string
+  finalProductId: string
+  finalProductName?: string
+  date: string
+  qtyProducedKg: number
+  notes: string | null
+  createdAt: Date
+  ingredients?: FactoryProductionRunIngredient[]
+}
+
+export interface CreateFactoryProductionRunRequest {
+  finalProductId: string
+  date: string
+  qtyProducedKg: number
+  notes?: string
+  ingredients: { rawMaterialId: string; qtyUsedKg: number }[]
+}
+
+export interface FactoryRawMaterialStock {
+  itemId: string
+  itemName: string
+  purchasedKg: number
+  consumedKg: number
+  currentStockKg: number
+}

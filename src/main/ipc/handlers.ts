@@ -606,6 +606,12 @@ export function registerHandlers(): void {
   ipcMain.handle('factory.listTransactions', (_e, itemId?: string) => factorySvc.listTransactions(itemId))
   ipcMain.handle('factory.createTransaction', (_e, req: any) => factorySvc.createTransaction(req))
   ipcMain.handle('factory.deleteTransaction', (_e, id: string) => factorySvc.deleteTransaction(id))
+  
+  // Factory Production Runs & Stock
+  ipcMain.handle('factory.listProductionRuns', () => factorySvc.listProductionRuns())
+  ipcMain.handle('factory.createProductionRun', (_e, req: any) => factorySvc.createProductionRun(req))
+  ipcMain.handle('factory.deleteProductionRun', (_e, id: string) => factorySvc.deleteProductionRun(id))
+  ipcMain.handle('factory.getRawMaterialStock', () => factorySvc.getRawMaterialStock())
 
   // ── Sync ────────────────────────────────────────────────────────────────────
   ipcMain.handle('sync.run', (): Promise<{ ok: boolean; message: string }> => syncSvc.syncWithSupabase())

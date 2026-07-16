@@ -156,6 +156,10 @@ declare global {
         listTransactions: (itemId?: string) => Promise<Result<import('../../shared/types').FactoryTransaction[]>>
         createTransaction: (req: import('../../shared/types').CreateFactoryTransactionRequest) => Promise<Result<void>>
         deleteTransaction: (id: string) => Promise<Result<void>>
+        listProductionRuns: () => Promise<Result<import('../../shared/types').FactoryProductionRun[]>>
+        createProductionRun: (req: import('../../shared/types').CreateFactoryProductionRunRequest) => Promise<Result<void>>
+        deleteProductionRun: (id: string) => Promise<Result<void>>
+        getRawMaterialStock: () => Promise<Result<import('../../shared/types').FactoryRawMaterialStock[]>>
       }
     }
   }

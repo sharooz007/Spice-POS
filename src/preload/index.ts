@@ -152,8 +152,14 @@ const api = {
   factory: {
     listItems: (): Promise<Result<any[]>> => ipcRenderer.invoke('factory.listItems'),
     createItem: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createItem', req),
+    deleteItem: (id: string): Promise<Result<void>> => ipcRenderer.invoke('factory.deleteItem', id),
     listTransactions: (itemId?: string): Promise<Result<any[]>> => ipcRenderer.invoke('factory.listTransactions', itemId),
-    createTransaction: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createTransaction', req)
+    createTransaction: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createTransaction', req),
+    deleteTransaction: (id: string): Promise<Result<void>> => ipcRenderer.invoke('factory.deleteTransaction', id),
+    listProductionRuns: (): Promise<Result<any[]>> => ipcRenderer.invoke('factory.listProductionRuns'),
+    createProductionRun: (req: any): Promise<Result<void>> => ipcRenderer.invoke('factory.createProductionRun', req),
+    deleteProductionRun: (id: string): Promise<Result<void>> => ipcRenderer.invoke('factory.deleteProductionRun', id),
+    getRawMaterialStock: (): Promise<Result<any[]>> => ipcRenderer.invoke('factory.getRawMaterialStock')
   }
 }
 
