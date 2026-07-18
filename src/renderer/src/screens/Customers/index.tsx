@@ -34,7 +34,7 @@ export default function CustomersScreen(): ReactElement {
       window.api.invoiceHistory.search({ customerId: c.id }),
       window.api.customers.listPayments({ customerId: c.id })
     ])
-    if (invRes.ok) setInvoices(invRes.data)
+    if (invRes.ok) setInvoices(invRes.data.invoices)
     if (payRes.ok) setPayments(payRes.data)
   }
 

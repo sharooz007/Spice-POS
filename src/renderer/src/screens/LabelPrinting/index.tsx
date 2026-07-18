@@ -14,7 +14,7 @@ function BarcodePreview({ barcode }: { barcode: string }): ReactElement {
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
     if (ref.current && barcode) {
-      try { JsBarcode(ref.current, barcode, { format: 'CODE128', height: 30, width: 1.2, fontSize: 9, margin: 0 }) }
+      try { JsBarcode(ref.current, barcode, { format: 'CODE128', height: 30, width: 1.2, margin: 0, displayValue: false }) }
       catch { /* invalid barcode */ }
     }
   }, [barcode])
@@ -31,11 +31,17 @@ export default function LabelPrintingScreen(): ReactElement {
   const [qty, setQty] = useState('1')
   const [printType, setPrintType] = useState<'after_pack' | 'reprice' | 'reprint'>('reprint')
   const [printDate, setPrintDate] = useState<string>(new Date().toISOString().slice(0, 10))
+  const [customProductName, setCustomProductName] = useState('')
   const [tab, setTab] = useState<Tab>('print')
   const [log, setLog] = useState<LabelPrintLogRow[]>([])
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const v = allVariants.find((v) => v.id === selectedVariantId)
+    if (v) setCustomProductName(v.productName)
+  }, [selectedVariantId, products])
 
   async function loadBase(): Promise<void> {
     const [pRes, eRes, sRes] = await Promise.all([
@@ -81,7 +87,8 @@ export default function LabelPrintingScreen(): ReactElement {
       qty: qtyNum,
       type: printType,
       userId: user!.id,
-      dateStr: printDate
+      dateStr: printDate,
+      customProductName: customProductName.trim() || undefined
     })
     setLoading(false)
     if (res.ok) {
@@ -223,7 +230,7 @@ export default function LabelPrintingScreen(): ReactElement {
                               boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                             }}>
                               <div style={{ fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center', color: '#000' }}>
-                                {selectedVariant.productName}
+                                {customProductName || product?.name}
                               </div>
                               <div style={{ fontSize: '10px', color: '#000' }}>{selectedVariant.label}</div>
                               <div style={{ margin: '2px 0' }}><BarcodePreview barcode={selectedVariant.barcode} /></div>
@@ -256,7 +263,7 @@ export default function LabelPrintingScreen(): ReactElement {
 
                     {/* Print controls */}
                     <form onSubmit={handlePrint} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexShrink: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                           <label style={labelStyle}>Quantity</label>
                           <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required />
@@ -272,6 +279,10 @@ export default function LabelPrintingScreen(): ReactElement {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                           <label style={labelStyle}>Date on Label</label>
                           <input type="date" value={printDate} onChange={(e) => setPrintDate(e.target.value)} required />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={labelStyle}>Product Name</label>
+                          <input type="text" value={customProductName} onChange={(e) => setCustomProductName(e.target.value)} placeholder={product?.name} required />
                         </div>
                       </div>
 

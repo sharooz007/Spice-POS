@@ -66,7 +66,7 @@ import type {
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
   PaymentBreakdownRow,
   RepaymentReportRow,
-  InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
+  InvoiceRow, SearchInvoicesRequest, SearchInvoicesResponse, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest,
   RetailItemRow, WholesaleItemRow, LooseItemRow
 } from '../../shared/types'
@@ -367,6 +367,16 @@ export function registerHandlers(): void {
       wrap(() => packingSvc.listPackingRuns(req?.productId))
   )
 
+  // ── packing.delete ──────────────────────────────────────────────────────────
+  ipcMain.handle(
+    'packing.delete',
+    (_e, req: { runId: string; userId: string }): Result<void> =>
+      wrap(() => {
+        requireAdmin(req.userId)
+        packingSvc.deletePackingRun(req.runId)
+      })
+  )
+
   // ── retailInventory.getStock ────────────────────────────────────────────────
   ipcMain.handle(
     'retailInventory.getStock',
@@ -521,7 +531,7 @@ export function registerHandlers(): void {
     wrap(() => reportsSvc.repaymentsReport(req)))
 
   // ── invoiceHistory ──────────────────────────────────────────────────────────
-  ipcMain.handle('invoiceHistory.search', (_e, req: SearchInvoicesRequest): Result<InvoiceRow[]> =>
+  ipcMain.handle('invoiceHistory.search', (_e, req: SearchInvoicesRequest): Result<SearchInvoicesResponse> =>
     wrap(() => invoiceHistorySvc.searchInvoices(req)))
 
   ipcMain.handle('invoiceHistory.getInvoice', (_e, req: { invoiceId: string }): Result<InvoiceRow | null> =>

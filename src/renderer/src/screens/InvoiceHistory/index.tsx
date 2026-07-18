@@ -13,14 +13,25 @@ export default function InvoiceHistoryScreen(): ReactElement {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
-  async function search(): Promise<void> {
-    const req: SearchInvoicesRequest = {}
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const limit = 50
+
+  async function search(targetPage = 1): Promise<void> {
+    const req: SearchInvoicesRequest = { page: targetPage, limit }
     if (invoiceNo.trim()) req.invoiceNo = invoiceNo.trim()
     if (dateFrom) req.dateFrom = dateFrom
     if (dateTo) req.dateTo = dateTo
     if (typeFilter) req.type = typeFilter
     const res = await window.api.invoiceHistory.search(req)
-    if (res.ok) { setResults(res.data); setError('') }
+    if (res.ok) { 
+      setResults(res.data.invoices)
+      setTotalPages(res.data.totalPages)
+      setTotalRecords(res.data.total)
+      setPage(res.data.page)
+      setError('') 
+    }
     else setError(res.error)
   }
 
@@ -47,7 +58,7 @@ export default function InvoiceHistoryScreen(): ReactElement {
           <label className="text-xs text-gray-500">Invoice No.</label>
           <input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)}
             className="border border-gray-300 rounded px-2 py-1.5 text-sm w-36"
-            onKeyDown={(e) => e.key === 'Enter' && search()} />
+            onKeyDown={(e) => e.key === 'Enter' && search(1)} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">From (business date)</label>
@@ -68,7 +79,7 @@ export default function InvoiceHistoryScreen(): ReactElement {
             <option value="wholesale">Wholesale</option>
           </select>
         </div>
-        <button onClick={search}
+        <button onClick={() => search(1)}
           className="btn btn-primary">
           Search
         </button>
@@ -77,7 +88,8 @@ export default function InvoiceHistoryScreen(): ReactElement {
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
       <div className="flex gap-4">
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+          <div className="flex-1 overflow-auto">
           {results.length === 0
             ? <p className="text-sm text-gray-400">No results. Search to find invoices.</p>
             : (
@@ -120,6 +132,31 @@ export default function InvoiceHistoryScreen(): ReactElement {
                 </tbody>
               </table>
             )}
+        </div>
+
+        {results.length > 0 && (
+          <div className="flex justify-between items-center py-2 text-sm text-gray-500 bg-white border rounded-lg px-4 mt-2">
+            <div>
+              Showing page {page} of {totalPages} ({totalRecords} total invoices)
+            </div>
+            <div className="flex gap-2">
+              <button 
+                disabled={page <= 1}
+                onClick={() => search(page - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button 
+                disabled={page >= totalPages}
+                onClick={() => search(page + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
         </div>
 
         {selectedId && (

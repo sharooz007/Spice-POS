@@ -194,20 +194,16 @@ export function listCategories(): Category[] {
   return getDb().select().from(categories).all()
 }
 
-export function generateBarcode(productName: string, weightGrams: number): string {
-  // PREFIX: first 3 uppercase letters of product name
-  const prefix = productName.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase()
-  // WEIGHT_LABEL: multiples of 1000 → nKG, else nG
-  const weightLabel = weightGrams % 1000 === 0
-    ? `${weightGrams / 1000}KG`
-    : `${weightGrams}G`
-
+export function generateBarcode(productName: string, _weightGrams: number): string {
+  const prefix = (productName.trim().charAt(0) || 'X').toUpperCase()
   const db = getDb()
   const existing = db.select({ barcode: productVariants.barcode }).from(productVariants).all().map((r) => r.barcode)
 
-  for (let seq = 1; seq <= 999; seq++) {
-    const candidate = `${prefix}${weightLabel}${String(seq).padStart(3, '0')}`
-    if (!existing.includes(candidate)) return candidate
+  while (true) {
+    const random4 = Math.floor(1000 + Math.random() * 9000)
+    const candidate = `${prefix}${random4}`
+    if (!existing.includes(candidate)) {
+      return candidate
+    }
   }
-  return `${prefix}${weightLabel}${Date.now().toString().slice(-3)}`
 }

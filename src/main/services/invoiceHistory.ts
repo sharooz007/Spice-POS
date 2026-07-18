@@ -9,7 +9,7 @@ import {
 } from '../db/schema'
 import { businessDate } from '../../shared/businessDate'
 import type {
-  InvoiceRow, InvoiceLineRow, SearchInvoicesRequest,
+  InvoiceRow, InvoiceLineRow, SearchInvoicesRequest, SearchInvoicesResponse,
   EditInvoiceDateTimeRequest, EditLogRow, UpdateInvoiceDetailsRequest
 } from '../../shared/types'
 
@@ -132,8 +132,12 @@ function mapInvoice(
 
 // ── Service functions ─────────────────────────────────────────────────────────
 
-export function searchInvoices(req: SearchInvoicesRequest): InvoiceRow[] {
+export function searchInvoices(req: SearchInvoicesRequest): SearchInvoicesResponse {
   const db = getDb()
+
+  const page = req.page && req.page > 0 ? req.page : 1
+  const limit = req.limit && req.limit > 0 ? req.limit : 50
+  const offset = (page - 1) * limit
 
   // Build WHERE clause dynamically — all date filters use business_date (rules.md #8)
   const conditions: ReturnType<typeof eq>[] = []
@@ -145,11 +149,18 @@ export function searchInvoices(req: SearchInvoicesRequest): InvoiceRow[] {
   else if (req.dateFrom) conditions.push(gte(invoices.businessDate, req.dateFrom) as ReturnType<typeof eq>)
   else if (req.dateTo) conditions.push(lte(invoices.businessDate, req.dateTo) as ReturnType<typeof eq>)
 
-  const invRows = conditions.length
-    ? db.select().from(invoices).where(and(...conditions)).orderBy(sql`invoice_datetime DESC`).limit(200).all()
-    : db.select().from(invoices).orderBy(sql`invoice_datetime DESC`).limit(200).all()
+  const whereClause = conditions.length ? and(...conditions) : undefined
 
-  if (invRows.length === 0) return []
+  const totalResult = whereClause
+    ? db.select({ count: sql<number>`count(*)` }).from(invoices).where(whereClause).get()
+    : db.select({ count: sql<number>`count(*)` }).from(invoices).get()
+  const total = totalResult?.count ?? 0
+
+  const invRows = whereClause
+    ? db.select().from(invoices).where(whereClause).orderBy(sql`invoice_datetime DESC`).limit(limit).offset(offset).all()
+    : db.select().from(invoices).orderBy(sql`invoice_datetime DESC`).limit(limit).offset(offset).all()
+
+  if (invRows.length === 0) return { invoices: [], total, page, totalPages: 0 }
 
   const ids = invRows.map((i) => i.id)
   // Fetch lines with product/variant names via LEFT JOINs
@@ -181,7 +192,14 @@ export function searchInvoices(req: SearchInvoicesRequest): InvoiceRow[] {
     for (const c of custRows) customerMap[c.id] = c.name
   }
 
-  return invRows.map((inv) => mapInvoice(inv, lineRows, inv.customerId ? (customerMap[inv.customerId] ?? null) : null))
+  const invoicesData = invRows.map((inv) => mapInvoice(inv, lineRows, inv.customerId ? (customerMap[inv.customerId] ?? null) : null))
+
+  return {
+    invoices: invoicesData,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit)
+  }
 }
 
 export function voidInvoice(invoiceId: string, userId: string): void {

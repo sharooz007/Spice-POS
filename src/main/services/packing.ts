@@ -202,3 +202,48 @@ export function listPackingRuns(productId?: string): PackingRunRow[] {
       }))
   }))
 }
+
+export function deletePackingRun(runId: string): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    const run = tx.select().from(packingRuns).where(eq(packingRuns.id, runId)).get()
+    if (!run) throw new Error('Packing run not found')
+
+    const lines = tx.select().from(packingRunLines).where(eq(packingRunLines.packingRunId, runId)).all()
+
+    // Revert retail stock
+    for (const line of lines) {
+      const rStock = tx.select().from(retailPacketStock).where(eq(retailPacketStock.variantId, line.variantId)).get()
+      if (rStock) {
+        const existPcs = rStock.qtyPcs
+        const existAvg = rStock.avgCostPerPc ?? 0
+        const newPcs = existPcs - line.packetsCount
+
+        let newAvg: number | null = null
+        if (newPcs > 0 && rStock.avgCostPerPc !== null && line.unitCostAtPack !== null) {
+          const totalValue = existPcs * existAvg
+          const removedValue = line.packetsCount * line.unitCostAtPack
+          newAvg = Math.max(0, (totalValue - removedValue) / newPcs)
+        }
+
+        tx.update(retailPacketStock)
+          .set({ qtyPcs: newPcs, avgCostPerPc: newPcs > 0 ? newAvg : null })
+          .where(eq(retailPacketStock.variantId, line.variantId))
+          .run()
+      }
+    }
+
+    // Revert bulk stock
+    const bulk = tx.select().from(bulkStock).where(eq(bulkStock.productId, run.productId)).get()
+    if (bulk) {
+      tx.update(bulkStock)
+        .set({ qtyGrams: bulk.qtyGrams + run.bulkUsedGrams })
+        .where(eq(bulkStock.productId, run.productId))
+        .run()
+    }
+
+    // Delete lines and run
+    tx.delete(packingRunLines).where(eq(packingRunLines.packingRunId, runId)).run()
+    tx.delete(packingRuns).where(eq(packingRuns.id, runId)).run()
+  })
+}

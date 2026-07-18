@@ -16,7 +16,7 @@ import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
   PaymentBreakdownRow, RepaymentReportRow,
-  InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
+  InvoiceRow, SearchInvoicesRequest, SearchInvoicesResponse, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest
 } from '../shared/types'
 
@@ -56,8 +56,9 @@ declare global {
       }
       packing: {
         validate: (req: ValidatePackingRunRequest) => Promise<ValidatePackingRunResult>
-        commit: (req: CommitPackingRunRequest) => Promise<Result<number>>
+        commit: (req: CommitPackingRunRequest) => Promise<Result<string>>
         listRuns: (req?: { productId?: number }) => Promise<Result<PackingRunRow[]>>
+        delete: (req: { runId: string; userId: string }) => Promise<Result<void>>
       }
       retailInventory: {
         getStock: (req?: { variantId?: number }) => Promise<Result<RetailStockRow[]>>
@@ -114,7 +115,7 @@ declare global {
         repayments: (req: DateRange) => Promise<Result<RepaymentReportRow[]>>
       }
       invoiceHistory: {
-        search: (req: SearchInvoicesRequest) => Promise<Result<InvoiceRow[]>>
+        search: (req: SearchInvoicesRequest) => Promise<Result<SearchInvoicesResponse>>
         getInvoice: (req: { invoiceId: string }) => Promise<Result<InvoiceRow | null>>
         void: (req: { invoiceId: string; userId: string }) => Promise<Result<void>>
         unvoid: (req: { invoiceId: string; userId: string }) => Promise<Result<void>>

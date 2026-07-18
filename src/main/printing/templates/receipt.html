@@ -10,12 +10,18 @@
   .shop-name { font-weight: bold; margin-bottom: 2px; }
   .shop-address { white-space: pre-wrap; margin-bottom: 2px; }
   .divider { border-top: 1px dashed #000; margin: 4px 0; }
+  
+  .flex-row { display: flex; }
+  .flex-row > div { padding: 1px 2px; }
+  .col-item { flex: 2; word-break: break-word; }
+  .col-qty { flex: 1; text-align: right; }
+  .col-rate { flex: 1; text-align: right; }
+  .col-amt { flex: 1; text-align: right; }
+  
   table { width: 100%; border-collapse: collapse; }
-  td { padding: 1px 2px; vertical-align: top; }
-  .right { text-align: right; }
-  .row-total { font-weight: bold; }
   .summary { border-top: 1px dashed #000; margin-top: 4px; padding-top: 4px; }
   .summary td { padding: 2px; }
+  .right { text-align: right; }
 </style>
 </head>
 <body>
@@ -32,18 +38,16 @@
     <div>Time: <span id="invoice-time"></span></div>
   </div>
   <div style="margin-bottom: 16px;">Bill No: <span id="invoice-no"></span></div>
-  <table>
-    <thead>
-      <tr>
-        <td class="bold">Item</td>
-        <td class="bold right">Qty</td>
-        <td class="bold right">Rate</td>
-        <td class="bold right">Total</td>
-      </tr>
-    </thead>
-    <tbody id="lines"></tbody>
-  </table>
-  <div class="divider"></div>
+  
+  <div class="flex-row bold" style="border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 4px;">
+    <div class="col-item">Item</div>
+    <div class="col-qty">Qty</div>
+    <div class="col-rate">Rate</div>
+    <div class="col-amt">Total</div>
+  </div>
+  
+  <div id="lines"></div>
+  
   <table class="summary">
     <tr><td>Subtotal</td><td class="right" id="subtotal"></td></tr>
     <tr id="discount-row" style="display:none"><td>Discount</td><td class="right" id="discount"></td></tr>
@@ -51,7 +55,8 @@
     <tr><td>Payment</td><td class="right" id="payment-mode"></td></tr>
     <tr><td>Paid</td><td class="right" id="amount-paid"></td></tr>
   </table>
+  
   <div class="divider"></div>
-  <div class="center">Thank you!</div>
+  <div class="center" id="receipt-footer" style="margin-top: 8px;"></div>
 </body>
 </html>

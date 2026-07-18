@@ -1,0 +1,12 @@
+name = "spice-pos-sync"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "spice-pos-sync"
+database_id = "00000000-0000-0000-0000-000000000000" # Replace with your real D1 database ID after running 'wrangler d1 create'
+
+[vars]
+# You can set the API_KEY here for dev, but for production use 'wrangler secret put API_KEY'
+API_KEY = "DEV_SECRET_KEY_123"

@@ -201,6 +201,9 @@ export default function SettingsScreen(): ReactElement {
     { id: 'advanced', label: 'Advanced' }
   ]
 
+  const rSizeStr = settings['receipt_size'] || '80mm';
+  const rSizeNum = parseFloat(rSizeStr) || 80;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 96px)', background: 'var(--bg-base)', padding: '1.25rem', gap: '1rem' }}>
       {showAddUser && <AddUserModal />}
@@ -330,11 +333,8 @@ export default function SettingsScreen(): ReactElement {
                       </select>
                     </div>
                     <div>
-                      <label style={labelStyle}>Receipt Size</label>
-                      <select style={selectStyle} value={settings['receipt_size'] || '80mm'} onChange={e => setSetting('receipt_size', e.target.value)}>
-                        <option value="58mm">58mm</option>
-                        <option value="80mm">80mm</option>
-                      </select>
+                      <label style={labelStyle}>Receipt Size (e.g. 58mm)</label>
+                      <input style={inputStyle} value={settings['receipt_size'] || '80mm'} onChange={e => setSetting('receipt_size', e.target.value)} placeholder="80mm" />
                     </div>
                   </div>
                   
@@ -398,14 +398,14 @@ export default function SettingsScreen(): ReactElement {
                 </div>
                 
                 <div style={{
-                  width: settings['receipt_size'] === '58mm' ? '200px' : '280px',
+                  width: `${rSizeNum * 3.5}px`,
                   background: '#fff',
                   padding: '1.5rem 1rem',
                   borderRadius: '2px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   color: '#000',
                   fontFamily: 'monospace',
-                  fontSize: settings['receipt_size'] === '58mm' ? '10px' : '12px',
+                  fontSize: rSizeNum < 65 ? '10px' : rSizeNum < 75 ? '11px' : '12px',
                   lineHeight: '1.4',
                   transition: 'width 0.3s ease, font-size 0.3s ease'
                 }}>
@@ -418,7 +418,7 @@ export default function SettingsScreen(): ReactElement {
                         placeholder="Shop Name"
                       />
                     ) : (
-                      <div style={{ fontSize: settings['receipt_size'] === '58mm' ? '1.2em' : '1.4em', fontWeight: 'bold' }}>{settings['shop_name'] || 'SPICE SHOP'}</div>
+                      <div style={{ fontSize: rSizeNum < 65 ? '1.2em' : rSizeNum < 75 ? '1.3em' : '1.4em', fontWeight: 'bold' }}>{settings['shop_name'] || 'SPICE SHOP'}</div>
                     )}
                     
                     {isEditingReceipt ? (
@@ -462,7 +462,7 @@ export default function SettingsScreen(): ReactElement {
                     <div style={{ flex: 2 }}>Item</div>
                     <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
                     <div style={{ flex: 1, textAlign: 'right' }}>Rate</div>
-                    <div style={{ flex: 1, textAlign: 'right' }}>Amt</div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
                   </div>
                   
                   <div style={{ display: 'flex', marginBottom: '0.25rem' }}>

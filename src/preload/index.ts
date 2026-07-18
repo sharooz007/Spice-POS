@@ -17,7 +17,7 @@ import type {
   DateRange, DailySalesRow, SalesByProductRow, SalesByVariantRow,
   InventoryReportRow, LowStockRow, PackingReportRun, ProfitReportRow, DuesRow, ExpensesSummaryRow,
   PaymentBreakdownRow, RepaymentReportRow,
-  InvoiceRow, SearchInvoicesRequest, EditInvoiceDateTimeRequest, EditLogRow,
+  InvoiceRow, SearchInvoicesRequest, SearchInvoicesResponse, EditInvoiceDateTimeRequest, EditLogRow,
   UpdateInvoiceDetailsRequest
 } from '../shared/types'
 
@@ -55,8 +55,9 @@ const api = {
   },
   packing: {
     validate: (req: ValidatePackingRunRequest): Promise<ValidatePackingRunResult> => ipcRenderer.invoke('packing.validate', req),
-    commit: (req: CommitPackingRunRequest): Promise<Result<number>> => ipcRenderer.invoke('packing.commit', req),
-    listRuns: (req?: { productId?: number }): Promise<Result<PackingRunRow[]>> => ipcRenderer.invoke('packing.listRuns', req)
+    commit: (req: CommitPackingRunRequest): Promise<Result<string>> => ipcRenderer.invoke('packing.commit', req),
+    listRuns: (req?: { productId?: number }): Promise<Result<PackingRunRow[]>> => ipcRenderer.invoke('packing.listRuns', req),
+    delete: (req: { runId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('packing.delete', req)
   },
   retailInventory: {
     getStock: (req?: { variantId?: number }): Promise<Result<RetailStockRow[]>> => ipcRenderer.invoke('retailInventory.getStock', req),
@@ -113,7 +114,7 @@ const api = {
     repayments: (req: DateRange): Promise<Result<RepaymentReportRow[]>> => ipcRenderer.invoke('reports.repayments', req)
   },
   invoiceHistory: {
-    search: (req: SearchInvoicesRequest): Promise<Result<InvoiceRow[]>> => ipcRenderer.invoke('invoiceHistory.search', req),
+    search: (req: SearchInvoicesRequest): Promise<Result<SearchInvoicesResponse>> => ipcRenderer.invoke('invoiceHistory.search', req),
     getInvoice: (req: { invoiceId: string }): Promise<Result<InvoiceRow | null>> => ipcRenderer.invoke('invoiceHistory.getInvoice', req),
     void: (req: { invoiceId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.void', req),
     unvoid: (req: { invoiceId: string; userId: string }): Promise<Result<void>> => ipcRenderer.invoke('invoiceHistory.unvoid', req),

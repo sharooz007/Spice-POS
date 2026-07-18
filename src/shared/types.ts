@@ -259,6 +259,7 @@ export interface PrintLabelsRequest {
   type: 'after_pack' | 'reprice' | 'reprint'
   userId: string
   dateStr?: string
+  customProductName?: string
 }
 
 export interface LabelPrintLogRow {
@@ -606,6 +607,15 @@ export interface SearchInvoicesRequest {
   dateFrom?: string   // filters by business_date
   dateTo?: string
   type?: 'retail' | 'wholesale'
+  page?: number
+  limit?: number
+}
+
+export interface SearchInvoicesResponse {
+  invoices: InvoiceRow[]
+  total: number
+  page: number
+  totalPages: number
 }
 
 export interface EditInvoiceDateTimeRequest {

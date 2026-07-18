@@ -1,16 +1,9 @@
 // @ts-nocheck
-import { createClient } from '@supabase/supabase-js'
 import { openDatabase } from '../db'
 import * as crypto from 'crypto'
 
-// Initialize Supabase Client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
-
-let supabase: ReturnType<typeof createClient> | null = null
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey)
-}
+const workerUrl = import.meta.env.VITE_SYNC_WORKER_URL || process.env.VITE_SYNC_WORKER_URL
+const apiKey = import.meta.env.VITE_SYNC_API_KEY || process.env.VITE_SYNC_API_KEY
 
 const TABLES_TO_SYNC = [
   'users', 'settings',
@@ -24,33 +17,46 @@ const TABLES_TO_SYNC = [
   'factory_items', 'factory_transactions'
 ]
 
-// Supabase returns timestamps as ISO strings. SQLite stores them as integers (ms since epoch)
-// Supabase also returns booleans, which SQLite must store as 1 or 0
-function parseDateStringsToEpoch(row: any): any {
-  const converted = { ...row }
-  for (const [key, value] of Object.entries(converted)) {
-    if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-      // It's a timestamp string. Supabase often returns timestamps without the 'Z' (UTC marker),
-      // which causes JS to parse it as Local Time, shifting it incorrectly.
-      let dateStr = value
-      if (!dateStr.endsWith('Z') && !dateStr.match(/[+-]\d{2}:?\d{2}$/)) {
-        dateStr += 'Z'
-      }
-      // Drizzle SQLite mode: 'timestamp' expects SECONDS, not milliseconds!
-      converted[key] = Math.floor(new Date(dateStr).getTime() / 1000)
-    } else if (typeof value === 'boolean') {
-      // SQLite only supports integers for booleans (1/0)
-      converted[key] = value ? 1 : 0
-    }
+async function callWorker(endpoint: string, body: any) {
+  if (!workerUrl || !apiKey) {
+    throw new Error('Sync Worker URL or API Key is missing in .env')
   }
-  return converted
+  const url = `${workerUrl.replace(/\/$/, '')}${endpoint}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(body)
+  })
+  if (!res.ok) {
+    let err
+    try { err = await res.json() } catch { err = { error: res.statusText } }
+    throw new Error(`Worker Error: ${err.error || res.statusText}`)
+  }
+  return res.json()
+}
+
+async function callWorkerGet(endpoint: string) {
+  if (!workerUrl || !apiKey) {
+    throw new Error('Sync Worker URL or API Key is missing in .env')
+  }
+  const url = `${workerUrl.replace(/\/$/, '')}${endpoint}`
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`
+    }
+  })
+  if (!res.ok) {
+    let err
+    try { err = await res.json() } catch { err = { error: res.statusText } }
+    throw new Error(`Worker Error: ${err.error || res.statusText}`)
+  }
+  return res.json()
 }
 
 export async function syncWithSupabase(): Promise<{ ok: boolean, message: string }> {
-  if (!supabase) {
-    return { ok: false, message: 'Supabase URL or Key is missing in .env' }
-  }
-
   const db = openDatabase()
   // @ts-ignore
   const sqlite = db.session?.client // The raw better-sqlite3 Database instance
@@ -62,55 +68,24 @@ export async function syncWithSupabase(): Promise<{ ok: boolean, message: string
   try {
     // 1. PUSH (Local -> Cloud)
     for (const table of TABLES_TO_SYNC) {
-      // Get all local rows
       const rows = sqlite.prepare(`SELECT * FROM ${table}`).all()
       if (rows.length > 0) {
-        // Convert any integer timestamps to ISO strings for Supabase? 
-        // Actually, Supabase's JS client will accept numbers if they match Unix timestamps, 
-        // or we might need to manually map them. Let's just push them directly first.
-        // Wait, Supabase requires ISO strings for TIMESTAMP WITH TIME ZONE.
-        const mappedRows = rows.map((r: any) => {
-          const out = { ...r }
-          for (const [k, v] of Object.entries(out)) {
-            // Strictly check for known timestamp columns
-            const dateColumns = ['created_at', 'changed_at', 'invoice_datetime', 'old_datetime', 'new_datetime', 'edited_at', 'synced_at', 'date']
-            if (dateColumns.includes(k) && typeof v === 'number') {
-              // Drizzle timestamp mode sometimes stores as seconds (10 digits) or ms (13 digits)
-              const ms = v < 10000000000 ? v * 1000 : v
-              out[k] = new Date(ms).toISOString()
-            }
-          }
-          return out
-        })
-
-        const { error } = await supabase.from(table).upsert(mappedRows)
-        if (error) {
-          console.error(`Push error on ${table}:`, error)
-          return { ok: false, message: `Failed to push ${table}: ${error.message}` }
-        }
+        await callWorker('/push', { table, rows })
       }
     }
 
     // 2. PULL (Cloud -> Local)
     for (const table of TABLES_TO_SYNC) {
-      const { data, error } = await supabase.from(table).select('*')
-      if (error) {
-        console.error(`Pull error on ${table}:`, error)
-        return { ok: false, message: `Failed to pull ${table}: ${error.message}` }
-      }
+      const { data } = await callWorker('/pull', { table })
 
       if (data && data.length > 0) {
         const cols = Object.keys(data[0])
         const placeholders = cols.map(() => '?').join(', ')
-        // Convert camelCase to snake_case if necessary? Drizzle uses snake_case in DB, 
-        // Supabase schema generated uses snake_case! Wait, Drizzle SQLite tables have snake_case column names.
-        // So SQLite returns snake_case, and Supabase uses snake_case. They match perfectly.
         const statement = sqlite.prepare(`INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`)
         
         const insertMany = sqlite.transaction((rowsToInsert: any[]) => {
           for (const row of rowsToInsert) {
-            const mapped = parseDateStringsToEpoch(row)
-            statement.run(cols.map(c => mapped[c]))
+            statement.run(cols.map(c => row[c]))
           }
         })
         
@@ -119,8 +94,6 @@ export async function syncWithSupabase(): Promise<{ ok: boolean, message: string
     }
 
     // 3. RECALCULATE STOCK
-    // Because we use UUIDs and event-sourcing, we don't sync absolute stock levels.
-    // Instead, we recalculate them completely from the ledger of events locally.
     sqlite.exec(`
       DELETE FROM bulk_stock;
       INSERT INTO bulk_stock (product_id, qty_grams, avg_cost_per_kg)
@@ -162,7 +135,7 @@ export async function syncWithSupabase(): Promise<{ ok: boolean, message: string
     sqlite.prepare('INSERT INTO sync_log (id, synced_at, records_pushed, records_failed) VALUES (?, ?, ?, ?)').run(crypto.randomUUID(), nowTimestamp, 0, 0)
     
     // Update global ping tracker
-    await supabase.from('global_sync_state').upsert({ id: 'singleton', last_sync_time: new Date().toISOString() })
+    await callWorker('/update-state', { time: nowTimestamp })
 
     return { ok: true, message: 'Sync complete!' }
   } catch (err: any) {
@@ -186,14 +159,10 @@ export async function checkRemoteState(): Promise<{ ok: boolean, data?: { outOfS
       return { ok: true, data: { outOfSync: false, lastLocalSync: 0 } }
     }
 
-    const { data, error } = await supabase.from('global_sync_state').select('last_sync_time').eq('id', 'singleton').single()
-    if (error) {
-      // If table doesn't exist yet or no row, it's fine, ignore
-      return { ok: true, data: { outOfSync: false, lastLocalSync } }
-    }
+    const res = await callWorkerGet('/state')
 
-    if (data && data.last_sync_time) {
-      const remoteTime = new Date(data.last_sync_time).getTime()
+    if (res && res.last_sync_time) {
+      const remoteTime = res.last_sync_time
       return {
         ok: true,
         data: {
@@ -220,13 +189,8 @@ export async function forcePush(): Promise<{ ok: boolean; message: string }> {
     return { ok: false, message: 'Could not access underlying SQLite database' }
   }
 
-  if (!supabase) {
-    return { ok: false, message: 'Supabase client not initialized (check .env)' }
-  }
-
   try {
     // 1. DELETE (Cloud deletions of things not existing locally)
-    // We do this in reverse order to respect foreign key constraints
     const reversedTables = [...TABLES_TO_SYNC].reverse()
     
     for (const table of reversedTables) {
@@ -234,25 +198,16 @@ export async function forcePush(): Promise<{ ok: boolean; message: string }> {
       const localRows = sqlite.prepare(`SELECT ${pk} FROM ${table}`).all()
       const localIds = new Set(localRows.map((r: any) => r[pk]))
 
-      const { data: cloudRows, error: pullErr } = await supabase.from(table).select(pk)
-      if (pullErr) {
-        console.error(`ForcePush pull error on ${table}:`, pullErr)
-        return { ok: false, message: `Failed to fetch cloud IDs for ${table}: ${pullErr.message}` }
-      }
+      const { data: cloudRows } = await callWorker('/pull', { table, select: [pk] })
 
       if (cloudRows && cloudRows.length > 0) {
-        const idsToDelete = cloudRows.map(r => r[pk]).filter(id => !localIds.has(id))
+        const idsToDelete = cloudRows.map((r: any) => r[pk]).filter((id: any) => !localIds.has(id))
         
         if (idsToDelete.length > 0) {
           console.log(`ForcePush: Deleting ${idsToDelete.length} rows from ${table}`)
-          // Supabase 'in' filter has limits, we chunk it
           for (let i = 0; i < idsToDelete.length; i += 200) {
             const chunk = idsToDelete.slice(i, i + 200)
-            const { error: delErr } = await supabase.from(table).delete().in(pk, chunk)
-            if (delErr) {
-              console.error(`ForcePush delete error on ${table}:`, delErr)
-              return { ok: false, message: `Failed to delete from ${table}: ${delErr.message}` }
-            }
+            await callWorker('/delete', { table, ids: chunk, pk })
           }
         }
       }
@@ -262,23 +217,7 @@ export async function forcePush(): Promise<{ ok: boolean; message: string }> {
     for (const table of TABLES_TO_SYNC) {
       const rows = sqlite.prepare(`SELECT * FROM ${table}`).all()
       if (rows.length > 0) {
-        const mappedRows = rows.map((r: any) => {
-          const out = { ...r }
-          for (const [k, v] of Object.entries(out)) {
-            const dateColumns = ['created_at', 'changed_at', 'invoice_datetime', 'old_datetime', 'new_datetime', 'edited_at', 'synced_at', 'date']
-            if (dateColumns.includes(k) && typeof v === 'number') {
-              const ms = v < 10000000000 ? v * 1000 : v
-              out[k] = new Date(ms).toISOString()
-            }
-          }
-          return out
-        })
-
-        const { error } = await supabase.from(table).upsert(mappedRows)
-        if (error) {
-          console.error(`ForcePush upsert error on ${table}:`, error)
-          return { ok: false, message: `Failed to push ${table}: ${error.message}` }
-        }
+        await callWorker('/push', { table, rows })
       }
     }
 
@@ -301,20 +240,17 @@ export async function forcePull(): Promise<{ ok: boolean; message: string }> {
   const sqlite = db.session?.client
 
   if (!sqlite) return { ok: false, message: 'Could not access SQLite' }
-  if (!supabase) return { ok: false, message: 'Supabase client not initialized' }
 
   try {
     // 1. DELETE local rows that don't exist in the cloud
-    // We do this in reverse order to respect local SQLite foreign key constraints
     const reversedTables = [...TABLES_TO_SYNC].reverse()
     
     for (const table of reversedTables) {
       const pk = table === 'settings' ? 'key' : 'id'
       
-      const { data: cloudRows, error: pullErr } = await supabase.from(table).select(pk)
-      if (pullErr) throw pullErr
+      const { data: cloudRows } = await callWorker('/pull', { table, select: [pk] })
 
-      const cloudIds = new Set((cloudRows || []).map(r => r[pk]))
+      const cloudIds = new Set((cloudRows || []).map((r: any) => r[pk]))
       const localRows = sqlite.prepare(`SELECT ${pk} FROM ${table}`).all()
       
       const idsToDelete = localRows.map((r: any) => r[pk]).filter((id: string) => !cloudIds.has(id))
@@ -332,8 +268,7 @@ export async function forcePull(): Promise<{ ok: boolean; message: string }> {
 
     // 2. PULL and UPSERT all cloud rows locally
     for (const table of TABLES_TO_SYNC) {
-      const { data, error } = await supabase.from(table).select('*')
-      if (error) throw error
+      const { data } = await callWorker('/pull', { table })
 
       if (data && data.length > 0) {
         const cols = Object.keys(data[0])
@@ -342,14 +277,12 @@ export async function forcePull(): Promise<{ ok: boolean; message: string }> {
         
         sqlite.transaction((rowsToInsert: any[]) => {
           for (const row of rowsToInsert) {
-            const mapped = parseDateStringsToEpoch(row)
-            statement.run(cols.map(c => mapped[c]))
+            statement.run(cols.map(c => row[c]))
           }
         })(data)
       }
     }
 
-    // 3. RECALCULATE STOCK
     // 3. RECALCULATE STOCK
     sqlite.exec(`
       DELETE FROM bulk_stock;

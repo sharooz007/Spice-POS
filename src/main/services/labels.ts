@@ -32,14 +32,18 @@ function generateHtml(productName: string, variantLabel: string, barcode: string
     : leftMarginMm + widthMm + rightMarginMm
   const pageHeightMm = heightMm
 
+  const formattedDate = new Date(dateStr).toLocaleDateString('en-GB');
+
   const singleLabel = `
     <div style="width:${widthMm}mm; height:${heightMm}mm; box-sizing:border-box; padding:2mm; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; flex-shrink:0;">
-      <div style="font-size:11px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${productName}</div>
-      <div style="font-size:10px;">${variantLabel}</div>
-      <svg class="bc"></svg>
-      <div style="font-size:11px; font-weight:bold; margin-top:2px; display:flex; justify-content:space-between; width:100%; align-items:center;">
+      <div style="font-size:11px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center; color:#000;">${productName}</div>
+      <div style="font-size:10px; color:#000;">${variantLabel}</div>
+      <div style="margin:2px 0; display:flex; justify-content:center; width:100%;">
+        <svg class="bc" style="max-width:100%; height:auto; display:block; margin:0 auto;"></svg>
+      </div>
+      <div style="font-size:11px; font-weight:bold; margin-top:2px; display:flex; justify-content:space-between; width:100%; align-items:center; color:#000;">
         <span>${priceStr}</span>
-        <span style="font-size:8px; font-weight:normal; color:#000;">${dateStr}</span>
+        <span style="font-size:8px; font-weight:normal; color:#000;">${formattedDate}</span>
       </div>
     </div>`
 
@@ -90,7 +94,7 @@ function generateHtml(productName: string, variantLabel: string, barcode: string
     <script>${jsBarcodeCode}</script>
     <script>
       document.querySelectorAll('.bc').forEach(function(el) {
-        JsBarcode(el, '${barcode}', {format:'CODE128',height:30,width:1.2,fontSize:9,margin:0});
+        JsBarcode(el, '${barcode}', {format:'CODE128',height:30,width:1.2,margin:0,displayValue:false});
       });
     </script>
   </body></html>`
@@ -129,7 +133,8 @@ export async function printLabels(req: PrintLabelsRequest): Promise<void> {
     return acc
   }, {} as Record<string, string>)
   
-  const html = generateHtml(varInfo.productName, varInfo.label, varInfo.barcode, pricePaise, req.qty, dateToPrint, settingsMap)
+  const finalProductName = req.customProductName || varInfo.productName
+  const html = generateHtml(finalProductName, varInfo.label, varInfo.barcode, pricePaise, req.qty, dateToPrint, settingsMap)
   
   // Printer config
   const deviceName = settingsMap['label_printer'] || ''

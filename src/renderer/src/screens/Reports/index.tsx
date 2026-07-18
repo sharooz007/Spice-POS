@@ -453,7 +453,7 @@ export default function ReportsScreen(): ReactElement {
     if (tab === 'invoices') {
       const r = await window.api.invoiceHistory.search({ dateFrom: range.dateFrom, dateTo: range.dateTo })
       if (id !== loadRef.current) return
-      if (r.ok) setInvoices(r.data); else setError(r.error)
+      if (r.ok) setInvoices(r.data.invoices); else setError(r.error)
     } else if (tab === 'repayments') {
       const r = await window.api.reports.repayments(range)
       if (id !== loadRef.current) return

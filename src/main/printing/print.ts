@@ -38,11 +38,12 @@ export async function printReceipt(invoiceId: string): Promise<void> {
   const shopName = getSetting('shop_name', 'Spice Shop')
   const shopAddress = getSetting('shop_address', '')
   const shopPhone = getSetting('shop_phone', '')
+  const receiptFooter = getSetting('receipt_footer', 'Thank you! Visit again.')
   const deviceName = getSetting('receipt_printer', '')
   const receiptSize = getSetting('receipt_size', '80mm')
 
   // Read template and fill placeholders via inline script
-  const templatePath = join(__dirname, 'templates', 'receipt.html')
+  const templatePath = join(__dirname, 'printing', 'templates', 'receipt.html')
   let html: string
   try {
     html = readFileSync(templatePath, 'utf-8')
@@ -64,10 +65,12 @@ export async function printReceipt(invoiceId: string): Promise<void> {
   const linesHtml = lines
     .map(
       (l) =>
-        `<tr><td>${l.productName ?? ''} ${l.label ?? ''}</td>
-         <td class="right">${l.qty}</td>
-         <td class="right">${fmt(l.unitPricePaise)}</td>
-         <td class="right">${fmt(l.lineTotalPaise)}</td></tr>`
+        `<div class="flex-row">
+           <div class="col-item">${l.productName ?? ''} ${l.label ?? ''}</div>
+           <div class="col-qty">${l.qty}</div>
+           <div class="col-rate">${fmt(l.unitPricePaise)}</div>
+           <div class="col-amt">${fmt(l.lineTotalPaise)}</div>
+         </div>`
     )
     .join('')
 
@@ -83,14 +86,16 @@ export async function printReceipt(invoiceId: string): Promise<void> {
     document.getElementById('total').textContent = ${JSON.stringify(fmt(inv.totalPaise))};
     document.getElementById('payment-mode').textContent = ${JSON.stringify(inv.paymentMode)};
     document.getElementById('amount-paid').textContent = ${JSON.stringify(fmt(inv.amountPaidPaise))};
+    document.getElementById('receipt-footer').textContent = ${JSON.stringify(receiptFooter)};
     if (${inv.discountPaise} > 0) {
       document.getElementById('discount-row').style.display = '';
       document.getElementById('discount').textContent = ${JSON.stringify(fmt(inv.discountPaise))};
     }
     const rSize = ${JSON.stringify(receiptSize)};
-    document.body.style.width = rSize === '58mm' ? '58mm' : '80mm';
-    document.body.style.fontSize = rSize === '58mm' ? '10px' : '12px';
-    document.getElementById('shop-name').style.fontSize = rSize === '58mm' ? '1.2em' : '1.4em';
+    const rSizeNum = parseFloat(rSize) || 80;
+    document.body.style.width = rSizeNum + 'mm';
+    document.body.style.fontSize = rSizeNum < 65 ? '10px' : rSizeNum < 75 ? '11px' : '12px';
+    document.getElementById('shop-name').style.fontSize = rSizeNum < 65 ? '1.2em' : rSizeNum < 75 ? '1.3em' : '1.4em';
   </script>`
 
   const fullHtml = html.replace('</body>', fillScript + '</body>')
@@ -101,7 +106,11 @@ export async function printReceipt(invoiceId: string): Promise<void> {
     win.webContents.on('did-finish-load', () => {
       setTimeout(() => {
         win.webContents.print(
-          { silent: true, deviceName: deviceName || undefined },
+          { 
+            silent: true, 
+            deviceName: deviceName || undefined,
+            margins: { marginType: 'none' }
+          },
           (success, errType) => {
             win.destroy()
             if (success) resolve()
