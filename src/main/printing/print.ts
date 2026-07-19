@@ -5,6 +5,7 @@ import { join } from 'path'
 import { eq } from 'drizzle-orm'
 import { getDb } from '../db'
 import { invoices, invoiceLines, productVariants, products, settings } from '../db/schema'
+import * as QRCode from 'qrcode'
 
 function getSetting(key: string, fallback: string): string {
   const row = getDb().select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get()
@@ -98,7 +99,26 @@ export async function printReceipt(invoiceId: string): Promise<void> {
     document.getElementById('shop-name').style.fontSize = rSizeNum < 65 ? '1.2em' : rSizeNum < 75 ? '1.3em' : '1.4em';
   </script>`
 
-  const fullHtml = html.replace('</body>', fillScript + '</body>')
+  let qrScript = ''
+  const upiId = getSetting('upi_id', '').trim()
+  const upiName = getSetting('upi_name', '').trim()
+  if (upiId) {
+    // Generate UPI Intent URL
+    // Format: upi://pay?pa=UPIID&pn=NAME&am=AMOUNT&cu=INR
+    const totalRupees = (inv.totalPaise / 100).toFixed(2)
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName || shopName)}&am=${totalRupees}&cu=INR`
+    try {
+      const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 120 })
+      qrScript = `<script>
+        document.getElementById('qr-container').style.display = 'block';
+        document.getElementById('qr-image').src = ${JSON.stringify(qrDataUrl)};
+      </script>`
+    } catch (e) {
+      console.error('Failed to generate QR code', e)
+    }
+  }
+
+  const fullHtml = html.replace('</body>', fillScript + qrScript + '</body>')
 
   await new Promise<void>((resolve, reject) => {
     const win = new BrowserWindow({ show: false, webPreferences: { javascript: true, sandbox: false } })

@@ -256,6 +256,14 @@ export default function SettingsScreen(): ReactElement {
                     <label style={labelStyle}>Phone Number</label>
                     <input style={inputStyle} value={settings['shop_phone'] || ''} onChange={e => setSetting('shop_phone', e.target.value)} />
                   </div>
+                  <div>
+                    <label style={labelStyle}>UPI ID (for receipt QR)</label>
+                    <input style={inputStyle} value={settings['upi_id'] || ''} onChange={e => setSetting('upi_id', e.target.value)} placeholder="e.g. yourname@upi" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>UPI Payee Name</label>
+                    <input style={inputStyle} value={settings['upi_name'] || ''} onChange={e => setSetting('upi_name', e.target.value)} placeholder="e.g. Spice Shop" />
+                  </div>
                 </div>
               </div>
 
