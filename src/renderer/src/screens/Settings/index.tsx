@@ -491,6 +491,15 @@ export default function SettingsScreen(): ReactElement {
                     <div>₹400.00</div>
                   </div>
                   
+                  {settings['upi_id'] && (
+                    <div style={{ textAlign: 'center', margin: '1rem 0' }}>
+                      <div style={{ width: '80px', height: '80px', background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #000' }}>
+                        <span style={{ background: '#fff', padding: '2px 4px', fontSize: '10px', fontWeight: 'bold' }}>UPI QR</span>
+                      </div>
+                      <div style={{ fontSize: '0.85em', marginTop: '4px' }}>Scan to Pay via UPI</div>
+                    </div>
+                  )}
+                  
                   <div style={{ textAlign: 'center', marginTop: '1.5rem', borderTop: '1px dashed #000', paddingTop: '0.5rem' }}>
                     {isEditingReceipt ? (
                       <input 
