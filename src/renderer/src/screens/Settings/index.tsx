@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, type ReactElement, type FormEvent } from 'react'
 import { useAppStore } from '../../store/appStore'
+import QRCode from 'qrcode'
 
 type Tab = 'general' | 'hardware' | 'backup' | 'users' | 'advanced'
 
@@ -20,6 +21,7 @@ export default function SettingsScreen(): ReactElement {
   const [showAddUser, setShowAddUser] = useState(false)
   const [showChangePin, setShowChangePin] = useState<{id: number, name: string} | null>(null)
   const [isEditingReceipt, setIsEditingReceipt] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
   
   const loadData = async () => {
     const sRes = await window.api.settings.getAll()
@@ -33,6 +35,20 @@ export default function SettingsScreen(): ReactElement {
   }
 
   useEffect(() => { loadData() }, [])
+
+  useEffect(() => {
+    const upiId = settings['upi_id']
+    const upiName = settings['upi_name']
+    const shopName = settings['shop_name']
+    if (upiId) {
+      const url = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName || shopName || '')}&am=400.00&cu=INR`
+      QRCode.toDataURL(url, { margin: 1, width: 100 })
+        .then(url => setQrDataUrl(url))
+        .catch(err => console.error(err))
+    } else {
+      setQrDataUrl('')
+    }
+  }, [settings['upi_id'], settings['upi_name'], settings['shop_name']])
 
   const setSetting = async (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -493,9 +509,13 @@ export default function SettingsScreen(): ReactElement {
                   
                   {settings['upi_id'] && (
                     <div style={{ textAlign: 'center', margin: '1rem 0' }}>
-                      <div style={{ width: '80px', height: '80px', background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #000' }}>
-                        <span style={{ background: '#fff', padding: '2px 4px', fontSize: '10px', fontWeight: 'bold' }}>UPI QR</span>
-                      </div>
+                      {qrDataUrl ? (
+                        <img src={qrDataUrl} alt="UPI QR Code" style={{ width: '80px', height: '80px', margin: '0 auto', display: 'block' }} />
+                      ) : (
+                        <div style={{ width: '80px', height: '80px', background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #000' }}>
+                          <span style={{ background: '#fff', padding: '2px 4px', fontSize: '10px', fontWeight: 'bold' }}>UPI QR</span>
+                        </div>
+                      )}
                       <div style={{ fontSize: '0.85em', marginTop: '4px' }}>Scan to Pay via UPI</div>
                     </div>
                   )}
