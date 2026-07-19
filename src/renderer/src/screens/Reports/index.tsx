@@ -401,6 +401,7 @@ export default function ReportsScreen(): ReactElement {
   const [collections, setCollections] = useState<PaymentBreakdownRow | null>(null)
   const [kpiDaily, setKpiDaily] = useState<DailySalesRow[]>([])
   const [dues, setDues] = useState<DuesRow[]>([])
+  const [inventorySnapshot, setInventorySnapshot] = useState<InventoryReportRow[]>([])
   const [error, setError] = useState('')
 
   // modal states
@@ -433,12 +434,13 @@ export default function ReportsScreen(): ReactElement {
     const id = ++loadRef.current
     setError('')
     // Always load summary data used above the tabbed report tables.
-    const [kpiRes, colRes, expRes, profitRes, duesRes] = await Promise.all([
+    const [kpiRes, colRes, expRes, profitRes, duesRes, invRes] = await Promise.all([
       window.api.reports.dailySales(range),
       window.api.reports.paymentBreakdown(range),
       window.api.expenses.list(range),
       isAdmin ? window.api.reports.profit(range) : Promise.resolve(null),
-      window.api.reports.dues()
+      window.api.reports.dues(),
+      window.api.reports.inventory()
     ])
     if (id !== loadRef.current) return
     if (kpiRes.ok) {
@@ -449,6 +451,7 @@ export default function ReportsScreen(): ReactElement {
     if (expRes.ok) setExpenses(expRes.data)
     if (profitRes && profitRes.ok) setProfitRows(profitRes.data)
     if (duesRes.ok) setDues(duesRes.data)
+    if (invRes.ok) setInventorySnapshot(invRes.data)
 
     if (tab === 'invoices') {
       const r = await window.api.invoiceHistory.search({ dateFrom: range.dateFrom, dateTo: range.dateTo })
@@ -606,6 +609,9 @@ export default function ReportsScreen(): ReactElement {
   const totalExpenses  = expenses.reduce((s, e) => s + e.amountPaise, 0)
   const totalProfit    = profitRows.reduce((s, r) => s + r.totalProfitPaise, 0)
 
+  const totalRetailInventoryCostPaise = Math.round(inventorySnapshot.filter(r => r.type === 'packet').reduce((acc, r) => acc + ((r.avgCost || 0) * r.qty), 0) * 100)
+  const totalBulkInventoryCostPaise = Math.round(inventorySnapshot.filter(r => r.type === 'bulk').reduce((acc, r) => acc + ((r.avgCost || 0) * (r.qty / 1000)), 0) * 100)
+
   // Payment breakdown
   const col = collections
   const colMethods = col ? [
@@ -744,12 +750,18 @@ export default function ReportsScreen(): ReactElement {
           <KpiCard label="Wholesale Revenue" value={paiseToCurrency(totalWholesale)} icon={Icons.wholesale} color={T.amber} />
           <KpiCard label="Invoice Count" value={String(totalInvoices)} sub="total bills" icon={Icons.invoice} color={T.sky} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
           <KpiCard label="Net Revenue" value={paiseToCurrency(totalSales - totalExpenses)} sub="sales - expenses" icon={Icons.revenue} color={T.green} accent />
           {isAdmin && <KpiCard label="Profit" value={paiseToCurrency(totalProfit)} sub="known-cost lines only" icon={Icons.profit} color={T.green} />}
           <KpiCard label="Expenses" value={paiseToCurrency(totalExpenses)} icon={Icons.expense} color={T.red} />
           <KpiCard label="Collected" value={paiseToCurrency(collections?.total ?? 0)} sub="paid amount" icon={Icons.dues} color={T.sky} />
         </div>
+        {isAdmin && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+            <KpiCard label="Retail Stock Cost" value={paiseToCurrency(totalRetailInventoryCostPaise)} icon={Icons.retail} color={T.purple} />
+            <KpiCard label="Bulk Stock Cost" value={paiseToCurrency(totalBulkInventoryCostPaise)} icon={Icons.wholesale} color={T.purple} />
+          </div>
+        )}
 
         {/* ── ANALYTICS BLOCK ───────────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginBottom: 28 }}>
