@@ -101,6 +101,18 @@ export default function FactoryScreen() {
   const finalSalesTotal = filteredTransactions.filter(t => items.find(i => i.id === t.itemId)?.type === 'final_product').reduce((acc, t) => acc + t.amountPaise, 0)
   const expensesTotal = filteredTransactions.filter(t => items.find(i => i.id === t.itemId)?.type === 'expense').reduce((acc, t) => acc + t.amountPaise, 0)
 
+  // Calculate current raw material stock value based on average cost
+  let currentStockValueTotalPaise = 0
+  for (const stock of rawMaterialStock) {
+    if (stock.currentStockKg > 0) {
+      const purchases = transactions.filter(t => t.itemId === stock.itemId && t.type === 'purchase')
+      const totalPurchasedKg = purchases.reduce((acc, t) => acc + t.qtyKg, 0)
+      const totalAmountPaise = purchases.reduce((acc, t) => acc + t.amountPaise, 0)
+      const avgCostPerKg = totalPurchasedKg > 0 ? totalAmountPaise / totalPurchasedKg : 0
+      currentStockValueTotalPaise += stock.currentStockKg * avgCostPerKg
+    }
+  }
+
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault()
     if (!newItemName.trim()) return
@@ -288,6 +300,10 @@ export default function FactoryScreen() {
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>Current Stock Value</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>{paiseToCurrency(currentStockValueTotalPaise)}</span>
+            </div>
             <div className="card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>Total Raw Purchases</span>
               <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--red)' }}>{paiseToCurrency(rawPurchasesTotal)}</span>
