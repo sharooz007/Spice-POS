@@ -167,8 +167,8 @@ export default function RetailBillingScreen(): ReactElement {
     if (!lines.length) return
     setLoading(true); setSaleError('')
 
-    if (payMode === 'credit' && (!customerName.trim() || !customerPhone.trim())) {
-      setSaleError('Customer name and phone number are required for credit bills')
+    if ((payMode === 'credit' || amountPaid < totalPaise) && (!customerName.trim() || !customerPhone.trim())) {
+      setSaleError('Customer name and phone number are required for credit or partial payments')
       setLoading(false)
       return
     }
