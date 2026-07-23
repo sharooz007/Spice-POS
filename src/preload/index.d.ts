@@ -63,6 +63,7 @@ declare global {
       retailInventory: {
         getStock: (req?: { variantId?: number }) => Promise<Result<RetailStockRow[]>>
         recordAdjustment: (req: RecordRetailAdjustmentRequest) => Promise<Result<void>>
+        addOutsideStock: (req: { variantId: string; qtyPcs: number; costPerPcPaise: number; userId: string; notes?: string }) => Promise<Result<void>>
         listMovements: (req: { variantId: string }) => Promise<Result<RetailMovementRow[]>>
       }
       labels: {

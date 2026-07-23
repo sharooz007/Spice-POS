@@ -16,7 +16,7 @@ import type {
   RecordRetailAdjustmentRequest
 } from '../../shared/types'
 
-const VALID_REASONS = ['manual', 'damage', 'wastage'] as const
+const VALID_REASONS = ['manual', 'damage', 'wastage', 'outside_purchase'] as const
 
 export function getRetailStock(variantId?: string): RetailStockRow[] {
   const db = getDb()
@@ -73,6 +73,54 @@ export function recordRetailAdjustment(req: RecordRetailAdjustmentRequest): void
     } else {
       tx.insert(retailPacketStock)
         .values({ variantId: req.variantId, qtyPcs: newQty })
+        .run()
+    }
+  })
+}
+
+export function addOutsideRetailStock(req: { variantId: string, qtyPcs: number, costPerPcPaise: number, userId: string, notes?: string }): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    const stock = tx
+      .select({ qtyPcs: retailPacketStock.qtyPcs, avgCostPerPc: retailPacketStock.avgCostPerPc })
+      .from(retailPacketStock)
+      .where(eq(retailPacketStock.variantId, req.variantId))
+      .get()
+
+    const currentQty = stock?.qtyPcs ?? 0
+    const currentAvgCost = stock?.avgCostPerPc ?? 0
+    const newQty = currentQty + req.qtyPcs
+
+    if (req.qtyPcs <= 0) {
+      throw new Error(`Quantity must be greater than zero (change: ${req.qtyPcs})`)
+    }
+
+    const costPerPc = req.costPerPcPaise / 100
+    // moving average calculation
+    const totalCurrentValue = currentQty * currentAvgCost
+    const totalAddedValue = req.qtyPcs * costPerPc
+    const newAvgCost = (totalCurrentValue + totalAddedValue) / newQty
+
+    const today = new Date().toISOString().slice(0, 10)
+    tx.insert(retailAdjustments)
+      .values({
+        variantId: req.variantId,
+        date: today,
+        qtyChangePcs: req.qtyPcs,
+        reason: 'outside_purchase',
+        notes: req.notes ?? null,
+        userId: req.userId
+      })
+      .run()
+
+    if (stock) {
+      tx.update(retailPacketStock)
+        .set({ qtyPcs: newQty, avgCostPerPc: newAvgCost })
+        .where(eq(retailPacketStock.variantId, req.variantId))
+        .run()
+    } else {
+      tx.insert(retailPacketStock)
+        .values({ variantId: req.variantId, qtyPcs: newQty, avgCostPerPc: newAvgCost })
         .run()
     }
   })

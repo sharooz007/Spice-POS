@@ -19,6 +19,7 @@ export type Screen =
   | 'InvoiceHistory'
   | 'Settings'
   | 'Factory'
+  | 'OutsideProducts'
 
 interface AppState {
   currentScreen: Screen

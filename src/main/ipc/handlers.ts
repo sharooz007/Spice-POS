@@ -394,6 +394,16 @@ export function registerHandlers(): void {
       })
   )
 
+  // ── retailInventory.addOutsideStock ──────────────────────────────────────────
+  ipcMain.handle(
+    'retailInventory.addOutsideStock',
+    (_e, req: { variantId: string; qtyPcs: number; costPerPcPaise: number; userId: string; notes?: string }): Result<void> =>
+      wrap(() => {
+        requireAdmin(req.userId)
+        retailSvc.addOutsideRetailStock(req)
+      })
+  )
+
   // ── retailInventory.listMovements ───────────────────────────────────────────
   ipcMain.handle(
     'retailInventory.listMovements',

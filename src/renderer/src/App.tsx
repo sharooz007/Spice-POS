@@ -17,6 +17,7 @@ import ReportsScreen from './screens/Reports'
 import InvoiceHistoryScreen from './screens/InvoiceHistory'
 import SettingsScreen from './screens/Settings'
 import FactoryScreen from './screens/Factory'
+import OutsideProductsScreen from './screens/OutsideProducts'
 
 const screens = {
   Login: LoginScreen,
@@ -35,7 +36,8 @@ const screens = {
   Reports: ReportsScreen,
   InvoiceHistory: InvoiceHistoryScreen,
   Settings: SettingsScreen,
-  Factory: FactoryScreen
+  Factory: FactoryScreen,
+  OutsideProducts: OutsideProductsScreen
 } as const
 
 // ── Navigation structure ──────────────────────────────────────────────────────
@@ -95,6 +97,7 @@ const tabs: TabDef[] = [
       { label: 'Bulk Inventory', screen: 'BulkInventory' },
       { label: 'Packing', screen: 'Packing' },
       { label: 'Retail Packets', screen: 'RetailPacketInventory' },
+      { label: 'Outside Products', screen: 'OutsideProducts' },
       { label: 'Product Master', screen: 'ProductMaster' },
       { label: 'Price Menu', screen: 'PriceMenu' },
       { label: 'Label Printing', screen: 'LabelPrinting' }
